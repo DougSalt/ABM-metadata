@@ -48,7 +48,6 @@ ObjectPropertyDomain(:hasForeignKey :Table)
 AnnotationAssertion(rdfs:label :hasPart "has part"@en)
 InverseObjectProperties(:hasPart :partOf)
 ObjectPropertyDomain(:hasPart :Table)
-ObjectPropertyRange(:hasPart :Column)
 
 # Object Property: :hasPrimaryKey (has primary key)
 
@@ -64,8 +63,6 @@ SubObjectPropertyOf(:manyToMany :relation)
 # Object Property: :partOf (part of)
 
 AnnotationAssertion(rdfs:label :partOf "part of"@en)
-ObjectPropertyDomain(:partOf ObjectUnionOf(:PrimaryKey :ForeignKey))
-ObjectPropertyRange(:partOf :Table)
 
 # Object Property: :relation (:relation)
 
@@ -95,17 +92,19 @@ for edgeKey, edgeValue in ssrepi.derive_edges().items():
     sourceForeignKey = sourceClass + "_foreign_key"
 
 
+    # You need to tidy this  up, because it is virtually impossible to read.
+
     objectPropertySubClass = None
     if "join" in edgeValue.keys():
         objectPropertySubClass = "manyToMany"
     else:
         objectPropertySubClass = "relation"
     print """
-# Class: :""" + targetClass + """ (:""" + targetClass + """)
+# Class: :""" + targetClass + """
 Declaration(Class(:""" + targetClass + """))
 SubClassOf(:""" + targetClass + """ :Table)
 
-# Class: :""" + targetKey + """ (:""" + targetKey + """)
+# Class: :""" + targetKey + """
 Declaration(Class(:""" + targetKey + """))
 
 Declaration(Class(:""" + targetPrimaryKey + """))
@@ -121,7 +120,7 @@ SubClassOf(:""" + targetClass + """ ObjectSomeValuesFrom(:hasPrimaryKey :""" + t
 Declaration(Class(:""" + sourceClass + """))
 SubClassOf(:""" + sourceClass + """ :Table)
     
-# Class: :""" + sourceKey + """ (:""" + sourceKey + """)
+# Class: :""" + sourceKey + """
 Declaration(Class(:""" + sourceKey + """))
 SubClassOf(:""" + sourceKey + """ :Column)
 """
@@ -132,6 +131,7 @@ Declaration(Class(:""" + sourcePrimaryKey + """))
 SubClassOf(:""" + sourcePrimaryKey + """ :PrimaryKey)
 AnnotationAssertion(rdfs:label :""" + sourcePrimaryKey + """ "primary key of """ + sourceClass + """ table"@en)
         SubClassOf(:""" + sourceKey + """ ObjectSomeValuesFrom(:partOf :""" + sourcePrimaryKey + """))
+        SubClassOf(:""" + sourcePrimaryKey + """ ObjectSomeValuesFrom(:partOf :""" + sourceClass + """))
 """
     else:
         sourceForeignKey = sourceClass + "_foreign_key"
@@ -140,6 +140,7 @@ Declaration(Class(:""" + sourceForeignKey + """))
 SubClassOf(:""" + sourceForeignKey + """ :ForeignKey)
 AnnotationAssertion(rdfs:label :""" + sourceForeignKey + """ "foreign key of """ + sourceClass + """ table"@en)
         SubClassOf(:""" + sourceKey + """ ObjectSomeValuesFrom(:partOf :""" + sourceForeignKey + """))
+        SubClassOf(:""" + sourceForeignKey + """ ObjectSomeValuesFrom(:partOf :""" + sourceClass + """))
 """
 
     print """
@@ -149,6 +150,20 @@ ObjectPropertyRange(:""" + edgeKey + """ :""" + targetClass + """)
 SubObjectPropertyOf(:""" + edgeKey + """ :""" + objectPropertySubClass + """)
 """
             
+for realTableName, columns in ssrepi.labels().items():
+    table = getattr(ssrepi.Table, realTableName)()
+    print """
+# Class: :""" + table + """
+Declaration(Class(:""" + table + """))
+SubClassOf(:""" + table + """ :Table)
+"""
+    for column in columns:
+        print """
+# Class: :""" + column + """
+Declaration(Class(:""" + column + """))
+SubClassOf(:""" + column + """ :Column)
+SubClassOf(:""" + column + """ ObjectSomeValuesFrom(:partOf :""" + table + """))
+"""
 
 print ")";
 

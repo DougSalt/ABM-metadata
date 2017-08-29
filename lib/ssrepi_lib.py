@@ -3239,6 +3239,28 @@ def derive_edges():
     return edges
 
 def derive_edge(schema):
+    """
+    This is a dictionary indexed on the name of the edge
+    Each edge value is a dictionary which may have one of three indexes
+
+    + join
+    + source
+    + target
+    + id
+
+    The values of these dictionaries may contain a single value, as in 
+    the case of source and target, otherwise "join" is another dictonary.
+
+    The simple values in id, source and target contain a single entry in
+    the form:
+
+    table(column_name)
+
+    The "source" specifies the source table of the edge
+    The "target" specifies the target table of the edge
+    The "id" specifies the where you will find the origin in the source
+    table
+    """
     edge = {}
     node = re.search(
         'CREATE\s+TABLE\s+IF\s+NOT\s+EXISTS\s+(\S*)\s*\(\s*$',
@@ -3438,6 +3460,10 @@ def labels():
     return labels
 
 def get_label(schema):
+    """
+    A dictionary keyed on table name, followed by a list containing
+    columns
+    """
     lines = schema.splitlines()
     node = re.search(
         'CREATE\s+TABLE\s+IF\s+NOT\s+EXISTS\s+(.*)\s*\(\s*$',
