@@ -1,0 +1,1190 @@
+
+Prefix(:=<http://www.semanticweb.org/doug/ontologies/2017/7/untitled-ontology-20#>)
+Prefix(owl:=<http://www.w3.org/2002/07/owl#>)
+Prefix(rdf:=<http://www.w3.org/1999/02/22-rdf-syntax-ns#>)
+Prefix(xml:=<http://www.w3.org/XML/1998/namespace>)
+Prefix(xsd:=<http://www.w3.org/2001/XMLSchema#>)
+Prefix(rdfs:=<http://www.w3.org/2000/01/rdf-schema#>)
+
+
+Ontology(<http://www.semanticweb.org/doug/ontologies/2017/7/untitled-ontology-20>
+
+Declaration(Class(:Column))
+Declaration(Class(:ForeignKey))
+Declaration(Class(:PrimaryKey))
+Declaration(Class(:Table))
+Declaration(ObjectProperty(:hasForeignKey))
+Declaration(ObjectProperty(:hasPart))
+Declaration(ObjectProperty(:hasPrimaryKey))
+Declaration(ObjectProperty(:manyToMany))
+Declaration(ObjectProperty(:part))
+Declaration(ObjectProperty(:relation))
+Declaration(DataProperty(:hasPrimaryKey))
+
+# Object Property: :hasForeignKey (has foreign key)
+
+AnnotationAssertion(rdfs:label :hasForeignKey "has foreign key"@en)
+ObjectPropertyDomain(:hasForeignKey :Table)
+
+# Object Property: :hasPart (has part)
+
+AnnotationAssertion(rdfs:label :hasPart "has part"@en)
+InverseObjectProperties(:hasPart :part)
+ObjectPropertyDomain(:hasPart :Column)
+ObjectPropertyRange(:hasPart :Table)
+
+# Object Property: :hasPrimaryKey (has primary key)
+
+AnnotationAssertion(rdfs:label :hasPrimaryKey "has primary key"@en)
+SubObjectPropertyOf(:hasPrimaryKey owl:topObjectProperty)
+ObjectPropertyDomain(:hasPrimaryKey :Table)
+
+# Object Property: :manyToMany (many to many)
+
+AnnotationAssertion(rdfs:label :manyToMany "many to many"@en)
+SubObjectPropertyOf(:manyToMany :relation)
+
+# Object Property: :part (part of)
+
+AnnotationAssertion(rdfs:label :part "part of"@en)
+ObjectPropertyDomain(:part :Table)
+ObjectPropertyRange(:part :Column)
+
+# Object Property: :relation (:relation)
+
+ObjectPropertyDomain(:relation :Table)
+ObjectPropertyRange(:relation :Table)
+
+# Class: :ForeignKey (Foreign key)
+
+AnnotationAssertion(rdfs:label :ForeignKey "Foreign key"@en)
+SubClassOf(:ForeignKey :Column)
+
+# Class: :OtherClass (:OtherClass)
+
+SubClassOf(:OtherClass :Table)
+
+# Class: :PrimaryKey (Primary key)
+
+AnnotationAssertion(rdfs:label :PrimaryKey "Primary key"@en)
+SubClassOf(:PrimaryKey :Column)
+
+
+# Class: :VisualisationMethod (:VisualisationMethod)
+Declaration(Class(:VisualisationMethod))
+SubClassOf(:VisualisationMethod :Table)
+    
+# Class: :VisualisationMethod (:VisualisationMethod)
+Declaration(Class(:VisualisationMethod))
+SubClassOf(:VisualisationMethod :Table)
+    
+# Object Property: :tagmap-to-visualisationmethods
+ObjectPropertyDomain(:tagmap-to-visualisationmethods :VisualisationMethod)
+ObjectPropertyRange(:tagmap-to-visualisationmethods :VisualisationMethod)
+
+
+# Class: :Application (:Application)
+Declaration(Class(:Application))
+SubClassOf(:Application :Table)
+    
+# Class: :Pipeline (:Pipeline)
+Declaration(Class(:Pipeline))
+SubClassOf(:Pipeline :Table)
+    
+# Object Property: :calls_application
+ObjectPropertyDomain(:calls_application :Pipeline)
+ObjectPropertyRange(:calls_application :Application)
+
+
+# Class: :Specification (:Specification)
+Declaration(Class(:Specification))
+SubClassOf(:Specification :Table)
+    
+# Class: :Specification (:Specification)
+Declaration(Class(:Specification))
+SubClassOf(:Specification :Table)
+    
+# Object Property: :meets-to-specifications
+ObjectPropertyDomain(:meets-to-specifications :Specification)
+ObjectPropertyRange(:meets-to-specifications :Specification)
+
+
+# Class: :Visualisation (:Visualisation)
+Declaration(Class(:Visualisation))
+SubClassOf(:Visualisation :Table)
+    
+# Class: :Value (:Value)
+Declaration(Class(:Value))
+SubClassOf(:Value :Table)
+    
+# Object Property: :visualisationvalue-to-visualisations
+ObjectPropertyDomain(:visualisationvalue-to-visualisations :Value)
+ObjectPropertyRange(:visualisationvalue-to-visualisations :Visualisation)
+
+
+# Class: :VisualisationMethod (:VisualisationMethod)
+Declaration(Class(:VisualisationMethod))
+SubClassOf(:VisualisationMethod :Table)
+    
+# Class: :Variable (:Variable)
+Declaration(Class(:Variable))
+SubClassOf(:Variable :Table)
+    
+# Object Property: :content-to-visualisationmethods
+ObjectPropertyDomain(:content-to-visualisationmethods :Variable)
+ObjectPropertyRange(:content-to-visualisationmethods :VisualisationMethod)
+
+
+# Class: :Container (:Container)
+Declaration(Class(:Container))
+SubClassOf(:Container :Table)
+    
+# Class: :Container (:Container)
+Declaration(Class(:Container))
+SubClassOf(:Container :Table)
+    
+# Object Property: :tagmap-to-containers
+ObjectPropertyDomain(:tagmap-to-containers :Container)
+ObjectPropertyRange(:tagmap-to-containers :Container)
+
+
+# Class: :Variable (:Variable)
+Declaration(Class(:Variable))
+SubClassOf(:Variable :Table)
+    
+# Class: :Variable (:Variable)
+Declaration(Class(:Variable))
+SubClassOf(:Variable :Table)
+    
+# Object Property: :value-to-variables
+ObjectPropertyDomain(:value-to-variables :Variable)
+ObjectPropertyRange(:value-to-variables :Variable)
+
+
+# Class: :VisualisationMethod (:VisualisationMethod)
+Declaration(Class(:VisualisationMethod))
+SubClassOf(:VisualisationMethod :Table)
+    
+# Class: :VisualisationMethod (:VisualisationMethod)
+Declaration(Class(:VisualisationMethod))
+SubClassOf(:VisualisationMethod :Table)
+    
+# Object Property: :employs-to-visualisationmethods
+ObjectPropertyDomain(:employs-to-visualisationmethods :VisualisationMethod)
+ObjectPropertyRange(:employs-to-visualisationmethods :VisualisationMethod)
+
+
+# Class: :Container (:Container)
+Declaration(Class(:Container))
+SubClassOf(:Container :Table)
+    
+# Class: :Visualisation (:Visualisation)
+Declaration(Class(:Visualisation))
+SubClassOf(:Visualisation :Table)
+    
+# Object Property: :contained_in
+ObjectPropertyDomain(:contained_in :Visualisation)
+ObjectPropertyRange(:contained_in :Container)
+
+
+# Class: :StatisticalMethod (:StatisticalMethod)
+Declaration(Class(:StatisticalMethod))
+SubClassOf(:StatisticalMethod :Table)
+    
+# Class: :StatisticalVariable (:StatisticalVariable)
+Declaration(Class(:StatisticalVariable))
+SubClassOf(:StatisticalVariable :Table)
+    
+# Object Property: :generated_by
+ObjectPropertyDomain(:generated_by :StatisticalVariable)
+ObjectPropertyRange(:generated_by :StatisticalMethod)
+
+
+# Class: :Tag (:Tag)
+Declaration(Class(:Tag))
+SubClassOf(:Tag :Table)
+    
+# Class: :Tag (:Tag)
+Declaration(Class(:Tag))
+SubClassOf(:Tag :Table)
+    
+# Object Property: :tagmap-to-tags
+ObjectPropertyDomain(:tagmap-to-tags :Tag)
+ObjectPropertyRange(:tagmap-to-tags :Tag)
+
+
+# Class: :Assumption (:Assumption)
+Declaration(Class(:Assumption))
+SubClassOf(:Assumption :Table)
+    
+# Class: :Variable (:Variable)
+Declaration(Class(:Variable))
+SubClassOf(:Variable :Table)
+    
+# Object Property: :assumes-to-assumptions
+ObjectPropertyDomain(:assumes-to-assumptions :Variable)
+ObjectPropertyRange(:assumes-to-assumptions :Assumption)
+
+
+# Class: :Application (:Application)
+Declaration(Class(:Application))
+SubClassOf(:Application :Table)
+    
+# Class: :Container (:Container)
+Declaration(Class(:Container))
+SubClassOf(:Container :Table)
+    
+# Object Property: :location_application
+ObjectPropertyDomain(:location_application :Container)
+ObjectPropertyRange(:location_application :Application)
+
+
+# Class: :ContainerType (:ContainerType)
+Declaration(Class(:ContainerType))
+SubClassOf(:ContainerType :Table)
+    
+# Class: :ContainerType (:ContainerType)
+Declaration(Class(:ContainerType))
+SubClassOf(:ContainerType :Table)
+    
+# Object Property: :tagmap-to-containertypes
+ObjectPropertyDomain(:tagmap-to-containertypes :ContainerType)
+ObjectPropertyRange(:tagmap-to-containertypes :ContainerType)
+
+
+# Class: :Application (:Application)
+Declaration(Class(:Application))
+SubClassOf(:Application :Table)
+    
+# Class: :Process (:Process)
+Declaration(Class(:Process))
+SubClassOf(:Process :Table)
+    
+# Object Property: :executable
+ObjectPropertyDomain(:executable :Process)
+ObjectPropertyRange(:executable :Application)
+
+
+# Class: :Application (:Application)
+Declaration(Class(:Application))
+SubClassOf(:Application :Table)
+    
+# Class: :Application (:Application)
+Declaration(Class(:Application))
+SubClassOf(:Application :Table)
+    
+# Object Property: :product-to-applications
+ObjectPropertyDomain(:product-to-applications :Application)
+ObjectPropertyRange(:product-to-applications :Application)
+
+
+# Class: :Visualisation (:Visualisation)
+Declaration(Class(:Visualisation))
+SubClassOf(:Visualisation :Table)
+    
+# Class: :Visualisation (:Visualisation)
+Declaration(Class(:Visualisation))
+SubClassOf(:Visualisation :Table)
+    
+# Object Property: :value-to-visualisations
+ObjectPropertyDomain(:value-to-visualisations :Visualisation)
+ObjectPropertyRange(:value-to-visualisations :Visualisation)
+
+
+# Class: :Study (:Study)
+Declaration(Class(:Study))
+SubClassOf(:Study :Table)
+    
+# Class: :Container (:Container)
+Declaration(Class(:Container))
+SubClassOf(:Container :Table)
+    
+# Object Property: :repository_of
+ObjectPropertyDomain(:repository_of :Container)
+ObjectPropertyRange(:repository_of :Study)
+
+
+# Class: :Statistics (:Statistics)
+Declaration(Class(:Statistics))
+SubClassOf(:Statistics :Table)
+    
+# Class: :Statistics (:Statistics)
+Declaration(Class(:Statistics))
+SubClassOf(:Statistics :Table)
+    
+# Object Property: :value-to-statistics
+ObjectPropertyDomain(:value-to-statistics :Statistics)
+ObjectPropertyRange(:value-to-statistics :Statistics)
+
+
+# Class: :Variable (:Variable)
+Declaration(Class(:Variable))
+SubClassOf(:Variable :Table)
+    
+# Class: :Variable (:Variable)
+Declaration(Class(:Variable))
+SubClassOf(:Variable :Table)
+    
+# Object Property: :content-to-variables
+ObjectPropertyDomain(:content-to-variables :Variable)
+ObjectPropertyRange(:content-to-variables :Variable)
+
+
+# Class: :Study (:Study)
+Declaration(Class(:Study))
+SubClassOf(:Study :Table)
+    
+# Class: :Study (:Study)
+Declaration(Class(:Study))
+SubClassOf(:Study :Table)
+    
+# Object Property: :tagmap-to-studies
+ObjectPropertyDomain(:tagmap-to-studies :Study)
+ObjectPropertyRange(:tagmap-to-studies :Study)
+
+
+# Class: :Pipeline (:Pipeline)
+Declaration(Class(:Pipeline))
+SubClassOf(:Pipeline :Table)
+    
+# Class: :Pipeline (:Pipeline)
+Declaration(Class(:Pipeline))
+SubClassOf(:Pipeline :Table)
+    
+# Object Property: :next
+ObjectPropertyDomain(:next :Pipeline)
+ObjectPropertyRange(:next :Pipeline)
+
+
+# Class: :Study (:Study)
+Declaration(Class(:Study))
+SubClassOf(:Study :Table)
+    
+# Class: :Documentation (:Documentation)
+Declaration(Class(:Documentation))
+SubClassOf(:Documentation :Table)
+    
+# Object Property: :describes
+ObjectPropertyDomain(:describes :Documentation)
+ObjectPropertyRange(:describes :Study)
+
+
+# Class: :Container (:Container)
+Declaration(Class(:Container))
+SubClassOf(:Container :Table)
+    
+# Class: :Container (:Container)
+Declaration(Class(:Container))
+SubClassOf(:Container :Table)
+    
+# Object Property: :value-to-containers
+ObjectPropertyDomain(:value-to-containers :Container)
+ObjectPropertyRange(:value-to-containers :Container)
+
+
+# Class: :Person (:Person)
+Declaration(Class(:Person))
+SubClassOf(:Person :Table)
+    
+# Class: :Person (:Person)
+Declaration(Class(:Person))
+SubClassOf(:Person :Table)
+    
+# Object Property: :contributor-to-persons
+ObjectPropertyDomain(:contributor-to-persons :Person)
+ObjectPropertyRange(:contributor-to-persons :Person)
+
+
+# Class: :Assumption (:Assumption)
+Declaration(Class(:Assumption))
+SubClassOf(:Assumption :Table)
+    
+# Class: :Person (:Person)
+Declaration(Class(:Person))
+SubClassOf(:Person :Table)
+    
+# Object Property: :tagmap-to-assumptions
+ObjectPropertyDomain(:tagmap-to-assumptions :Person)
+ObjectPropertyRange(:tagmap-to-assumptions :Assumption)
+
+
+# Class: :Computer (:Computer)
+Declaration(Class(:Computer))
+SubClassOf(:Computer :Table)
+    
+# Class: :Specification (:Specification)
+Declaration(Class(:Specification))
+SubClassOf(:Specification :Table)
+    
+# Object Property: :specification_of
+ObjectPropertyDomain(:specification_of :Specification)
+ObjectPropertyRange(:specification_of :Computer)
+
+
+# Class: :Application (:Application)
+Declaration(Class(:Application))
+SubClassOf(:Application :Table)
+    
+# Class: :Application (:Application)
+Declaration(Class(:Application))
+SubClassOf(:Application :Table)
+    
+# Object Property: :tagmap-to-applications
+ObjectPropertyDomain(:tagmap-to-applications :Application)
+ObjectPropertyRange(:tagmap-to-applications :Application)
+
+
+# Class: :Process (:Process)
+Declaration(Class(:Process))
+SubClassOf(:Process :Table)
+    
+# Class: :Process (:Process)
+Declaration(Class(:Process))
+SubClassOf(:Process :Table)
+    
+# Object Property: :input-to-processes
+ObjectPropertyDomain(:input-to-processes :Process)
+ObjectPropertyRange(:input-to-processes :Process)
+
+
+# Class: :Application (:Application)
+Declaration(Class(:Application))
+SubClassOf(:Application :Table)
+    
+# Class: :Documentation (:Documentation)
+Declaration(Class(:Documentation))
+SubClassOf(:Documentation :Table)
+    
+# Object Property: :contributor-to-applications
+ObjectPropertyDomain(:contributor-to-applications :Documentation)
+ObjectPropertyRange(:contributor-to-applications :Application)
+
+
+# Class: :Parameter (:Parameter)
+Declaration(Class(:Parameter))
+SubClassOf(:Parameter :Table)
+    
+# Class: :Parameter (:Parameter)
+Declaration(Class(:Parameter))
+SubClassOf(:Parameter :Table)
+    
+# Object Property: :value-to-parameters
+ObjectPropertyDomain(:value-to-parameters :Parameter)
+ObjectPropertyRange(:value-to-parameters :Parameter)
+
+
+# Class: :Assumption (:Assumption)
+Declaration(Class(:Assumption))
+SubClassOf(:Assumption :Table)
+    
+# Class: :VisualisationMethod (:VisualisationMethod)
+Declaration(Class(:VisualisationMethod))
+SubClassOf(:VisualisationMethod :Table)
+    
+# Object Property: :entailment-to-assumptions
+ObjectPropertyDomain(:entailment-to-assumptions :VisualisationMethod)
+ObjectPropertyRange(:entailment-to-assumptions :Assumption)
+
+
+# Class: :Study (:Study)
+Declaration(Class(:Study))
+SubClassOf(:Study :Table)
+    
+# Class: :Study (:Study)
+Declaration(Class(:Study))
+SubClassOf(:Study :Table)
+    
+# Object Property: :part
+ObjectPropertyDomain(:part :Study)
+ObjectPropertyRange(:part :Study)
+
+
+# Class: :Process (:Process)
+Declaration(Class(:Process))
+SubClassOf(:Process :Table)
+    
+# Class: :ArgumentValue (:ArgumentValue)
+Declaration(Class(:ArgumentValue))
+SubClassOf(:ArgumentValue :Table)
+    
+# Object Property: :for_process
+ObjectPropertyDomain(:for_process :ArgumentValue)
+ObjectPropertyRange(:for_process :Process)
+
+
+# Class: :Statistics (:Statistics)
+Declaration(Class(:Statistics))
+SubClassOf(:Statistics :Table)
+    
+# Class: :Statistics (:Statistics)
+Declaration(Class(:Statistics))
+SubClassOf(:Statistics :Table)
+    
+# Object Property: :assumes-to-statistics
+ObjectPropertyDomain(:assumes-to-statistics :Statistics)
+ObjectPropertyRange(:assumes-to-statistics :Statistics)
+
+
+# Class: :Argument (:Argument)
+Declaration(Class(:Argument))
+SubClassOf(:Argument :Table)
+    
+# Class: :ArgumentValue (:ArgumentValue)
+Declaration(Class(:ArgumentValue))
+SubClassOf(:ArgumentValue :Table)
+    
+# Object Property: :for_argument
+ObjectPropertyDomain(:for_argument :ArgumentValue)
+ObjectPropertyRange(:for_argument :Argument)
+
+
+# Class: :Visualisation (:Visualisation)
+Declaration(Class(:Visualisation))
+SubClassOf(:Visualisation :Table)
+    
+# Class: :Visualisation (:Visualisation)
+Declaration(Class(:Visualisation))
+SubClassOf(:Visualisation :Table)
+    
+# Object Property: :assumes-to-visualisations
+ObjectPropertyDomain(:assumes-to-visualisations :Visualisation)
+ObjectPropertyRange(:assumes-to-visualisations :Visualisation)
+
+
+# Class: :Context (:Context)
+Declaration(Class(:Context))
+SubClassOf(:Context :Table)
+    
+# Class: :Context (:Context)
+Declaration(Class(:Context))
+SubClassOf(:Context :Table)
+    
+# Object Property: :value-to-contexts
+ObjectPropertyDomain(:value-to-contexts :Context)
+ObjectPropertyRange(:value-to-contexts :Context)
+
+
+# Class: :Value (:Value)
+Declaration(Class(:Value))
+SubClassOf(:Value :Table)
+    
+# Class: :Statistics (:Statistics)
+Declaration(Class(:Statistics))
+SubClassOf(:Statistics :Table)
+    
+# Object Property: :statisticalinput-to-value
+ObjectPropertyDomain(:statisticalinput-to-value :Statistics)
+ObjectPropertyRange(:statisticalinput-to-value :Value)
+
+
+# Class: :StatisticalVariable (:StatisticalVariable)
+Declaration(Class(:StatisticalVariable))
+SubClassOf(:StatisticalVariable :Table)
+    
+# Class: :StatisticalVariable (:StatisticalVariable)
+Declaration(Class(:StatisticalVariable))
+SubClassOf(:StatisticalVariable :Table)
+    
+# Object Property: :employs-to-statisticalvariables
+ObjectPropertyDomain(:employs-to-statisticalvariables :StatisticalVariable)
+ObjectPropertyRange(:employs-to-statisticalvariables :StatisticalVariable)
+
+
+# Class: :VisualisationMethod (:VisualisationMethod)
+Declaration(Class(:VisualisationMethod))
+SubClassOf(:VisualisationMethod :Table)
+    
+# Class: :VisualisationMethod (:VisualisationMethod)
+Declaration(Class(:VisualisationMethod))
+SubClassOf(:VisualisationMethod :Table)
+    
+# Object Property: :implements-to-visualisationmethods
+ObjectPropertyDomain(:implements-to-visualisationmethods :VisualisationMethod)
+ObjectPropertyRange(:implements-to-visualisationmethods :VisualisationMethod)
+
+
+# Class: :Project (:Project)
+Declaration(Class(:Project))
+SubClassOf(:Project :Table)
+    
+# Class: :Study (:Study)
+Declaration(Class(:Study))
+SubClassOf(:Study :Table)
+    
+# Object Property: :project
+ObjectPropertyDomain(:project :Study)
+ObjectPropertyRange(:project :Project)
+
+
+# Class: :Person (:Person)
+Declaration(Class(:Person))
+SubClassOf(:Person :Table)
+    
+# Class: :Person (:Person)
+Declaration(Class(:Person))
+SubClassOf(:Person :Table)
+    
+# Object Property: :assumes-to-persons
+ObjectPropertyDomain(:assumes-to-persons :Person)
+ObjectPropertyRange(:assumes-to-persons :Person)
+
+
+# Class: :Documentation (:Documentation)
+Declaration(Class(:Documentation))
+SubClassOf(:Documentation :Table)
+    
+# Class: :Documentation (:Documentation)
+Declaration(Class(:Documentation))
+SubClassOf(:Documentation :Table)
+    
+# Object Property: :tagmap-to-documentation
+ObjectPropertyDomain(:tagmap-to-documentation :Documentation)
+ObjectPropertyRange(:tagmap-to-documentation :Documentation)
+
+
+# Class: :Application (:Application)
+Declaration(Class(:Application))
+SubClassOf(:Application :Table)
+    
+# Class: :Specification (:Specification)
+Declaration(Class(:Specification))
+SubClassOf(:Specification :Table)
+    
+# Object Property: :requirement-to-applications
+ObjectPropertyDomain(:requirement-to-applications :Specification)
+ObjectPropertyRange(:requirement-to-applications :Application)
+
+
+# Class: :ContainerType (:ContainerType)
+Declaration(Class(:ContainerType))
+SubClassOf(:ContainerType :Table)
+    
+# Class: :ContainerType (:ContainerType)
+Declaration(Class(:ContainerType))
+SubClassOf(:ContainerType :Table)
+    
+# Object Property: :uses-to-containertypes
+ObjectPropertyDomain(:uses-to-containertypes :ContainerType)
+ObjectPropertyRange(:uses-to-containertypes :ContainerType)
+
+
+# Class: :Application (:Application)
+Declaration(Class(:Application))
+SubClassOf(:Application :Table)
+    
+# Class: :Model (:Model)
+Declaration(Class(:Model))
+SubClassOf(:Model :Table)
+    
+# Object Property: :application
+ObjectPropertyDomain(:application :Model)
+ObjectPropertyRange(:application :Application)
+
+
+# Class: :VisualisationMethod (:VisualisationMethod)
+Declaration(Class(:VisualisationMethod))
+SubClassOf(:VisualisationMethod :Table)
+    
+# Class: :VisualisationMethod (:VisualisationMethod)
+Declaration(Class(:VisualisationMethod))
+SubClassOf(:VisualisationMethod :Table)
+    
+# Object Property: :entailment-to-visualisationmethods
+ObjectPropertyDomain(:entailment-to-visualisationmethods :VisualisationMethod)
+ObjectPropertyRange(:entailment-to-visualisationmethods :VisualisationMethod)
+
+
+# Class: :Application (:Application)
+Declaration(Class(:Application))
+SubClassOf(:Application :Table)
+    
+# Class: :Application (:Application)
+Declaration(Class(:Application))
+SubClassOf(:Application :Table)
+    
+# Object Property: :dependency-to-applications
+ObjectPropertyDomain(:dependency-to-applications :Application)
+ObjectPropertyRange(:dependency-to-applications :Application)
+
+
+# Class: :Pipeline (:Pipeline)
+Declaration(Class(:Pipeline))
+SubClassOf(:Pipeline :Table)
+    
+# Class: :Pipeline (:Pipeline)
+Declaration(Class(:Pipeline))
+SubClassOf(:Pipeline :Table)
+    
+# Object Property: :calls_pipeline
+ObjectPropertyDomain(:calls_pipeline :Pipeline)
+ObjectPropertyRange(:calls_pipeline :Pipeline)
+
+
+# Class: :Variable (:Variable)
+Declaration(Class(:Variable))
+SubClassOf(:Variable :Table)
+    
+# Class: :Variable (:Variable)
+Declaration(Class(:Variable))
+SubClassOf(:Variable :Table)
+    
+# Object Property: :assumes-to-variables
+ObjectPropertyDomain(:assumes-to-variables :Variable)
+ObjectPropertyRange(:assumes-to-variables :Variable)
+
+
+# Class: :Application (:Application)
+Declaration(Class(:Application))
+SubClassOf(:Application :Table)
+    
+# Class: :VisualisationMethod (:VisualisationMethod)
+Declaration(Class(:VisualisationMethod))
+SubClassOf(:VisualisationMethod :Table)
+    
+# Object Property: :implements-to-applications
+ObjectPropertyDomain(:implements-to-applications :VisualisationMethod)
+ObjectPropertyRange(:implements-to-applications :Application)
+
+
+# Class: :Visualisation (:Visualisation)
+Declaration(Class(:Visualisation))
+SubClassOf(:Visualisation :Table)
+    
+# Class: :Visualisation (:Visualisation)
+Declaration(Class(:Visualisation))
+SubClassOf(:Visualisation :Table)
+    
+# Object Property: :statisticalinput-to-visualisations
+ObjectPropertyDomain(:statisticalinput-to-visualisations :Visualisation)
+ObjectPropertyRange(:statisticalinput-to-visualisations :Visualisation)
+
+
+# Class: :StatisticalMethod (:StatisticalMethod)
+Declaration(Class(:StatisticalMethod))
+SubClassOf(:StatisticalMethod :Table)
+    
+# Class: :Parameter (:Parameter)
+Declaration(Class(:Parameter))
+SubClassOf(:Parameter :Table)
+    
+# Object Property: :statistical_method
+ObjectPropertyDomain(:statistical_method :Parameter)
+ObjectPropertyRange(:statistical_method :StatisticalMethod)
+
+
+# Class: :Documentation (:Documentation)
+Declaration(Class(:Documentation))
+SubClassOf(:Documentation :Table)
+    
+# Class: :Documentation (:Documentation)
+Declaration(Class(:Documentation))
+SubClassOf(:Documentation :Table)
+    
+# Object Property: :contributor-to-documentation
+ObjectPropertyDomain(:contributor-to-documentation :Documentation)
+ObjectPropertyRange(:contributor-to-documentation :Documentation)
+
+
+# Class: :Application (:Application)
+Declaration(Class(:Application))
+SubClassOf(:Application :Table)
+    
+# Class: :Documentation (:Documentation)
+Declaration(Class(:Documentation))
+SubClassOf(:Documentation :Table)
+    
+# Object Property: :documents
+ObjectPropertyDomain(:documents :Documentation)
+ObjectPropertyRange(:documents :Application)
+
+
+# Class: :Container (:Container)
+Declaration(Class(:Container))
+SubClassOf(:Container :Table)
+    
+# Class: :Process (:Process)
+Declaration(Class(:Process))
+SubClassOf(:Process :Table)
+    
+# Object Property: :input-to-containers
+ObjectPropertyDomain(:input-to-containers :Process)
+ObjectPropertyRange(:input-to-containers :Container)
+
+
+# Class: :StatisticalVariable (:StatisticalVariable)
+Declaration(Class(:StatisticalVariable))
+SubClassOf(:StatisticalVariable :Table)
+    
+# Class: :StatisticalVariable (:StatisticalVariable)
+Declaration(Class(:StatisticalVariable))
+SubClassOf(:StatisticalVariable :Table)
+    
+# Object Property: :value-to-statisticalvariables
+ObjectPropertyDomain(:value-to-statisticalvariables :StatisticalVariable)
+ObjectPropertyRange(:value-to-statisticalvariables :StatisticalVariable)
+
+
+# Class: :Person (:Person)
+Declaration(Class(:Person))
+SubClassOf(:Person :Table)
+    
+# Class: :Person (:Person)
+Declaration(Class(:Person))
+SubClassOf(:Person :Table)
+    
+# Object Property: :tagmap-to-persons
+ObjectPropertyDomain(:tagmap-to-persons :Person)
+ObjectPropertyRange(:tagmap-to-persons :Person)
+
+
+# Class: :Specification (:Specification)
+Declaration(Class(:Specification))
+SubClassOf(:Specification :Table)
+    
+# Class: :Specification (:Specification)
+Declaration(Class(:Specification))
+SubClassOf(:Specification :Table)
+    
+# Object Property: :requirement-to-specifications
+ObjectPropertyDomain(:requirement-to-specifications :Specification)
+ObjectPropertyRange(:requirement-to-specifications :Specification)
+
+
+# Class: :StatisticalMethod (:StatisticalMethod)
+Declaration(Class(:StatisticalMethod))
+SubClassOf(:StatisticalMethod :Table)
+    
+# Class: :StatisticalMethod (:StatisticalMethod)
+Declaration(Class(:StatisticalMethod))
+SubClassOf(:StatisticalMethod :Table)
+    
+# Object Property: :tagmap-to-statisticalmethods
+ObjectPropertyDomain(:tagmap-to-statisticalmethods :StatisticalMethod)
+ObjectPropertyRange(:tagmap-to-statisticalmethods :StatisticalMethod)
+
+
+# Class: :ContainerType (:ContainerType)
+Declaration(Class(:ContainerType))
+SubClassOf(:ContainerType :Table)
+    
+# Class: :Container (:Container)
+Declaration(Class(:Container))
+SubClassOf(:Container :Table)
+    
+# Object Property: :instance
+ObjectPropertyDomain(:instance :Container)
+ObjectPropertyRange(:instance :ContainerType)
+
+
+# Class: :StatisticalMethod (:StatisticalMethod)
+Declaration(Class(:StatisticalMethod))
+SubClassOf(:StatisticalMethod :Table)
+    
+# Class: :StatisticalMethod (:StatisticalMethod)
+Declaration(Class(:StatisticalMethod))
+SubClassOf(:StatisticalMethod :Table)
+    
+# Object Property: :implements-to-statisticalmethods
+ObjectPropertyDomain(:implements-to-statisticalmethods :StatisticalMethod)
+ObjectPropertyRange(:implements-to-statisticalmethods :StatisticalMethod)
+
+
+# Class: :ContainerType (:ContainerType)
+Declaration(Class(:ContainerType))
+SubClassOf(:ContainerType :Table)
+    
+# Class: :ContainerType (:ContainerType)
+Declaration(Class(:ContainerType))
+SubClassOf(:ContainerType :Table)
+    
+# Object Property: :content-to-containertypes
+ObjectPropertyDomain(:content-to-containertypes :ContainerType)
+ObjectPropertyRange(:content-to-containertypes :ContainerType)
+
+
+# Class: :Value (:Value)
+Declaration(Class(:Value))
+SubClassOf(:Value :Table)
+    
+# Class: :Value (:Value)
+Declaration(Class(:Value))
+SubClassOf(:Value :Table)
+    
+# Object Property: :visualisationvalue-to-value
+ObjectPropertyDomain(:visualisationvalue-to-value :Value)
+ObjectPropertyRange(:visualisationvalue-to-value :Value)
+
+
+# Class: :Application (:Application)
+Declaration(Class(:Application))
+SubClassOf(:Application :Table)
+    
+# Class: :Application (:Application)
+Declaration(Class(:Application))
+SubClassOf(:Application :Table)
+    
+# Object Property: :uses-to-applications
+ObjectPropertyDomain(:uses-to-applications :Application)
+ObjectPropertyRange(:uses-to-applications :Application)
+
+
+# Class: :StatisticalMethod (:StatisticalMethod)
+Declaration(Class(:StatisticalMethod))
+SubClassOf(:StatisticalMethod :Table)
+    
+# Class: :Statistics (:Statistics)
+Declaration(Class(:Statistics))
+SubClassOf(:Statistics :Table)
+    
+# Object Property: :used
+ObjectPropertyDomain(:used :Statistics)
+ObjectPropertyRange(:used :StatisticalMethod)
+
+
+# Class: :Process (:Process)
+Declaration(Class(:Process))
+SubClassOf(:Process :Table)
+    
+# Class: :Process (:Process)
+Declaration(Class(:Process))
+SubClassOf(:Process :Table)
+    
+# Object Property: :parent
+ObjectPropertyDomain(:parent :Process)
+ObjectPropertyRange(:parent :Process)
+
+
+# Class: :Documentation (:Documentation)
+Declaration(Class(:Documentation))
+SubClassOf(:Documentation :Table)
+    
+# Class: :Container (:Container)
+Declaration(Class(:Container))
+SubClassOf(:Container :Table)
+    
+# Object Property: :location_documentation
+ObjectPropertyDomain(:location_documentation :Container)
+ObjectPropertyRange(:location_documentation :Documentation)
+
+
+# Class: :StatisticalMethod (:StatisticalMethod)
+Declaration(Class(:StatisticalMethod))
+SubClassOf(:StatisticalMethod :Table)
+    
+# Class: :StatisticalMethod (:StatisticalMethod)
+Declaration(Class(:StatisticalMethod))
+SubClassOf(:StatisticalMethod :Table)
+    
+# Object Property: :entailment-to-statisticalmethods
+ObjectPropertyDomain(:entailment-to-statisticalmethods :StatisticalMethod)
+ObjectPropertyRange(:entailment-to-statisticalmethods :StatisticalMethod)
+
+
+# Class: :Container (:Container)
+Declaration(Class(:Container))
+SubClassOf(:Container :Table)
+    
+# Class: :Container (:Container)
+Declaration(Class(:Container))
+SubClassOf(:Container :Table)
+    
+# Object Property: :collection
+ObjectPropertyDomain(:collection :Container)
+ObjectPropertyRange(:collection :Container)
+
+
+# Class: :Person (:Person)
+Declaration(Class(:Person))
+SubClassOf(:Person :Table)
+    
+# Class: :User (:User)
+Declaration(Class(:User))
+SubClassOf(:User :Table)
+    
+# Object Property: :account_of
+ObjectPropertyDomain(:account_of :User)
+ObjectPropertyRange(:account_of :Person)
+
+
+# Class: :Computer (:Computer)
+Declaration(Class(:Computer))
+SubClassOf(:Computer :Table)
+    
+# Class: :Process (:Process)
+Declaration(Class(:Process))
+SubClassOf(:Process :Table)
+    
+# Object Property: :host
+ObjectPropertyDomain(:host :Process)
+ObjectPropertyRange(:host :Computer)
+
+
+# Class: :Statistics (:Statistics)
+Declaration(Class(:Statistics))
+SubClassOf(:Statistics :Table)
+    
+# Class: :Statistics (:Statistics)
+Declaration(Class(:Statistics))
+SubClassOf(:Statistics :Table)
+    
+# Object Property: :statisticalinput-to-statistics
+ObjectPropertyDomain(:statisticalinput-to-statistics :Statistics)
+ObjectPropertyRange(:statisticalinput-to-statistics :Statistics)
+
+
+# Class: :User (:User)
+Declaration(Class(:User))
+SubClassOf(:User :Table)
+    
+# Class: :Process (:Process)
+Declaration(Class(:Process))
+SubClassOf(:Process :Table)
+    
+# Object Property: :user
+ObjectPropertyDomain(:user :Process)
+ObjectPropertyRange(:user :User)
+
+
+# Class: :Variable (:Variable)
+Declaration(Class(:Variable))
+SubClassOf(:Variable :Table)
+    
+# Class: :Argument (:Argument)
+Declaration(Class(:Argument))
+SubClassOf(:Argument :Table)
+    
+# Object Property: :variable
+ObjectPropertyDomain(:variable :Argument)
+ObjectPropertyRange(:variable :Variable)
+
+
+# Class: :VisualisationMethod (:VisualisationMethod)
+Declaration(Class(:VisualisationMethod))
+SubClassOf(:VisualisationMethod :Table)
+    
+# Class: :Visualisation (:Visualisation)
+Declaration(Class(:Visualisation))
+SubClassOf(:Visualisation :Table)
+    
+# Object Property: :visualisation_method
+ObjectPropertyDomain(:visualisation_method :Visualisation)
+ObjectPropertyRange(:visualisation_method :VisualisationMethod)
+
+
+# Class: :StatisticalMethod (:StatisticalMethod)
+Declaration(Class(:StatisticalMethod))
+SubClassOf(:StatisticalMethod :Table)
+    
+# Class: :StatisticalVariable (:StatisticalVariable)
+Declaration(Class(:StatisticalVariable))
+SubClassOf(:StatisticalVariable :Table)
+    
+# Object Property: :employs-to-statisticalmethods
+ObjectPropertyDomain(:employs-to-statisticalmethods :StatisticalVariable)
+ObjectPropertyRange(:employs-to-statisticalmethods :StatisticalMethod)
+
+
+# Class: :Study (:Study)
+Declaration(Class(:Study))
+SubClassOf(:Study :Table)
+    
+# Class: :Person (:Person)
+Declaration(Class(:Person))
+SubClassOf(:Person :Table)
+    
+# Object Property: :involvement-to-studies
+ObjectPropertyDomain(:involvement-to-studies :Person)
+ObjectPropertyRange(:involvement-to-studies :Study)
+
+
+# Class: :Person (:Person)
+Declaration(Class(:Person))
+SubClassOf(:Person :Table)
+    
+# Class: :PersonalData (:PersonalData)
+Declaration(Class(:PersonalData))
+SubClassOf(:PersonalData :Table)
+    
+# Object Property: :about
+ObjectPropertyDomain(:about :PersonalData)
+ObjectPropertyRange(:about :Person)
+
+
+# Class: :Person (:Person)
+Declaration(Class(:Person))
+SubClassOf(:Person :Table)
+    
+# Class: :Container (:Container)
+Declaration(Class(:Container))
+SubClassOf(:Container :Table)
+    
+# Object Property: :sourced_from
+ObjectPropertyDomain(:sourced_from :Container)
+ObjectPropertyRange(:sourced_from :Person)
+
+
+# Class: :Study (:Study)
+Declaration(Class(:Study))
+SubClassOf(:Study :Table)
+    
+# Class: :Project (:Project)
+Declaration(Class(:Project))
+SubClassOf(:Project :Table)
+    
+# Object Property: :study
+ObjectPropertyDomain(:study :Project)
+ObjectPropertyRange(:study :Study)
+
+
+# Class: :ContainerType (:ContainerType)
+Declaration(Class(:ContainerType))
+SubClassOf(:ContainerType :Table)
+    
+# Class: :ContainerType (:ContainerType)
+Declaration(Class(:ContainerType))
+SubClassOf(:ContainerType :Table)
+    
+# Object Property: :product-to-containertypes
+ObjectPropertyDomain(:product-to-containertypes :ContainerType)
+ObjectPropertyRange(:product-to-containertypes :ContainerType)
+
+
+# Class: :Process (:Process)
+Declaration(Class(:Process))
+SubClassOf(:Process :Table)
+    
+# Class: :Container (:Container)
+Declaration(Class(:Container))
+SubClassOf(:Container :Table)
+    
+# Object Property: :output_of
+ObjectPropertyDomain(:output_of :Container)
+ObjectPropertyRange(:output_of :Process)
+
+
+# Class: :Person (:Person)
+Declaration(Class(:Person))
+SubClassOf(:Person :Table)
+    
+# Class: :Container (:Container)
+Declaration(Class(:Container))
+SubClassOf(:Container :Table)
+    
+# Object Property: :held_by
+ObjectPropertyDomain(:held_by :Container)
+ObjectPropertyRange(:held_by :Person)
+
+
+# Class: :Person (:Person)
+Declaration(Class(:Person))
+SubClassOf(:Person :Table)
+    
+# Class: :Person (:Person)
+Declaration(Class(:Person))
+SubClassOf(:Person :Table)
+    
+# Object Property: :involvement-to-persons
+ObjectPropertyDomain(:involvement-to-persons :Person)
+ObjectPropertyRange(:involvement-to-persons :Person)
+
+)

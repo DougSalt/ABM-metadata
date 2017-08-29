@@ -1,0 +1,86 @@
+Prefix(:=<http://www.semanticweb.org/doug/ontologies/2017/7/untitled-ontology-20#>)
+Prefix(owl:=<http://www.w3.org/2002/07/owl#>)
+Prefix(rdf:=<http://www.w3.org/1999/02/22-rdf-syntax-ns#>)
+Prefix(xml:=<http://www.w3.org/XML/1998/namespace>)
+Prefix(xsd:=<http://www.w3.org/2001/XMLSchema#>)
+Prefix(rdfs:=<http://www.w3.org/2000/01/rdf-schema#>)
+
+
+Ontology(<http://www.semanticweb.org/doug/ontologies/2017/7/untitled-ontology-20>
+
+Declaration(Class(:Column))
+Declaration(Class(:ForeignKey))
+Declaration(Class(:OtherClass))
+Declaration(Class(:PrimaryKey))
+Declaration(Class(:SomeClass))
+Declaration(Class(:Table))
+Declaration(ObjectProperty(:hasForeignKey))
+Declaration(ObjectProperty(:hasPart))
+Declaration(ObjectProperty(:hasPrimaryKey))
+Declaration(ObjectProperty(:manyToMany))
+Declaration(ObjectProperty(:part))
+Declaration(ObjectProperty(:relation))
+Declaration(DataProperty(:hasPrimaryKey))
+
+############################
+#   Object Properties
+############################
+
+# Object Property: :hasForeignKey (has foreign key)
+
+AnnotationAssertion(rdfs:label :hasForeignKey "has foreign key"@en)
+ObjectPropertyDomain(:hasForeignKey :Table)
+
+# Object Property: :hasPart (has part)
+
+AnnotationAssertion(rdfs:label :hasPart "has part"@en)
+InverseObjectProperties(:hasPart :part)
+ObjectPropertyDomain(:hasPart :Column)
+ObjectPropertyRange(:hasPart :Table)
+
+# Object Property: :hasPrimaryKey (has primary key)
+
+AnnotationAssertion(rdfs:label :hasPrimaryKey "has primary key"@en)
+SubObjectPropertyOf(:hasPrimaryKey owl:topObjectProperty)
+ObjectPropertyDomain(:hasPrimaryKey :Table)
+
+# Object Property: :manyToMany (many to many)
+
+AnnotationAssertion(rdfs:label :manyToMany "many to many"@en)
+SubObjectPropertyOf(:manyToMany :relation)
+
+# Object Property: :part (part of)
+
+AnnotationAssertion(rdfs:label :part "part of"@en)
+ObjectPropertyDomain(:part :Table)
+ObjectPropertyRange(:part :Column)
+
+# Object Property: :relation (:relation)
+
+ObjectPropertyDomain(:relation :Table)
+ObjectPropertyRange(:relation :Table)
+
+
+
+
+############################
+#   Classes
+############################
+
+# Class: :ForeignKey (Foreign key)
+
+AnnotationAssertion(rdfs:label :ForeignKey "Foreign key"@en)
+SubClassOf(:ForeignKey :Column)
+
+# Class: :OtherClass (:OtherClass)
+
+SubClassOf(:OtherClass :Table)
+
+# Class: :PrimaryKey (Primary key)
+
+AnnotationAssertion(rdfs:label :PrimaryKey "Primary key"@en)
+SubClassOf(:PrimaryKey :Column)
+
+# Class: :SomeClass (:SomeClass)
+
+SubClassOf(:SomeClass :Table)

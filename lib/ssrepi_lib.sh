@@ -1106,7 +1106,12 @@ _ip_address() {
 }
 
 _mac_address() {
-	/sbin/ifconfig | sed -n "1p" | awk '{print $5}'
+	MAC=$(/sbin/ifconfig | sed -n "1p" | awk '{print $5}')
+        if [ -z "$MAC" ]
+        then 
+		MAC=$(/sbin/ifconfig | sed -n "5p" | awk '{print $2}')
+	fi
+	echo "$MAC"
 }
 
 _fqdn() {
@@ -1116,7 +1121,12 @@ _fqdn() {
 # this is the shortname rather than the long name, so I am going to 
 # use nslookup to get around this.
 
-	nslookup -host $(hostname) | grep ^Name | awk '{print $2}'
+	if hostname -f | grep -qs "\."
+	then 
+		hostname -f 
+	else
+		nslookup -host $(hostname) | grep ^Name | awk '{print $2}'
+	fi
 }
 
 _calling_script() {

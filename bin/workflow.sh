@@ -91,7 +91,7 @@ pipe=$(SSREPI_create_pipeline $ME)
 # =============
 
 paper_id=$(SSREPI_paper \
-	'/mnt/storage/doug/SSS/doc/Reconstructing the diagrams and results in Polhill et al.docx' \
+	'doc/Reconstructing the diagrams and results in Polhill et al.docx' \
 	--held_by=$doug_salt_id \
 	--sourced_from=$gary_polhill_id \
 	--describes=$study_id \
@@ -155,7 +155,7 @@ garys_2nd_assumption=$(SSREPI_person_makes_assumption $gary_polhill_id \
 required_perl=$(SSREPI_require_minimum perl  "5.0")
 required_python=$(SSREPI_require_minimum python  "2.6.6")
 required_fearlus=$(SSREPI_require_exact fearlus "fearlus-1.1.5.2_spom-2.3")
-required_R=$(SSREPI_require_minimum "R" "3.3.3")
+required_R=$(SSREPI_require_minimum "R" "3.3.1")
 required_os=$(SSREPI_require_exact os Linux)
 required_shell=$(SSREPI_require_exact shell '/bin/bash')
 

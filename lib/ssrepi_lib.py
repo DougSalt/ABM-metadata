@@ -223,13 +223,13 @@ class Table:
         return foreignKeys
 
     @classmethod
-    def manyToMany(cls):
+    def is_relation(cls):
         # The task here is simple. We need to determine whether this is
         # a mediating table. That it allows a many-to-many link between
         # two, or more, other tables
 
         # If this table has a single value in its primary key, then it
-        # definitely is not a many-to-many table, so
+        # definitely is not a many-to-many, or one-to-many table, so
 
         if (len(cls.primaryKeys()) == 1
         and len(cls.primaryKeys()[0]) == 1):
@@ -237,8 +237,7 @@ class Table:
 
         # I am a little wary here, because this doesn't cover the case
         # primaryKeys[>1][1], i.e., more than one primary key of
-        # 1 column. Arguably this is silly and should never happen Now
-        # let's see
+        # 1 column. Arguably this is silly and should never happen...
                 
         if len(cls.primaryKeys()) > 1:
             for primaryKey in cls.primaryKeys():
@@ -246,29 +245,22 @@ class Table:
                     sys.exit("Serious problem with keys in " +
                     self.__class__)
     
-        # We know the keys are at least sane, and have at least two
-        # parts...  
-        
-        # If we do have more than one primary key, then I think it is
-        # farily safe to assume that this is a many-to-many table.
-        
-        if len(cls.primaryKeys()) > 1:
-            return True
+        # So we have one or more  primary keys, consisting of at least 2
+        # parts. If any of of these key are primary keys, then
+        # this is not a many-to-many, and we move on to the next key.
 
-        # So we only have one primary key, consisting of at least 2
-        # parts. If ANY part of this key is not a primary key, then
-        # this is not a many-to-many.
-
-        for primaryKeyPart in cls.primaryKeys()[0]:
-            partFound = False
-            for value in cls.foreignKeys():
-                if value["sourceColumn"] == primaryKeyPart:
-                    partFound=True
-                    break
-            if not partFound:
+        for primaryKey in cls.primaryKeys():
+            for primaryKeyPart in primaryKey:
+                primaryKeyFound = False
+                for value in cls.foreignKeys():
+                    if value["sourceColumn"] == primaryKeyPart:
+                        primaryKeyFound=True
+                        break
+            if not primaryKeyFound:
                 return False
-        return True
 
+        return True
+    
     def setValues(self, values = None):
         if values != None:
             for key in values:
@@ -715,7 +707,7 @@ FOREIGN KEY (STATISTICS)
 REFERENCES Statistics(ID_STATISTICS)
 DEFERRABLE INITIALLY DEFERRED,
 FOREIGN KEY (VISUALISATION)
-REFERENCES Visualisations (ID_VISUALISATIONS)
+REFERENCES Visualisations (ID_VISUALISATION)
 DEFERRABLE INITIALLY DEFERRED,
 FOREIGN KEY (VARIABLE)
 REFERENCES Variables(ID_VARIABLE)
@@ -1887,7 +1879,7 @@ CONTAINER_TYPE TEXT NOT NULL,
 IN_FILE TEXT,
 PRIMARY KEY (APPLICATION, CONTAINER_TYPE),
 FOREIGN KEY (APPLICATION)
-REFERENCES Applications(ID_APPLICATIION)
+REFERENCES Applications(ID_APPLICATION)
 DEFERRABLE INITIALLY DEFERRED,
 FOREIGN KEY (CONTAINER_TYPE)
 REFERENCES ContainerTypes(ID_CONTAINER_TYPE)
@@ -1978,13 +1970,13 @@ UNIQUE( APPLICATION, EXACT),
 CONSTRAINT ApplicationMinimum
 UNIQUE( APPLICATION, MINIMUM),
 FOREIGN KEY (MATCH)
-REFERENCES Specifications(ID_SPECIFICATIONS)
+REFERENCES Specifications(ID_SPECIFICATION)
 DEFERRABLE INITIALLY DEFERRED,
 FOREIGN KEY (MINIMUM)
-REFERENCES Specifications(ID_SPECIFICATIONS)
+REFERENCES Specifications(ID_SPECIFICATION)
 DEFERRABLE INITIALLY DEFERRED,
 FOREIGN KEY (EXACT)
-REFERENCES Specifications(ID_SPECIFICATIONS)
+REFERENCES Specifications(ID_SPECIFICATION)
 DEFERRABLE INITIALLY DEFERRED,
 FOREIGN KEY (APPLICATION)
 REFERENCES Applications(ID_APPLICATION)
@@ -3254,12 +3246,20 @@ def derive_edge(schema):
     if node == None:
         sys.exit("No create table statement for " + schema)
     table = globals()[getattr(Table, node.group(1))()]
-    if table.manyToMany():
+    if table.is_relation():
+        
         # Two foreign keys will provide a single link.
         # All combinations of foreign keys will be valid many-to-many links
+
         theKeys = table.foreignKeys()
-        for i in range(0, len(theKeys) - 2):
-            for j in range(i + 1, len(theKeys) - 1):
+
+        # Fsck me, you can use "range" to single loop over zero. How crap
+        # is that? So rather than using a for loop, I have to use a bloody
+        # while construction. Nowt like consistency is there?
+        i = 0
+        while i <= len(theKeys) - 2:
+            j = i
+            while j <= len(theKeys) - 1:
                 edgeDetail = {}
                 join = {}
                 join["source"] = (theKeys[i]["sourceTable"] + "(" +
@@ -3271,22 +3271,10 @@ def derive_edge(schema):
                     "(" + theKeys[i]["targetColumn"] + ")")
                 edgeDetail["target"] = (theKeys[j]["targetTable"] +
                     "(" + theKeys[j]["targetColumn"] + ")")
-                edge[theKeys[i]["targetColumn"].lower()] = edgeDetail                
-    elif table.oneToMany():
-        theKeys = table.foreignKeys()
-        for i in range(0, len(theKeys) - 2):
-            for j in range(i + 1, len(theKeys) - 1):
-                edgeDetail = {}
-                join = {}
-                join["source"] = (theKeys[i]["sourceTable"] + "(" +
-                    theKeys[i]["sourceColumn"] + ")")                
-                join["target"] = ( theKeys[j]["sourceTable"] + "(" +
-                    theKeys[j]["sourceColumn"] + ")")                
-                edge[table.tableName().lower()] = edgeDetail
-        # So there are two pairs of foreign keys, no primary keys
-        # and this table is the relationship. This  allows one-to-many
-    
- 
+                edge[(table.__name__ + "-to-" + 
+                    theKeys[j]["targetTable"]).lower()] = edgeDetail                
+                j = j + 1
+            i = i + 1
     else:
         for key in table.foreignKeys():
             edgeDetail = {}
@@ -3299,7 +3287,7 @@ def derive_edge(schema):
                 key["targetColumn"] + ")")
             edgeDetail["id"] = ( table.tableName() + 
                 "(" + ",".join(table.primaryKeys()[0]) +")" )
-            edge[key["sourceColumn"].lower()] = edgeDetail                
+            edge[key["sourceColumn"].lower()] = ( edgeDetail )                
 
     return edge
 
