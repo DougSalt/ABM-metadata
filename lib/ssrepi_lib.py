@@ -3249,7 +3249,7 @@ def derive_edge(schema):
     + id
 
     The values of these dictionaries may contain a single value, as in 
-    the case of source and target, otherwise "join" is another dictonary.
+    the case of source and target, otherwise "join" is another dictionary.
 
     The simple values in id, source and target contain a single entry in
     the form:
@@ -3312,104 +3312,6 @@ def derive_edge(schema):
             edge[key["sourceColumn"].lower()] = ( edgeDetail )                
 
     return edge
-
-#        sourceColumns = getForeignKeys(sourceTable)
-#            for sourceColumn, targetTable in sourceColumns.items():
-#                if  
-#
-#        sourcePrimaryKeys = table.myPrimaryKeys()
-#
-#    line = schema.splitlines()
-#        # If there is more than one primary key then we know this is a 
-#        # many-to-many construction. Since such are always directioned
-#        # then they ALWAYS start in a table containing a single column
-#        # as a primary key or a true composite primary (containing at
-#        # least one column that is not a foreign key)
-#
-#        # Let's collect our keys
-#        for i in range(1,  len(line) - 1):
-#            edgeDetail = {}
-#            if re.search('^\s*FOREIGN\s+KEY\s*\(', line[i]):
-#                field = re.search(
-#                    '^\s*FOREIGN\s+KEY\s*\(\s*(\S*)\s*\)\s*$',
-#                    line[i])
-#                sourceForeignKey = field.group(1)
-#                edgeDetail["source"] = table + "(" + sourceForeignKey + ")"        
-#                i = i + 1
-#                field = re.search(
-#                    '^\s*REFERENCES\s*(\S+)\s*\((.*)\)\s*(\,\s*)?$',
-#                    line[i])
-#                foreignTable = field.group(1)
-#                foreignColumn = field.group(2)
-#                edgeDetail["target"] = (foreignTable + "(" + 
-#                            foreignColumn + ")")
-#
-#                # If the target has a composite primary key, then it is
-#                # many to many link, otherwise we need to establish
-#                # the primary key of the origin of the link
-#
-#                targetPrimaryKeys = globals()[getattr(Table, foreignTable)()].myPrimaryKeys()
-#                    if (len(targetPrimaryKeys) == 1 and 
-#                        len(targetPrimaryKeys[0]) == 1 and 
-#                        targetPrimaryKeys[0][0] == foreignColumn):
-#
-#                        # We have a simple primary key, so this might be
-#                        # simple linkage from one instance to another.
-#                        # We now look for the primary key in the
-#                        # source table, so we can start the link from
-#                        # the correct instance.
-#
-#                        edgeDetail["id"] = ",".join(sourcePrimaryKeys[0][0])
-#                    else    
-#                        found = False
-#                        for ppfk in pfk:
-#                        if ppfk == foreignColumn:
-#                            found = True
-#                            # We now have to look for
-#                            # the table this belongs to
-#                    # TODO: Not found - something wrong
-#                    if not found:
-#                        sys.exit("Did not find foreign key")
-#
-#        if len(sourcePrimaryKeys) == 1:
-#            # We have a single primary key, but this still might be
-#            # composite If a singleton, then well-behaved.  If true
-#            # composite key (i.e. having at least one non foreign
-#            # key), i then we just we can just join it at the end,
-#            # otherwise this is a many-to-many and we can just
-#            # ignore it.
-#
-##                if (len(globals()[getattr(Table, table)()].myPrimaryKeys()) == 1 and
-##                    len(globals()[getattr(Table, table)()].myPrimaryKeys()[0]) == 1):
-##                    # We have a simple primary key, so this is 
-##                    # simple linkage from one instance to another.
-##                    # We now look for the primary key in the source
-##                    # table, so we can start the link from the 
-##                    # correct instance.
-##
-##                    edgeDetail["id"] = globals()[getattr(Table, table)()].myPrimaryKeys()[0][0]
-##                    
-##                elif (globals()[getattr(Table, table)()].myPrimaryKeys()) > 1:
-##                    # 
-##                else:
-##                    # We are going to have to query for the primary
-##                    # and this is definitely a many-to-many link
-##                    pass
-#                
-#                
-#                
-#                
-#            elif (re.search('^\s*CONSTRAINT', line[i])
-#            or  re.search('^\s*DEFERRABLE', line[i])
-#            or  re.search('^--', line[i])
-#            or  re.search('^\s*UNIQUE', line[i])
-#            or  re.search('^\s*PRIMARY', line[i])
-#            or  re.search('\)\s*$', line[i])):
-#                pass
-#            else:
-#                pass
-#        
-#    return edge 
 
 def labels():
 
@@ -3594,6 +3496,7 @@ def get_edges(conn, edges, labels, activeNodes):
                         raise InvalidEdge
                     mediatorSourceTable = found.group(1)
                     mediatorSourceRow = found.group(2)
+                    # This is where you need to do it. You need to pick out all the information here and do the necessary sql select and then encode it.
                     sql_string = ("SELECT " +  
                                 sourceRow + 
                                 " FROM " +
