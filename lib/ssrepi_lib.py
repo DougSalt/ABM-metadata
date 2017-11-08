@@ -2530,7 +2530,7 @@ class Value(Table):
     def schema(cls):
         return """CREATE TABLE IF NOT EXISTS """ + cls.tableName() + """ (
 """ + Table.commonFields() + """
-VALUE TEXT NOT NULL,
+ID_VALUE TEXT NOT NULL,
 FORMAT TEXT,
 UNITS TEXT,
 VARIABLE TEXT,
@@ -2545,17 +2545,17 @@ SPACE TEXT,
 AGENT TEXT,
 LINK TEXT,
 CONSTRAINT ValueVariable
-UNIQUE (VALUE, VARIABLE),
+UNIQUE (ID_VALUE, VARIABLE),
 CONSTRAINT ValueStatisticalParameter
-UNIQUE (VALUE, STATISTICAL_VARIABLE),
+UNIQUE (ID_VALUE, STATISTICAL_VARIABLE),
 CONSTRAINT ValueParameter
-UNIQUE (VALUE, PARAMETER),
+UNIQUE (ID_VALUE, PARAMETER),
 CONSTRAINT ValueStatisitcialParameter
-UNIQUE (VALUE, STATISTICAL_PARAMETER),
+UNIQUE (ID_VALUE, STATISTICAL_PARAMETER),
 CONSTRAINT ValueVisualisationParameter
-UNIQUE (VALUE, VISUALISATION_PARAMETER),
+UNIQUE (ID_VALUE, VISUALISATION_PARAMETER),
 CONSTRAINT ValueResultOf
-UNIQUE (VALUE, RESULT_OF),
+UNIQUE (ID_VALUE, RESULT_OF),
 FOREIGN KEY (VARIABLE)
 REFERENCES Variables(ID_VARIABLE)
 DEFERRABLE INITIALLY DEFERRED,
@@ -3455,8 +3455,11 @@ def format_text(str, length=30):
 
     
 
-def get_edges(conn, edges, labels, activeNodes):
+def get_edges(conn, edges, activeNodes):
     with conn:
+        # This reads the edges dictionary, locates those involved with the
+        # active nodes, and then reads the necessary information from the database
+        # about those connections.
 
         # Because edges being dealt with in this function are either
         # one-to-one or one-to-many, then because of the possibility
@@ -3549,9 +3552,9 @@ def get_edges(conn, edges, labels, activeNodes):
 
     return activeEdges
                 
-def draw_edges(conn, graph, edges, labels, activeNodes):
+def draw_edges(conn, graph, edges, activeNodes):
     with conn:
-        activeEdges = get_edges(conn, edges, labels, activeNodes)
+        activeEdges = get_edges(conn, edges, activeNodes)
         for activeEdge in activeEdges:
             label=activeEdges[activeEdge]
             graph.edge(activeEdge[0][0] + '.' + activeEdge[0][1],

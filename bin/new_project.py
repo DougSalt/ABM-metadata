@@ -27,7 +27,7 @@ nodes = {
 working_dir = os.getcwd()
 db_specs = ssrepi.connect_db(working_dir)
 originalNodes = ssrepi.get_nodes(db_specs[0], nodes, ssrepi.labels())
-activeEdges = ssrepi.get_edges(db_specs[0], ssrepi.derive_edges(), ssrepi.labels(), originalNodes)
+activeEdges = ssrepi.get_edges(db_specs[0], ssrepi.derive_edges(), originalNodes)
 activeNodes = ssrepi.remove_orphans(originalNodes, activeEdges)
 ssrepi.draw_graph(activeNodes,activeEdges,output="project.dot")
 ssrepi.disconnect_db(db_specs[0])
