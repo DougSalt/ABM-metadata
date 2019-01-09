@@ -1017,7 +1017,7 @@ SSREPI_value() {
 	shift 1
 	value_id=$(update.py \
 		--table=Value \
-		--value=$val \
+		--id_value=$val \
 		$@)
 }
 SSREPI_content() {
