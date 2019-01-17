@@ -1,3 +1,5 @@
+This directory is for the Miracle simulation metadata outputs specification.
+
 2017-07-28
 
 OK where you are at:
