@@ -23,3 +23,5 @@ tramp
 *.dot
 *.png
 *.out
+
+ssrepi.db
