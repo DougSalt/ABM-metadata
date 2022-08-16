@@ -311,7 +311,9 @@ SSREPI_call_bash_script_with_dependency() {
 	[ -n "$dependency_id" ] || exit -1
 	if [ -z "$NOQSUB" ]
 	then
-		qsub -hold_jid $(tr "\n" "," < $DEPEND) -cwd "$RUN"
+		#qsub -hold_jid $(tr "\n" "," < $DEPEND) -cwd "$RUN"
+		# https://www.depts.ttu.edu/hpcc/userguides/general_guides/Conversion_Table_1.pdf
+		srun ---dependency=afterany$(tr "\n" "," < $DEPEND) --chdir "$RUN"
 	else
 		exec "$RUN"
 	fi
@@ -1064,7 +1066,9 @@ SSREPI_run() {
 			(>&2 echo "==========================")
 			(>&2 echo "Running ${runcmd[$run]}...")
 			chmod +x "${runcmd[$run]}"
-			qsub -N $(basename ${runcmd[$run]}) -cwd "${runcmd[$run]}"
+			#qsub -N $(basename ${runcmd[$run]}) -cwd "${runcmd[$run]}"
+			# https://www.depts.ttu.edu/hpcc/userguides/general_guides/Conversion_Table_1.pdf
+			srun -J $(basename ${runcmd[$run]}) --chdir"${runcmd[$run]}"
 			
 			echo $(basename ${runcmd[$run]}) >> $POST_DEPENDENCIES
 
