@@ -5,7 +5,7 @@
 # ASPs, and for flat and var2 market. There will be 20 runs each
 
 
-. lib/ssrepi_lib.sh
+. lib/ssrepi.sh
 
 # Identity
 # ========
@@ -389,7 +389,7 @@ SSREPI_argument_value $THIS_PROCESS $iwealth_id "0.0"
 SSREPI_argument_value $THIS_PROCESS $aspiration_id $asp
 SSREPI_argument_value $THIS_PROCESS $run_id $run
 
-bin/SSS-StopC2-Cluster-expt.pl \
+example/SSS-StopC2-Cluster-expt.pl \
 	$govt \
 	NO \
 	$market \
@@ -403,6 +403,7 @@ bin/SSS-StopC2-Cluster-expt.pl \
 	$run 2>&1 > /dev/null
 
 DIR="SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0.0_${asp}_"
+mkdir $DIR 2>/dev/null
 
 SSREPI_output $PROG $THIS_PROCESS $SSS_CWD_id $DIR 
 

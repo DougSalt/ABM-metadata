@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # last modified: 10.08.15
 # author: Doug Salt

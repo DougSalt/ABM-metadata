@@ -313,7 +313,7 @@ SSREPI_call_bash_script_with_dependency() {
 	then
 		#qsub -hold_jid $(tr "\n" "," < $DEPEND) -cwd "$RUN"
 		# https://www.depts.ttu.edu/hpcc/userguides/general_guides/Conversion_Table_1.pdf
-		srun ---dependency=afterany$(tr "\n" "," < $DEPEND) --chdir "$RUN"
+		srun ---dependency=afterany$(tr "\n" "," < $DEPEND) --chdir ./ "$RUN"
 	else
 		exec "$RUN"
 	fi
@@ -575,10 +575,15 @@ SSREPI_working_directory() {
 }
 
 SSREPI_output() {
+ 
+# 1 - application path
+# 2 - output_of
+# 3 - how to identify the object
+# 4 - 
 	if [ ! -e $4 ]
 	then
-		(>&2 echo "$0: Something seriously wrong $4 does not exist")
-		#exit -1 
+		(>&2 echo "$FUNCNAME: Something seriously wrong in $0 at $BASH_LINENO: $4 does not exist")
+		exit -1 
 	fi
 
 	container_id=
@@ -661,8 +666,8 @@ SSREPI_input_type() {
 SSREPI_input() {
 	if [ ! -e $4 ]
 	then
-		(>&2 echo "$0: Something seriously wrong $4 does not exist")
-		#exit -1 
+		(>&2 echo "$FUNCNAME: Something seriously wrong in $0 at $BASH_LINENO: $4 does not exist")
+		exit -1 
 	fi
 
 	container_id=
@@ -728,7 +733,7 @@ SSREPI_input() {
 SSREPI_hutton_person() {
 	if ! getent passwd $1 >/dev/null 2>/dev/null 
 	then
-		(>&2 echo "$0: Invalid user supplied: $1")
+		(>&2 echo "$FUNCNAME: $0 at $BASH_LINENO: Invalid user supplied: $1")
 		echo ""
 		exit 1
 	fi
@@ -764,7 +769,7 @@ SSREPI_person() {
 SSREPI_project() {
 	if [[ "$@" != *--id_project* ]]
 	then
-		(>&2 echo "$0: No project id has been provided")
+		(>&2 echo "$FUNCNAME: $0 at $BASH_LINENO: No project id has been provided")
 		echo ""
 		exit -1
 	fi
@@ -1068,7 +1073,7 @@ SSREPI_run() {
 			chmod +x "${runcmd[$run]}"
 			#qsub -N $(basename ${runcmd[$run]}) -cwd "${runcmd[$run]}"
 			# https://www.depts.ttu.edu/hpcc/userguides/general_guides/Conversion_Table_1.pdf
-			srun -J $(basename ${runcmd[$run]}) --chdir"${runcmd[$run]}"
+			srun -J $(basename ${runcmd[$run]}) --chdir ./ "${runcmd[$run]}"
 			
 			echo $(basename ${runcmd[$run]}) >> $POST_DEPENDENCIES
 
@@ -1113,7 +1118,7 @@ _mac_address() {
 	MAC=$(/sbin/ifconfig | sed -n "1p" | awk '{print $5}')
         if [ -z "$MAC" ]
         then 
-		MAC=$(/sbin/ifconfig | sed -n "5p" | awk '{print $2}')
+		MAC=$(/sbin/ifconfig | sed -n "4p" | awk '{print $2}')
 	fi
 	echo "$MAC"
 }

@@ -1,1 +1,1 @@
-export PATH=bin:lib:$PATH
+export PATH=example:bin:lib:$PATH

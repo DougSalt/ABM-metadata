@@ -1,4 +1,4 @@
-#!/usr/in/python
+#!/usr/in/python3
 
 # file name: ssrepi_lib.py
 # created: 20.04.15 - modified: 05.08.15
@@ -42,7 +42,7 @@ encoding = magic.Magic(mime_encoding=True)
 mimetypes_map = {} 
 
 # Create a mimetype dictionary.
-for (key, value) in mimetypes.types_map.iteritems():
+for (key, value) in iter(mimetypes.types_map.items()):
     mimetypes_map[value] = key
 
 mimetypes_map["text/csv"] = ".csv"
@@ -2851,8 +2851,8 @@ def connect_db(working_dir):
         cur.execute('SELECT SQLITE_VERSION()')
         sqlite_vers = cur.fetchone()
 
-    except lite.Error, e:
-        print "error %s:" % e.args[0]
+    except lite.Error as e:
+        print( "error %s:" % e.args[0])
         sys.exit(1)
     
     finally:
@@ -2979,7 +2979,7 @@ def write_all_to_db(ss_rep, conn, order = None):
                 sys.stderr.write( e.message)
                 sys.stderr.write("DANGER Will Robinson!")
                 sys.exit(1)
-            except lite.Error, e:
+            except lite.Error as e:
                 sys.stderr.write("error %s:" % e.args[0])
                 sys.exit(1)
     
@@ -3066,7 +3066,7 @@ def is_positive_int(s):
     """
     try:
         int(s)
-        if s > 0:
+        if int(s) > 0:
             return True
         else:
             return False
@@ -3578,6 +3578,8 @@ def remove_orphans(nodes, edges):
 def draw_graph(nodes, edges, output=None):
 
     graph = graphviz.Digraph()
+    #graph.attr(ratio="fill", size = "8.3,11.7", margin = 0)
+    graph.attr(size = "8.3,11.7", margin = "0", ratio="fill")
     
     for node in nodes:
                 graph.node(str(node[0]) + '.' +  str(node[1]), nodes[node])
@@ -3587,6 +3589,6 @@ def draw_graph(nodes, edges, output=None):
                    label=edges[edge])
 
     if output == None:
-        print graph
+        print(graph)
     else:
         graph.save(output)

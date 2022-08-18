@@ -28,3 +28,27 @@ The following represent scripts I have created to recreate what Gary did manuall
 
 workflow.R - this recreates the manual R manipulation that Gary did to get the results.
 workflow.sh - this recreates the main workflow program, eventually this will be done by SSS-cluster.py2.py
+analysis.py
+clean.sh
+ContainerTypes.pl
+create_database.py
+fearlus-1.1.5.2_spom-2.3
+fine_grain.py
+folksonomy.py
+get_value.py
+new_analysis.py
+new_fine_grain.py
+new_project.py
+new_workflow.py
+next_study.py
+path.sh
+postprocessing.sh
+project_metadata.py
+project.py
+provenance.py
+README.md
+services.py
+tbox.py
+total.py
+update.py
+workflow.py

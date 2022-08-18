@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """A program to obtain a single value from the database, from the CLI
 """
 
@@ -20,7 +20,7 @@ import sqlite3
 # some functionality. In this instance 
 
 sys.path.append("lib")
-import ssrepi_lib as ssrepi
+import ssrepi
 
 table_parameter = re.compile(r'^--table=([A-Za-z0-9_]+)$')
 column_parameter = re.compile(r'^([A-Za-z0-9_-]+)(=(.*?))?$')
@@ -70,7 +70,7 @@ def parameters(conn, argv):
 		elif column_parameter.match(arg).group(1) != None:
 			col = column_parameter.match(arg).group(1).upper()
 			col_argument = None
-		        if column_parameter.match(arg).group(3) != None:
+			if column_parameter.match(arg).group(3) != None:
 				col_argument = column_parameter.match(arg).group(3)
 			# Now make sure this column actually exists
 			try:
@@ -103,7 +103,7 @@ def parameters(conn, argv):
 	# TODO - Table specific validation.
 	if table == "ArgumentValue":
 		pass
-        return (table,target,columns)
+	return (table,target,columns)
 		
 if __name__ == "__main__":
 	target = None
@@ -111,7 +111,7 @@ if __name__ == "__main__":
 	columns = {}
 	db_specs = ssrepi.connect_db(os.getcwd())
 	(table,target,columns) = parameters(db_specs[0],sys.argv[1:])
-        tableClass = getattr(ssrepi, table)	
+	tableClass = getattr(ssrepi, table)	
 	row = tableClass(columns) 
 	try:	
 		row.query(db_specs[0].cursor())

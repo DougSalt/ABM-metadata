@@ -11,7 +11,7 @@
 
 date
 
-. lib/ssrepi_lib.sh
+. lib/ssrepi.sh
 
 export NOF_CPUS=2
 export POST_DEPENDENCIES=/tmp/postprocessing.sh.dependencies

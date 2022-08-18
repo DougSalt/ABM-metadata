@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """A program to insert, or update values in the database, from the CLI
 """
 
@@ -20,7 +20,7 @@ import sqlite3
 # some functionality. In this instance 
 
 sys.path.append("lib")
-import ssrepi_lib as ssrepi
+import ssrepi
 
 table_parameter = re.compile(r'^--table=([A-Za-z0-9_]+)$')
 column_parameter = re.compile(r'^([A-Za-z0-9_-]+)(=(.*?))$')
@@ -85,10 +85,10 @@ def parameters(conn, argv):
 
 
 
-			except IllegalArgumentError, e:
+			except IllegalArgumentError as e:
 				sys.stderr.write("Error: " + str(e))
 				raise IllegalArgumentError("Unexpected error for querying column")
-			except Exception, e:
+			except Exception as e:
 				sys.stderr.write("Error: " + 
 					type(e).__name__ + 
 					" - " +
@@ -103,14 +103,14 @@ def parameters(conn, argv):
 	# TODO - Table specific validation.
 	if table == "ArgumentValue":
 		pass
-        return (table, columns)
+	return (table, columns)
 		
 if __name__ == "__main__":
 	table = None
 	colums = {}
 	db_specs = ssrepi.connect_db(os.getcwd())
 	(table,columns) = parameters(db_specs[0],sys.argv[1:])
-        tableClass = getattr(ssrepi, table)	
+	tableClass = getattr(ssrepi, table)	
 	row = tableClass(columns) 
 	try:
 		row.add(db_specs[0].cursor())
@@ -119,7 +119,7 @@ if __name__ == "__main__":
 			row.update(db_specs[0].cursor())
 		except:
 			raise
-	except Exception, e:
+	except Exception as e:
 		sys.stderr.write("Error: " + 
 			type(e).__name__ + 
 			" - " +

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """A program to return the next study number to the CL@I
 """
 
@@ -20,7 +20,7 @@ import sqlite3
 # some functionality. In this instance 
 
 sys.path.append("lib")
-import ssrepi_lib as ssrepi
+import ssrepi
 
 if __name__ == "__main__":
 	table = None
