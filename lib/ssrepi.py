@@ -1,6 +1,6 @@
-#!/usr/in/python3
+#!/usr/bin/env python3
 
-# file name: ssrepi_lib.py
+# file name: ssrepi.py
 # created: 20.04.15 - modified: 05.08.15
 
 '''Social Simulation Repository Interface (SSRepI)'''
@@ -23,16 +23,22 @@ __credits__ = ""
 # The "SSRepI" is a library to implement an interface between
 # an application and the SSRep.
 
-import sqlite3 as lite
+import sqlite3
+import psycopg2
+from psycopg2.extras import RealDictCursor
 import os, sys, subprocess, re, mimetypes, rfc3987, os.path, datetime, magic
 import graphviz, getpass
+
+db_type = 'postgres'
+if 'SSREP_DBTYPE' in os.environ:
+    db_type = os.environ['SSREP_DBTYPE']
 
 db_file = 'ssrep.db'
 if 'SSREP_DBNAME' in os.environ:
     db_file = os.environ['SSREP_DBNAME']
 
 
-debug = False
+debug = True
 if 'SSREP_DEBUG' in os.environ:
     db_file = os.environ['SSREP_DEBUG']
 
@@ -54,6 +60,12 @@ mimetypes_map["application/x-executable"] = ""
 # Regex for the LOCATOR field in Uses and Product
 locator = re.compile('^(arg[0-9]*|opt=.+|env=.+|STDOUT|STDERR|CWD|CWD PATH REGEX(\:.*)?)$',re.IGNORECASE)
 
+def dict_factory(cursor, row):
+    d = {}
+    for idx, col in enumerate(cursor.description):
+        d[col[0]] = row[idx]
+    return d
+
 class InvalidEntity(Exception):
     pass
 
@@ -69,6 +81,19 @@ class Table:
     def getDict(self):
         return self.__dict__
 
+    # The database is updated using the objects. There are 3 actions
+    
+    # add - inserts a database row from the instance values
+    # update - updates an existing row from the instance values
+    # query - gets the values from the database and populates the instance
+
+    # update will only be called if add does not work (i.e there is already a
+    # row present with the primary keys). In sqlite3 this does not cause a
+    # problem, but in postgres if you try and insert a record then the
+    # constraints are checked _before hand_, which is a pain, because it means
+    # you have to supply values to meet the constraints for the insert phase.
+    # Bear this in mind. I might want to change this.
+
     def add(self, cur):
 
         self.CREATOR = getpass.getuser()
@@ -80,16 +105,16 @@ class Table:
                 "ERROR: No primary key value provided on add for " 
                 + self.__class__.__name__)
 
-        fields = ''
-        values = ''
+        fields = ""
+        values = ""
         for key, value in self.__dict__.items():
-            fields = fields + key + ','
-            if value == None or value == (None,):
-                values = values + 'null,'
+            fields = fields + key + ","
+            if value == None or value == (None,) or value == "":
+                values = values + "null,"
             else:
-                values = values + '"%s",' % value
-        insertSQL = ("INSERT INTO " + self.myTableName() + 
-                 '(' + fields.strip(',') + ') VALUES (' + 
+                values = values + "'%s'," % value
+        insertSQL = ('INSERT INTO ' + self.myTableName() + 
+                 "(" + fields.strip(',') + ") VALUES (" + 
                 values.strip(',') + ')')
         if debug:
             sys.stderr.write(insertSQL + '\n')
@@ -107,21 +132,11 @@ class Table:
             " WHERE " + matches)
         if debug:
             sys.stderr.write(getSQL + '\n')
-        cur.row_factory = lite.Row
         curry = cur.execute(getSQL)
-        row = curry.fetchone()
-        setValues = ""
-        for key in row.keys():
-            if self.__dict__[key] == None:
-                self.__dict__[key] = row[key]
-            elif (self.__dict__[key] != None and 
-                isinstance(self.__dict__[key], int)):
-                setValues = (setValues + key + "=" + 
-                    str(self.__dict__[key]) + ",")
+        row = cur.fetchone()
+        for key in row:
+            self.__dict__[key.upper()] = row[key]
 
-            else:
-                setValues = (setValues + key + "='" + 
-                    self.__dict__[key] + "',")
     def update(self,cur):
         matches = self.getPrimaryKeys()
         if matches == "":
@@ -134,35 +149,36 @@ class Table:
             " WHERE " + matches)
         if debug:
             sys.stderr.write(getSQL + '\n')
-        cur.row_factory = lite.Row
-        curry = cur.execute(getSQL)
-        row = curry.fetchone()
+        cur.execute(getSQL)
+        row = cur.fetchone()
+        sys.stderr.write("Row = " + str(row))
         setValues = ""
         self.MODIFIER = getpass.getuser()
         self.MODIFIED = datetime.datetime.now().isoformat()
-        for key in row.keys():
-            if self.__dict__[key] == None:
-                self.__dict__[key] = row[key]
-            elif (self.__dict__[key] != None and 
-                isinstance(self.__dict__[key], int)):
+        self.validate()
+        for key in row:
+            #sys.stderr.write("Updating: " + str(key) + " = " + str(row[key]) + " against self[" + str(key) + "] = " + str(self.__dict__[key.upper()]) + "\n")
+            if self.__dict__[key.upper()] == None or self.__dict__[key.upper()] == '':
+                setValues = (setValues + key + "=null,")
+            elif (self.__dict__[key.upper()] != None and 
+                isinstance(self.__dict__[key.upper()], int)):
                 setValues = (setValues + key + "=" + 
                     str(self.__dict__[key]) + ",")
 
             else:
                 setValues = (setValues + key + "='" + 
-                    self.__dict__[key] + "',")
-        self.validate()
+                    self.__dict__[key.upper()] + "',")
         setValues = setValues.strip(',')
-        updateSQL = ("UPDATE " + self.myTableName() + 
-                 " SET " + setValues + 
-                 " WHERE " + matches)
+        updateSQL = ('UPDATE ' + self.myTableName() + 
+                 ' SET ' + setValues + 
+                 ' WHERE ' + matches)
         if debug:
             sys.stderr.write(updateSQL + '\n')
         try:
             cur.execute(updateSQL)
         except:
-            print("Class: " + self.__class__.__name__ +
-                  "Key: " + matches + ": Unable to update ")
+            sys.stderr.write("Class: " + self.__class__.__name__ +
+                  "Key: " + matches + ": Unable to update\n")
             raise
 
     def getPrimaryKeys(self):
@@ -300,9 +316,9 @@ class Table:
 
     @staticmethod
     def commonFields():
-        return """CREATED DATETIME NOT NULL,
+        return """CREATED DATE NOT NULL,
 CREATOR TEXT NOT NULL,
-MODIFIED DATETIME,
+MODIFIED DATE,
 MODIFIER TEXT,
 DESCRIPTION TEXT,
 ABOUT TEXT,"""
@@ -311,6 +327,8 @@ ABOUT TEXT,"""
     def createTable(cls, conn):
         with conn:
             cur = conn.cursor()
+            if debug:
+                sys.stderr.write(cls.schema() + '\n')
             cur.execute(cls.schema())
             conn.commit()
 
@@ -517,7 +535,7 @@ VARIABLE TEXT,
 --CONTAINER_TYPE TEXT,
 FOREIGN KEY (APPLICATION)
 REFERENCES Applications(ID_APPLICATION)
-DEFERRABLE INITIALLY DEFERRED
+DEFERRABLE INITIALLY DEFERRED,
 --FOREIGN KEY (CONTAINER_TYPE)
 --REFERENCES Variables(ID_CONTAINER_TYPE)
 --DEFERRABLE INITIALLY DEFERRED,
@@ -856,8 +874,8 @@ HASH TEXT,
 INSTANCE TEXT, 
 LOCATION_APPLICATION TEXT, 
 LOCATION_DOCUMENTATION TEXT, 
-GENERATED_BY TEXT, 
-REPOSITORY_OF TEXT, 
+GENERATED_BY INTEGER, 
+REPOSITORY_OF INTEGER,
 HELD_BY TEXT, 
 SOURCED_FROM TEXT, 
 OUTPUT_OF TEXT, 
@@ -881,7 +899,7 @@ FOREIGN KEY (HELD_BY)
 REFERENCES Persons(ID_PERSON)
 DEFERRABLE INITIALLY DEFERRED,
 FOREIGN KEY (SOURCED_FROM)
-REFERENCES Persons(ID_PERSON)
+REFERENCES Persons(ID_PERSON),
 FOREIGN KEY (OUTPUT_OF)
 REFERENCES Processes(ID_PROCESS)
 DEFERRABLE INITIALLY DEFERRED,
@@ -1165,7 +1183,7 @@ class Contributor(Table):
 CONTRIBUTION TEXT NOT NULL, 
 ALIAS TEXT, 
 CONTRIBUTOR TEXT NOT NULL, 
-DOCUMENTATION TEXT, 
+DOCUMENTATION TEXT,
 APPLICATION TEXT,
 CONSTRAINT ContributorApplication
 UNIQUE( CONTRIBUTOR, APPLICATION ),
@@ -1174,13 +1192,18 @@ UNIQUE( CONTRIBUTOR, APPLICATION ),
 FOREIGN KEY (CONTRIBUTOR)
 REFERENCES Persons(ID_PERSON)
 DEFERRABLE INITIALLY DEFERRED
-FOREIGN KEY (DOCUMENTATION)
-REFERENCES Documentation(ID_DOCUMENTATION)
-DEFERRABLE INITIALLY DEFERRED,
-FOREIGN KEY (APPLICATION)
-REFERENCES Applications(ID_APPLICATION)
-DEFERRABLE INITIALLY DEFERRED
+--FOREIGN KEY (DOCUMENTATION)
+--REFERENCES Documentation(ID_DOCUMENTATION)
+--DEFERRABLE INITIALLY DEFERRED,
+--FOREIGN KEY (APPLICATION)
+--REFERENCES Applications(ID_APPLICATION)
+--DEFERRABLE INITIALLY DEFERRED
 )"""
+
+    # The problem is that this is an either/or situation. Either there is
+    # foreign key that is an application or there is a foreign key that is
+    # documentation. I need some kind of constraint. Will check out
+    # CHECK and CONSTRAINT to do this.
 
     @classmethod
     def primaryKeys(cls):
@@ -1443,7 +1466,7 @@ REFERENCES StatisticalMethods(ID_STATISTICAL_METHOD)
 DEFERRABLE INITIALLY DEFERRED,
 FOREIGN KEY (VISUALISATION_METHOD)
 REFERENCES VisualisationMethods(ID_VISUALISATION_METHOD)
-DEFERRABLE INITIALLY DEFERRED
+DEFERRABLE INITIALLY DEFERRED,
 FOREIGN KEY (APPLICATION)
 REFERENCES Applications(ID_APPLICATION)
 DEFERRABLE INITIALLY DEFERRED
@@ -1531,7 +1554,7 @@ class Involvement(Table):
     def schema(cls):
         return """CREATE TABLE IF NOT EXISTS """ + cls.tableName() + """ (
 """ + Table.commonFields() + """
-ROLE TEXT NGOT NULL, 
+ROLE TEXT NOT NULL, 
 PERSON TEXT NOT NULL, 
 STUDY INT NOT NULL,
 PRIMARY KEY (PERSON, STUDY),
@@ -1796,13 +1819,13 @@ ARGV TEXT,
 ENVIRONMENT TEXT,
 WORKING_DIR TEXT NOT NULL, 
 EXECUTABLE TEXT NOT NULL, 
-USER TEXT NOT NULL, 
+SOME_USER TEXT NOT NULL, 
 HOST TEXT NOT NULL, 
 PARENT TEXT,
 FOREIGN KEY (EXECUTABLE)
 REFERENCES Applications(ID_APPLICATION)
 DEFERRABLE INITIALLY DEFERRED,
-FOREIGN KEY (USER)
+FOREIGN KEY (SOME_USER)
 REFERENCES Users(ID_USER)
 DEFERRABLE INITIALLY DEFERRED,
 FOREIGN KEY (HOST)
@@ -2204,9 +2227,9 @@ START_TIME TEXT NOT NULL,
 END_TIME TEXT, 
 PROJECT TEXT, 
 PART INT,
-FOREIGN KEY (PROJECT)
-REFERENCES Projects(ID_PROJECT) 
-DEFERRABLE INITIALLY DEFERRED,
+--FOREIGN KEY (PROJECT)
+--REFERENCES Projects(ID_PROJECT) 
+--DEFERRABLE INITIALLY DEFERRED,
 FOREIGN KEY (PART)
 REFERENCES Studies(ID_STUDY) 
 DEFERRABLE INITIALLY DEFERRED
@@ -2302,7 +2325,7 @@ VISUALISATION_METHOD TEXT,
 STATISTICAL_METHOD TEXT,
 DOCUMENTATION TEXT,
 PERSON TEXT,
-STUDY TEXT,
+STUDY INTEGER,
 CONSTRAINT TargetTagContainerType
 UNIQUE( TARGET_TAG, CONTAINER_TYPE ),
 CONSTRAINT TargetTagTag
@@ -2345,7 +2368,7 @@ FOREIGN KEY (STATISTICAL_METHOD)
 REFERENCES StatisticalMethods(ID_STATISTICAL_METHOD)
 DEFERRABLE INITIALLY DEFERRED,
 FOREIGN KEY (VISUALISATION_METHOD)
-REFERENCES VisualisationMethods(ID_VISUALISATION_METHOD)
+REFERENCES VisualisationMethods(ID_VISUALISATION_METHOD),
 FOREIGN KEY (STUDY)
 REFERENCES Studies(ID_STUDY)
 DEFERRABLE INITIALLY DEFERRED,
@@ -2530,7 +2553,7 @@ class Value(Table):
     def schema(cls):
         return """CREATE TABLE IF NOT EXISTS """ + cls.tableName() + """ (
 """ + Table.commonFields() + """
-ID_VALUE TEXT NOT NULL,
+ID_VALUE TEXT NOT NULL UNIQUE,
 FORMAT TEXT,
 UNITS TEXT,
 VARIABLE TEXT,
@@ -2585,7 +2608,7 @@ REFERENCES Contexts(ID_CONTEXT)
 DEFERRABLE INITIALLY DEFERRED,
 FOREIGN KEY (AGENT)
 REFERENCES Contexts(ID_CONTEXT)
-DEFERRABLE INITIALLY DEFERRED
+DEFERRABLE INITIALLY DEFERRED,
 FOREIGN KEY (LINK)
 REFERENCES Contexts(ID_CONTEXT)
 )"""
@@ -2839,34 +2862,46 @@ def connect_db(working_dir):
     # SSRep database (SQLite db), FQFN
     db_fqfn = os.path.join(working_dir, db_file)
 
-    try:
-        # I/O processing, connecting to db
-        conn = lite.connect(db_fqfn)
-        # This next statement is very important as it turns off
-        # Python's sqlite module's rather random transaction
-        # methodology.
-        conn.isolation_level = None
+    if db_type == "sqlite3": 
+        try:
+            #conn = sqlite3.connect(db_fqfn, row_factory=sqlite3.Row)
+            conn = sqlite3.connect(db_fqfn)
+            # This next statement is very important as it turns off
+            # Python's sqlite module's rather random transaction
+            # methodology.
+            conn.row_factory = dict_factory
+            conn.isolation_level = None
 
-        cur = conn.cursor()    
-        cur.execute('SELECT SQLITE_VERSION()')
-        sqlite_vers = cur.fetchone()
+            cur = conn.cursor()    
+            cur.execute('SELECT SQLITE_VERSION()')
+            sqlite_vers = cur.fetchone()
 
-    except lite.Error as e:
-        print( "error %s:" % e.args[0])
-        sys.exit(1)
-    
-    finally:
-        return (conn, db_fqfn, sqlite_vers)
+        except sqlite3.Error as e:
+            print( "error %s:" % e.args[0])
+            sys.exit(1)
+        finally:
+            return conn
+    elif db_type == "postgres":
+        try:
+            conn = psycopg2.connect("dbname=ssrepi user=doug", cursor_factory = RealDictCursor)
+            conn.set_session(autocommit = True)
+        except psycopg2.Error as e:
+            print( "error %s:" % e.args[0])
+            sys.exit(1)
+        finally:
+            return conn
+    else:
+        sys.stderr.write("Unknow database type %s" % db_type)
+        raise
 
-
-def init_db(conn):
-    """Function to initialize the SQLite db
-    """
-    with conn:
-        cur = conn.cursor()
-        # enabling foreign key support     
-        cur.execute("PRAGMA foreign_keys = ON")
-
+#def init_db(conn):
+#    """Function to initialize the SQLite db
+#    """
+#    with conn:
+#        cur = conn.cursor()
+#        # enabling foreign key support     
+#        cur.execute("PRAGMA foreign_keys = ON")
+#
 
 def disconnect_db(conn):
     """Function to disconnect the SQLite db
@@ -2877,48 +2912,48 @@ def disconnect_db(conn):
 def create_tables(conn):
     """Creates all the tables for the Repository for a Social Simulation database
     """
+    Person.createTable(conn)
+    User.createTable(conn)
+    Computer.createTable(conn)
     Application.createTable(conn)
+    Process.createTable(conn)
+    Variable.createTable(conn)
     Argument.createTable(conn)
     ArgumentValue.createTable(conn)
-    Assumes.createTable(conn)
-    Assumption.createTable(conn)
-    Computer.createTable(conn)
-    Container.createTable(conn)
+    StatisticalMethod.createTable(conn)
+    Statistics.createTable(conn)
     ContainerType.createTable(conn)
+    Study.createTable(conn)
+    Project.createTable(conn)
+    Documentation.createTable(conn)
+    Container.createTable(conn)
+    VisualisationMethod.createTable(conn)
+    Visualisation.createTable(conn)
+    Assumption.createTable(conn)
+    Assumes.createTable(conn)
     Content.createTable(conn)
     Context.createTable(conn)
     Contributor.createTable(conn)
     Dependency.createTable(conn)
-    Documentation.createTable(conn)
+    StatisticalVariable.createTable(conn)
     Employs.createTable(conn)
     Entailment.createTable(conn)
     Implements.createTable(conn)
     Input.createTable(conn)
     Involvement.createTable(conn)
+    Specification.createTable(conn)
     Meets.createTable(conn)
     Model.createTable(conn)
     Parameter.createTable(conn)
-    Person.createTable(conn)
     PersonalData.createTable(conn)
     Pipeline.createTable(conn)
-    Process.createTable(conn)
     Product.createTable(conn)
-    Project.createTable(conn)
     Requirement.createTable(conn)
-    Specification.createTable(conn)
+    Value.createTable(conn)
     StatisticalInput.createTable(conn)
-    StatisticalMethod.createTable(conn)
-    StatisticalVariable.createTable(conn)
-    Statistics.createTable(conn)
-    Study.createTable(conn)
     Tag.createTable(conn)
     TagMap.createTable(conn)
-    User.createTable(conn)
     Uses.createTable(conn)
-    Value.createTable(conn)
-    Variable.createTable(conn)
-    Visualisation.createTable(conn)
-    VisualisationMethod.createTable(conn)
     VisualisationValue.createTable(conn)
 
     
@@ -2973,13 +3008,13 @@ def write_all_to_db(ss_rep, conn, order = None):
                         sys.stderr.write("Row = %s" % key)
                         ss_rep[key].add(cur)
                 cur.execute('COMMIT')
-            except lite.OperationalError as e:
+            except sqlite3.OperationalError as e:
                 for key in e:
                     sys.stderr.write("Key = " + key)
                 sys.stderr.write( e.message)
                 sys.stderr.write("DANGER Will Robinson!")
                 sys.exit(1)
-            except lite.Error as e:
+            except sqlite3.Error as e:
                 sys.stderr.write("error %s:" % e.args[0])
                 sys.exit(1)
     
@@ -3042,16 +3077,24 @@ def studies_table_exists(conn):
     existence = False
     id_study_last = None
 
-    with conn:
-        cur = conn.cursor()    
-        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='Studies'")
+    if db_type == "sqlite3":
+        with conn:
+            cur = conn.cursor()    
+            cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='Studies'")
+    else:
+        with conn:
+            cur = conn.cursor()    
+            cur.execute("SELECT columns.column_name FROM information_schema.columns WHERE table_name = 'studies'")
+      
     qresult = cur.fetchone()
     if (qresult != None):
         existence = True
         cur.execute("SELECT MAX(ID_STUDY) FROM Studies")
         qresult = cur.fetchone()
-        id_study_last = qresult[0]
-    conn.commit()
+        if db_type == "sqlite3":
+            id_study_last = qresult['MAX(ID_STUDY)']
+        else:
+            id_study_last = qresult['max']
     if id_study_last == None:
         id_study_last = 0
     return (existence, id_study_last)

@@ -25,6 +25,6 @@ import ssrepi
 if __name__ == "__main__":
 	table = None
 	colums = {}
-	db_specs = ssrepi.connect_db(os.getcwd())
-	(existence, nextStudy) = ssrepi.studies_table_exists(db_specs[0])	
+	conn = ssrepi.connect_db(os.getcwd())
+	(existence, nextStudy) = ssrepi.studies_table_exists(conn)
 	print(nextStudy + 1)

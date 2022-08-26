@@ -20,7 +20,7 @@ import ssrepi
 
 # A program to initialise the database
 
-conn = psycopg2.connect("dbname=ssrepi user=ds42723")
+conn = psycopg2.connect("dbname=ssrepi user=doug")
 cur = conn.cursor()
 ssrepi.create_tables(cur)
 ssrepi.disconnect_db(cur)

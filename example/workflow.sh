@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # A script which is trying to regenerate the data and consequently
 # rerun the model for Gary's paper, automate the process and record
@@ -49,8 +49,18 @@ SSREPI_set_study $study_id
 # People
 # ======
 
-gary_polhill_id=$(SSREPI_hutton_person gp40285)
-doug_salt_id=$(SSREPI_hutton_person ds42723)
+#gary_polhill_id=$(SSREPI_hutton_person gp40285)
+gary_polhill_id=$(SSREPI_person \
+	--id_person=gary_polhill \
+	--name="Gary Polhill" \
+	--email=gary.polhill@hutton.ac.uk
+	)
+#doug_salt_id=$(SSREPI_hutton_person ds42723)
+doug_salt_id=$(SSREPI_person \
+	--id_person=doug_salt \
+	--name="Doug Salt" \
+	--email=doug.salt@hutton.ac.uk
+	)
 lorenzo_milazzo_id=$(SSREPI_person \
 	--id_person=lorenzo_milazzo \
 	--name="Lorenzo Milazzo" \
@@ -77,7 +87,7 @@ LICENCE=GPLv3
 ME=$(SSREPI_application \
 	--language=bash \
 	--version=$VERSION \
-	--license=$LICENCE \
+	--licence=$LICENCE \
 	--purpose="Overall workflow shell script" \
         --model=fearlus-spomm)
 [ -n "$ME" ] || exit -1
@@ -97,7 +107,7 @@ paper_id=$(SSREPI_paper \
 	--describes=$study_id \
 	--date=20170414)
 
-SSREPI_contributor $paper_id $gary_polhill_id Author
+SSREPI_contributor "$paper_id" $gary_polhill_id Author
 
 # Folksonomy
 # ==========
@@ -133,6 +143,7 @@ SSREPI_tag too_slow --container_type=bash
 SSREPI_tag frivilous --tag=mad
 SSREPI_tag frivilous --tag=$too_old
 
+exit
 
 # Assumptions
 # ===========
@@ -156,7 +167,8 @@ required_perl=$(SSREPI_require_minimum perl  "5.0")
 required_python=$(SSREPI_require_minimum python  "2.6.6")
 required_fearlus=$(SSREPI_require_exact fearlus "fearlus-1.1.5.2_spom-2.3")
 required_R=$(SSREPI_require_minimum "R" "3.3.1")
-required_os=$(SSREPI_require_exact os Linux)
+#required_os=$(SSREPI_require_exact os Linux)
+required_os=$(SSREPI_require_exact os Darwin)
 required_shell=$(SSREPI_require_exact shell '/bin/bash')
 
 # Hardware

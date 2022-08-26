@@ -250,6 +250,8 @@ SSREPI_application() {
 	container_id=$(update.py \
 		--table=Container \
 		--id_container=$container_id \
+		--location_type="relative_ref" \
+		--location_value=$(readlink -f $APP) \
 		--location_application=$app_id \
 		)
 	[ -n "$container_id" ] || exit -1
@@ -811,6 +813,16 @@ SSREPI_paper() {
 		shift
 	fi
 	PARAMS=$@
+	for param in $PARAMS
+	do
+		parameter=$(echo $param | cut -f1 -d=)
+		case "$parameter" in
+			"sourced_by") sourced_by=$(echo $param | cut -f2 -d=);;
+			"held_by") held_by=$(echo $param | cut -f2 -d=);;
+			"describes") describes=$(echo $param | cut -f2 -d=);;
+			"date") date=$(echo $param | cut -f2 -d=);;
+		esac
+	done
 
 	paper_container_type_id=$(update.py \
 		--table=ContainerType \
@@ -825,6 +837,8 @@ SSREPI_paper() {
 		--table=Container \
 		--id_container=$(basename "$DOC") \
 		--location_value=$(readlink -f "$DOC") \
+		--held_by=$held_bv \
+	        --sourced_from=$sourced_from \
 		--location_type="relative_ref" \
 		--encoding=$(file -b --mime-encoding "$DOC") \
 		--size=$(stat --printf="%s" "$DOC") \
@@ -848,20 +862,23 @@ SSREPI_paper() {
 	paper_id=$(update.py \
 		--table=Documentation \
 		--id_documentation="$DOC" \
-		--location=$container_id \
 		--title=$(basename "$DOC") \
-		$PARAMS
+		--describes=$describes \
 		)
+		#--date=$date \
+		#--location=$container_id \
 	[ -n "$paper_id" ] || exit -1
 
 	container_id=$(update.py \
 		--table=Container \
 		--id_container=$container_id \
+		--location_type="relative_ref" \
+		--location_value=$(readlink -f "$DOC") \
 		--location_documentation=$paper_id \
 		)
 	[ -n "$container_id" ] || exit -1
 
-	echo $paper_id
+	echo $container_id
 
 }
 SSREPI_make_tag() {
@@ -880,12 +897,26 @@ SSREPI_tag() {
 	)
 }
 SSREPI_contributor() {
-	contributor_id=$(update.py \
-		--table=Contributor \
-		--application=$1 \
-		--contributor=$2 \
-		--contribution=$3 \
-	)
+	instance=$(get_value.py \
+		--table=Container \
+	        --id_container="$1" \
+		--instance)
+	if [[ "$instance" == "paper" ]]
+	then
+		contributor_id=$(update.py \
+			--table=Contributor \
+			--documentation="$1" \
+			--contributor="$2" \
+			--contribution="$3" \
+		)
+	else
+		contributor_id=$(update.py \
+			--table=Contributor \
+			--application="$1" \
+			--contributor="$2" \
+			--contribution="$3" \
+		)
+	fi
 }
 SSREPI_create_pipeline() {
         pipeline_id=$(update.py \
@@ -1111,11 +1142,20 @@ SSREPI_run() {
 	fi
 }
 _ip_address() {
-	/sbin/ifconfig | sed -n "2p" | awk '{print $2}' |cut -f2 -d:
+	IP=$(/sbin/ifconfig | sed -n "2p" | awk '{print $2}' |cut -f2 -d:)
+	if [[ $(uname -s) == "Darwin" ]]
+	then
+		IP=$(/sbin/ifconfig en0 | sed -n "5p" | awk '{print $2}' |cut -f2 -d:)
+	fi
+	echo "$IP"
 }
 
 _mac_address() {
 	MAC=$(/sbin/ifconfig | sed -n "1p" | awk '{print $5}')
+	if [[ $(uname -s) == "Darwin" ]]
+	then
+		MAC=$(/sbin/ifconfig | sed -n "1p" | awk '{print $3}')
+	fi
         if [ -z "$MAC" ]
         then 
 		MAC=$(/sbin/ifconfig | sed -n "4p" | awk '{print $2}')
@@ -1142,7 +1182,10 @@ _calling_script() {
 	# Should be able to do this in one line, but bash doesn't like it for
 	# some reason
 	BASH_PROB=$(ps -o args= $BASHPID)
-	if [[ "$BASH_PROB" == *-xv* ]]
+	if [[ $(uname -s) == "Darwin" ]]
+	then
+		RESULT=$(basename $0)
+	elif [[ "$BASH_PROB" == *-xv* ]]
 	then
 		RESULT=$(echo $BASH_PROB | awk '{print $3}') 
 	else
@@ -1150,6 +1193,7 @@ _calling_script() {
 	fi
 	echo $RESULT
 }
+
 uniq() {
 cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1
 }

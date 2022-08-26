@@ -21,7 +21,7 @@ LICENCE=GPLv3
 ME=$(SSREPI_application \
         --language=bash \
         --version=$VERSION \
-        --license=$LICENCE )
+        --licence=$LICENCE )
 [ -n "$ME" ] || exit -1
 
 SSREPI_contributor $ME ds42723 Author
@@ -694,7 +694,7 @@ SSREPI_process \
 # ================
 
 some_script=$(SSREPI_call_R_script $(which postprocessing.R) \
-		--license=GPLv3 \
+		--licence=$LICENCE \
 		--version=1.0 \
 		--description="
 	A small R script that emaulates what Gary did with the outputs from the

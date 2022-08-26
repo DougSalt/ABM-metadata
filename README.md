@@ -24,6 +24,24 @@ nohup example/workflow.sh > workflow.out 2>workflow.err &
 
 ## POSTGRES
 
+```
+brew install postgresql
+brew install libmagic
+brew install coreutils
+```
+add to .zshrc
+```
+PATH="/opt/homebrew/opt/coreutils/libexec/gnubin:$PATH"
+```
+
+
+pip install --upgrade pip
+pip uninstall psycopg2
+pip install psycopg2-binary --no-cache-dir
+pip install rfc3987
+pip install python-magic-bin==0.4.14
+pip install graphviz
+
 `psql` to get to the database prompt.
 `psql some-database-name` to get to a specific prompt
 
@@ -31,7 +49,7 @@ or at the prompt, type
 
 `\list`
 `\connect some-database-name`
-
+`\q` or '\quit' to quit
 
 # NOTES
 

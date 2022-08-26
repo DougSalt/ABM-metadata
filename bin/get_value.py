@@ -27,96 +27,105 @@ column_parameter = re.compile(r'^([A-Za-z0-9_-]+)(=(.*?))?$')
 
 
 class IllegalArgumentError(ValueError):
-	pass
+    pass
 
 def parameters(conn, argv):
-	""" Variable parameters for obtaining a single value from  the database.
-	This will be of the form:
+    """ Variable parameters for obtaining a single value from  the database.
+    This will be of the form:
 
-		--table=some_table_name
-		[--column_name=some value]...
-		--column_name
+        --table=some_table_name
+        [--column_name=some value]...
+        --column_name
 
-	Where the last --column name without parameter is the value to return.
-	It should be fairly evident that the parameters will change
-	dependent upon the table.
+    Where the last --column name without parameter is the value to return.
+    It should be fairly evident that the parameters will change
+    dependent upon the table.
 
-	"""
+    """
 
-	table = None
-	for arg in argv:
-		if len(table_parameter.match(arg).groups()) != 0:
-			table = table_parameter.match(arg).group(1)
-			break
+    table = None
+    for arg in argv:
+        if len(table_parameter.match(arg).groups()) != 0:
+            table = table_parameter.match(arg).group(1)
+            break
 
-	
-	if table == None:
-		raise IllegalArgumentError("No --table argument supplied")
-	if debug:
-		sys.stderr.write("Doing table: " + table + "\n")
-	
-	tableClass = None
-	try:	
-		tableClass = getattr(ssrepi, table)	
-	except:
-		raise IllegalArgumentError("Invalid table name: " + table)
+    
+    if table == None:
+        raise IllegalArgumentError("No --table argument supplied")
+    if debug:
+        sys.stderr.write("Doing table: " + table + "\n")
+    
+    tableClass = None
+    try:    
+        tableClass = getattr(ssrepi, table)    
+    except:
+        raise IllegalArgumentError("Invalid table name: " + table)
 
-	columns = {}
-	for arg in re.split(r' --',' '.join(argv)):
-		if debug:
-			sys.stderr.write("Processing argument: " + arg + "\n")
-		if table_parameter.match(arg):
-			pass
-		elif column_parameter.match(arg).group(1) != None:
-			col = column_parameter.match(arg).group(1).upper()
-			col_argument = None
-			if column_parameter.match(arg).group(3) != None:
-				col_argument = column_parameter.match(arg).group(3)
-			# Now make sure this column actually exists
-			try:
-				cur = conn.cursor()
-				cur.execute('PRAGMA TABLE_INFO("' + 
-					tableClass().tableName() + '")')
-				actual_columns = cur.fetchall()
-				found = False
-				for col_details in actual_columns:
-					if col_details[1] == col:
-						found = True
-						if not found:
-							raise IllegalArgumentError("Invalid column: " + col)
-						if col_argument == None:
-							target = col
-						else:
-							columns[col] = col_argument
+    columns = {}
+    for arg in re.split(r' --',' '.join(argv)):
+        if debug:
+            sys.stderr.write("Processing argument: " + arg + "\n")
+        if table_parameter.match(arg):
+            pass
+        elif column_parameter.match(arg).group(1) != None:
+            col = column_parameter.match(arg).group(1).upper()
+            col_argument = None
+            if column_parameter.match(arg).group(3) != None:
+                col_argument = column_parameter.match(arg).group(3)
+            # Now make sure this column actually exists
+            try:
+                cur = conn.cursor()
+                actual_columns = None
+                if ssrepi.db_type == "sqlite3":
+                    mysql = 'PRAGMA TABLE_INFO("' + tableClass().tableName() + '")'
+                else:
+                    mysql = "SELECT columns.column_name FROM information_schema.columns WHERE table_name = '" + tableClass().tableName().lower() + "'"
+                cur.execute(mysql)
+                result = cur.fetchall()
+                if ssrepi.db_type == "sqlite3":
+                    actual_columns = [ row['name'] for row in result ]
+                else:
+                    actual_columns = [ row['column_name'] for row in result ]
+                found = False
+                for col_details in actual_columns:
+                    if col_details.lower() == col.lower():
+                        found = True
+                        break
+                if not found:
+                    raise IllegalArgumentError("Invalid column: " + col)
+                if col_argument == None:
+                    target = col
+                else:
+                    columns[col] = col_argument
 
 
 
-			except:
-				raise IllegalArgumentError("Unexpected error for querying column")
-			
-		else:
-			raise IllegalArgumentError("Invalid parameter: " + arg)
+            except:
+                raise IllegalArgumentError("Unexpected error for querying column")
+            
+        else:
+            raise IllegalArgumentError("Invalid parameter: " + arg)
 
-	if len(columns.keys()) == 0:
-		raise IllegalArgumentError("No valid columns supplied")
+    if len(columns.keys()) == 0:
+        raise IllegalArgumentError("No valid columns supplied")
 
-	# TODO - Table specific validation.
-	if table == "ArgumentValue":
-		pass
-	return (table,target,columns)
-		
+    # TODO - Table specific validation.
+    if table == "ArgumentValue":
+        pass
+    return (table,target,columns)
+        
 if __name__ == "__main__":
-	target = None
-	table = None
-	columns = {}
-	db_specs = ssrepi.connect_db(os.getcwd())
-	(table,target,columns) = parameters(db_specs[0],sys.argv[1:])
-	tableClass = getattr(ssrepi, table)	
-	row = tableClass(columns) 
-	try:	
-		row.query(db_specs[0].cursor())
-	except: raise
-	ssrepi.disconnect_db(db_specs[0])
-	if debug:
-		sys.stderr.write("Printing: " + getattr(row,target) + "\n")
-	print(getattr(row,target))
+    target = None
+    table = None
+    columns = {}
+    conn = ssrepi.connect_db(os.getcwd())
+    (table,target,columns) = parameters(conn,sys.argv[1:])
+    tableClass = getattr(ssrepi, table)    
+    row = tableClass(columns) 
+    try:    
+        row.query(conn.cursor())
+    except: raise
+    ssrepi.disconnect_db(conn)
+    if debug:
+        sys.stderr.write("Printing: " + getattr(row,target) + "\n")
+    print(getattr(row,target))

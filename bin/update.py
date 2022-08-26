@@ -10,10 +10,12 @@ __credits__ = "Gary Polhill, Lorenzo Milazzo"
 __modified__ = "2017-03-02"
 
 
-debug=False
+debug=True
 
 import os, sys, getopt, re
 import sqlite3
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 # I am going to have to think of a better way of doing this. Need to 
 # research site level Python paths. Additionally I only want to import
@@ -72,27 +74,40 @@ def parameters(conn, argv):
 			# Now make sure this column actually exists
 			try:
 				cur = conn.cursor()
-				cur.execute('PRAGMA TABLE_INFO("' + 
-					tableClass().tableName() + '")')
-				actual_columns = cur.fetchall()
+				mysql = None
+				actual_columns = None
+				if ssrepi.db_type == "sqlite3":
+					mysql = 'PRAGMA TABLE_INFO("' + tableClass().tableName() + '")'
+					cur.execute(mysql)
+				else:
+					mysql = "SELECT columns.column_name FROM information_schema.columns WHERE table_name = '" + tableClass().tableName().lower() + "'"
+				cur.execute(mysql)
+				result = cur.fetchall()
+				if ssrepi.db_type == "sqlite3":
+					actual_columns = [ row['name'] for row in result ]
+				else:
+					actual_columns = [ row['column_name'] for row in result ]
+				if debug:
+					sys.stderr.write(mysql + "\n")
 				found = False
 				for col_details in actual_columns:
-					if col_details[1] == col:
+					if col_details.lower() == col.lower():
 						found = True
-						if not found:
-							raise IllegalArgumentError("Invalid column: " + col)
-						columns[col] = col_argument
+						break
+				if not found:
+					raise IllegalArgumentError("Invalid column: " + col + "\n")
+				columns[col] = col_argument
 
 
 
 			except IllegalArgumentError as e:
-				sys.stderr.write("Error: " + str(e))
+				sys.stderr.write("Error: " + str(e) + "\n")
 				raise IllegalArgumentError("Unexpected error for querying column")
 			except Exception as e:
 				sys.stderr.write("Error: " + 
 					type(e).__name__ + 
 					" - " +
-					str(e))
+					str(e) + "\n")
 				raise e
 		else:
 			raise IllegalArgumentError("Invalid parameter: " + arg)
@@ -108,24 +123,25 @@ def parameters(conn, argv):
 if __name__ == "__main__":
 	table = None
 	colums = {}
-	db_specs = ssrepi.connect_db(os.getcwd())
-	(table,columns) = parameters(db_specs[0],sys.argv[1:])
+	conn = ssrepi.connect_db(os.getcwd())
+	(table,columns) = parameters(conn,sys.argv[1:])
 	tableClass = getattr(ssrepi, table)	
 	row = tableClass(columns) 
 	try:
-		row.add(db_specs[0].cursor())
-	except sqlite3.IntegrityError:
+		row.add(conn.cursor())
+	except (sqlite3.IntegrityError, psycopg2.errors.UniqueViolation) as e:
 		try:
-			row.update(db_specs[0].cursor())
+			row.update(conn.cursor())
 		except:
 			raise
 	except Exception as e:
+		sys.stderr.write("Pickle\n")
 		sys.stderr.write("Error: " + 
 			type(e).__name__ + 
 			" - " +
 			str(e))
 		raise 
-	ssrepi.disconnect_db(db_specs[0])
+	ssrepi.disconnect_db(conn)
 	result = re.sub(r' AND ',',', row.getPrimaryKeys())
 	result = re.sub(r'^.* = ','',result)
 	result = re.sub(r'[\'\"]','',result)
