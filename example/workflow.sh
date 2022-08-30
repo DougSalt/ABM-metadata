@@ -49,18 +49,24 @@ SSREPI_set_study $study_id
 # People
 # ======
 
-#gary_polhill_id=$(SSREPI_hutton_person gp40285)
-gary_polhill_id=$(SSREPI_person \
-	--id_person=gary_polhill \
-	--name="Gary Polhill" \
-	--email=gary.polhill@hutton.ac.uk
-	)
-#doug_salt_id=$(SSREPI_hutton_person ds42723)
-doug_salt_id=$(SSREPI_person \
-	--id_person=doug_salt \
-	--name="Doug Salt" \
-	--email=doug.salt@hutton.ac.uk
-	)
+gary_polhill_id=""
+if [[ $(uname -s) == "Darwin" ]]
+then
+	gary_polhill_id=$(SSREPI_person \
+		--id_person=gary_polhill \
+		--name="Gary Polhill" \
+		--email=gary.polhill@hutton.ac.uk
+		)
+	doug_salt_id=$(SSREPI_person \
+		--id_person=doug_salt \
+		--name="Doug Salt" \
+		--email=doug.salt@hutton.ac.uk
+		)
+else
+	gary_polhill_id=$(SSREPI_hutton_person gp40285)
+	doug_salt_id=$(SSREPI_hutton_person ds42723)
+fi
+
 lorenzo_milazzo_id=$(SSREPI_person \
 	--id_person=lorenzo_milazzo \
 	--name="Lorenzo Milazzo" \
@@ -162,64 +168,71 @@ garys_2nd_assumption=$(SSREPI_person_makes_assumption $gary_polhill_id \
 
 # Software
 
-required_perl=$(SSREPI_require_minimum perl  "5.0")
-required_python=$(SSREPI_require_minimum python  "3.0")
-required_fearlus=$(SSREPI_require_exact fearlus "fearlus-1.1.5.2_spom-2.3")
-required_R=$(SSREPI_require_minimum "R" "3.3.1")
-#required_os=$(SSREPI_require_exact os Linux)
-required_os=$(SSREPI_require_exact os Darwin)
-required_shell=$(SSREPI_require_exact shell '/bin/bash')
-
-# Hardware
-
-required_disk_space=$(SSREPI_require_minimum disk_space "20G")
-required_nof_cpus=$(SSREPI_require_minimum nof_cpus $NOF_CPUS)
-required_memory=$(SSREPI_require_minimum memory "4G")
-
-if SSREPI_fails_minimum_requirement $required_perl $(perl -e 'print $];')
+if SSREPI_require_minimum perl  "5.0" $(perl -e 'print $];')
 then
-	(>&2 echo PPPPPPPPPOOOOOOOOO)
         (>&2 echo "$0: Minimum requirement for Perl failed")
+        (>&2 echo "$0: Required at least Perl 5.0, got " \
+		$(perl -e 'print $];'))
         exit -1
 fi
 
-if SSREPI_fails_minimum_requirement $required_python \
-	$(python --version 2>&1 | cut -f2 -d' ')
+
+if SSREPI_require_minimum python "3.0" $(python --version 2>&1 | cut -f2 -d' ')
 then
         (>&2 echo "$0: Minimum requirement for Python failed")
-        (>&2 echo "$0: Required $python, got " \
+        (>&2 echo "$0: Required 3.0 got " \
 		$(python --version 2>&1 | cut -f2 -d' '))
         exit -1
 fi
 
-# Don't need to check the shell as the hashbang insists we are running
-# under bash, so we just need to set the meets criterion.
-SSREPI_meets $required_shell
-
-if SSREPI_fails_exact_requirement $required_os $(uname)
+if SSREPI_require_minimum "R" "3.3.1" $(R --version | head -1 | awk '{print $3}')
 then
-        (>&2 echo "$0: Minimum requirement for the OS failed")
+        (>&2 echo "$0: Minimum requirement for R failed")
+        (>&2 echo "$0: Required 3.3.1 got " \
+		$(R --version | head -1 | awk '{print $3}'))
         exit -1
 fi
 
-#if SSREPI_fails_exact_requirement $required_fearlus \
+
+
+if SSREPI_require_minimum bash 3.0 $(bash --version | sed -n 1p | awk '{print $4}' | cut -f1 -d.)
+then
+        (>&2 echo "$0: Minimum requirement for bash failed")
+        (>&2 echo "$0: Required 3.0 got " \
+		$(bash --version | sed -n 1p | awk '{print $4}' | cut -f1 -d.))
+        exit -1
+fi
+
+#if SSREPI_require_exact fearlus "fearlus-1.1.5.2_spom-2.3") \
 #	$($(which fearlus-1.1.5.2_spom-2.3) --version | tail -1 | awk '{print $1}')
 #then
 #        (>&2 echo "$0: Minimum requirement for fearlus-spom binary failed")
+#        (>&2 echo "$0: Required fearlus-1.1.5.2_spom-2.3 got " \
+#		$($(which fearlus-1.1.5.2_spom-2.3) --version | tail -1 | awk '{print $1}'))
 #        exit -1
 #fi
 
-if SSREPI_fails_minimum_requirement $required_R  \
-	$(R --version | head -1 | awk '{print $3}')
+
+#if SSREPI_require_exact os Linux $(uname -s)
+if SSREPI_require_exact os Darwin $(uname -s)
 then
-        (>&2 echo "$0: Minimum requirement for R failed")
+        (>&2 echo "$0: Exact requirement for the OS failed")
+#	(>&2 echo "$0: Required Linux got "$(uname -s)
+	(>&2 echo "$0: Required Darwin got "$(uname -s))
         exit -1
 fi
 
-if SSREPI_fails_minimum_requirement $required_disk_space \
-	$(df -k . | tail -1 | awk '{print $1}')
+# Hardware
+
+SPACE=$(df -k -h . | tail -1 | awk '{print $1}' | sed 's/G$//')
+if [[ $(uname -s) == "Darwin" ]]
+then
+	SPACE=$(df -k . | tail -1 | awk '{print $4}' | sed 's/G$//')
+fi
+if SSREPI_require_minimum diskspace 20G $SPACE
 then
         (>&2 echo "$0: Minimum requirement for disk space failed")
+	(>&2 echo "$0: Required 20G of disk space got $SPACE")
         exit -1
 fi
 
@@ -228,9 +241,10 @@ if [[ $(uname -s) == "Darwin" ]]
 then
 	MEM=$(echo $(sysctl hw.memsize | cut -f2 -d' ')) / 1024 / 1024 / 1024 | bc
 fi
-if SSREPI_fails_minimum_requirement $required_memory ${MEM}G
+if SSREPI_require_mininum memory 4G ${MEM}G
 then
         (>&2 echo "$0: Minimum requirement for memory failed")
+	(>&2 echo "$0: Required 4G of memory got ${MEM}G")
         exit -1
 fi
 
@@ -239,11 +253,10 @@ if [[ $(uname -s) == "Darwin" ]]
 then
 	CPUS=$(sysctl hw.ncpu | cut -f2 -d ' ')
 fi
-
-
-if SSREPI_fails_minimum_requirement $required_nof_cpus $CPUS
+if SSREPI_require_minimum nof_cpus $NOF_CPUS $CPUS 
 then
         (>&2 echo "$0: Minimum requirement for number of cpus failed")
+	(>&2 echo "$0: Required $NOF_CPUS cpus of memory got $CPUS")
         exit -1
 fi
 
@@ -258,6 +271,7 @@ SHELL_SCRIPT_1=$(SSREPI_call_bash_script \
 
 [ -n "$SHELL_SCRIPT_1" ] || exit -1
 
+exit
 pipe=$(SSREPI_add_pipeline_to_pipeline $pipe $SHELL_SCRIPT_1)
 [ -n "$pipe" ] || exit -1
 

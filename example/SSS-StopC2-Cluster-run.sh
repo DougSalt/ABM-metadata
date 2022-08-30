@@ -6,7 +6,7 @@
 
 # Date: January 2017
 
-. lib/ssrepi_lib.sh
+. lib/ssrepi.sh
 
 if [[ -z $POST_DEPENDENCIES ]]
 then

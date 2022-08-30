@@ -4,6 +4,9 @@
 
 # I have decided to do this in the bash script
 
+# Remember because this is in-line, exit causes a stop program, return to abort
+# to calling program.
+
 export NOF_CPUS=2
 export SSREP_DBNAME="$PWD"/ssrep.db
 
@@ -18,14 +21,28 @@ fi
 
 
 SSREPI_require_minimum() {
+	# $1 - executable
+	# $2 - desired version literal
+	# $3 - actual version literal
+	# $4 - calling script (optional)
 	PARENT_COMMAND=$(basename $(_calling_script))
-	if [ -n "$3" ]
+	if [ -n "$4" ]
 	then
-		PARENT_COMMAND=$(basename "$3")
+		PARENT_COMMAND=$(basename "$4")
 	fi
+	computer_id=$(update.py \
+		--table=Computer \
+		--id_computer=$(hostname) \
+		--name=$(hostname) \
+		--host_id=$(_fqdn) \
+		--ip_address=$(_ip_address) \
+		--mac_address=$(_mac_address) \
+	)
+	[ -n "$computer_id" ] || exit -1
 	specification_id=$(update.py \
 		--table=Specification \
 		--id_specification=$1 \
+		--specification_of=$computer_id \
 		--value="$2" \
 	)	
 	[ -n "$specification_id" ] || exit -1
@@ -35,17 +52,49 @@ SSREPI_require_minimum() {
 		--application=$PARENT_COMMAND \
 	)		
 	[ -n "$requirement_id" ] || exit -1
-	echo "$specification_id"
-}
-SSREPI_require_exact() {
-	PARENT_COMMAND=$(basename $(_calling_script))
-	if [ -n "$3" ]
+	if echo $2 | egrep -q "^[0-9]+(\.[0-9]+)?$" && \
+	   echo $3 | egrep -q "^[0-9]+(\.[0-9]+)?$"
+	then 
+	     	if (( $(echo $2'>'$3 | bc -lq 2>/dev/null) ))
+	     	then
+			return 0
+		fi
+	elif [[ "$2" > "$3" ]]
 	then
-		PARENT_COMMAND=$(basename "$3")
+		return 0
 	fi
+	meets_id=$(update.py \
+		--table=Meets \
+		--computer_specification=$computer_id \
+		--requirement_specification=$specification_id \
+	)
+	[ -n "$meets_id" ] || exit -1
+	return 1
+}
+
+SSREPI_require_exact() {
+	# $1 - executable
+	# $2 - desired version literal
+	# $3 - actual version literal
+	# $4 - calling script (optional)
+	PARENT_COMMAND=$(basename $(_calling_script))
+	if [ -n "$4" ]
+	then
+		PARENT_COMMAND=$(basename "$4")
+	fi
+	computer_id=$(update.py \
+		--table=Computer \
+		--id_computer=$(hostname) \
+		--name=$(hostname) \
+		--host_id=$(_fqdn) \
+		--ip_address=$(_ip_address) \
+		--mac_address=$(_mac_address) \
+	)
+	[ -n "$computer_id" ] || exit -1
 	specification_id=$(update.py \
 		--table=Specification \
-		--id_specification="$1" \
+		--id_specification=$1 \
+		--specification_of=$computer_id \
 		--value="$2" \
 	)	
 	[ -n "$specification_id" ] || exit -1
@@ -55,76 +104,17 @@ SSREPI_require_exact() {
 		--application=$PARENT_COMMAND \
 	)		
 	[ -n "$requirement_id" ] || exit -1
-	echo "$specification_id"
-}
-
-SSREPI_fails_minimum_requirement() {
-#	specification_id=$(update.py \
-#		--table=Specification \
-#		--value="$2" \
-#		--specification_of=$(hostname) \
-#		--id_specification=$(hostname).$1 \
-#		--label="$(hostname) - $1" \
-#	)
-	requirement=$(get_value.py \
-		--table=Specification \
-		--id_specification=$1 \
-		--value) 
-	requirement=$(echo $requirement | sed "s/K/000/")
-	requirement=$(echo $requirement | sed "s/M/000000/")
-	requirement=$(echo $requirement | sed "s/G/000000000/")
-	if echo $requirement | egrep -q "^[0-9]+(\.[0-9]+)?$"
-	then 
-	     	if (( $(echo $2'<'$requirement | bc -lq 2>/dev/null) ))
-	     	then
-			return 0
-		fi
-	elif [[ "$2" < "$requirement" ]]
+	if [[ "$2" != "$3" ]]
 	then
 		return 0
 	fi
-	(>&2 echo arg arg agr)
-	[ -n "$1" ] || return -1
 	meets_id=$(update.py \
 		--table=Meets \
-		--computer_specification=$(hostname).$1 \
-		--requirement_specification="$1" \
-	)
-	[ -n "$meets_id" ] || return -1
-	return 1
-}
-SSREPI_fails_exact_requirement() {
-#	specification_id=$(update.py \
-#		--table=Specification \
-#		--specification_of=$(hostname) \
-#		--id_specification=$(hostname).$1 \
-#		--label="$(hostname) - $1" \
-#		--value="$2" \
-#	)
-	requirement=$(get_value.py \
-		--table=Specification \
-		--id_specification=$1 \
-		--value) 
-	if [[ $2 != $requirement ]]
-	then
-		return 0
-	fi
-	[ -n "$1" ] || return -1
-	meets_id=$(update.py \
-		--table=Meets \
-		--computer_specification=$(hostname).$1 \
-		--requirement_specification="$1" \
-	)
-	[ -n "$meets_id" ] || return -1
-	return 1
-}
-SSREPI_meets() {
-	meets_id=$(update.py \
-		--table=Meets \
-		--computer_specification=$(hostname).$1 \
-		--requirement_specification="$1" \
+		--computer_specification=$computer_id \
+		--requirement_specification=$specification_id \
 	)
 	[ -n "$meets_id" ] || exit -1
+	return 1
 }
 
 SSREPI_process() {
@@ -175,10 +165,10 @@ SSREPI_process() {
 		computer_id=$(update.py \
 			--table=Computer \
 			--id_computer=$(hostname) \
-		--name=$(hostname) \
-		--host_id=$(_fqdn) \
-		--ip_address=$(_ip_address) \
-		--mac_address=$(_mac_address) \
+			--name=$(hostname) \
+			--host_id=$(_fqdn) \
+			--ip_address=$(_ip_address) \
+			--mac_address=$(_mac_address) \
 		)
 		[ -n "$computer_id" ] || exit -1
 	fi
@@ -186,6 +176,11 @@ SSREPI_process() {
 }
 
 SSREPI_application() {
+	# $1 - executable
+	# Free form except for --instance  which gets deleted as a prefix and
+	# used to update the container and --model which is also deleted and
+	# used to update the model entry.
+
 	APP=$(which "$1" 2>/dev/null)
 	if [[ ! -f "$APP" ]]
 	then
@@ -213,7 +208,7 @@ SSREPI_application() {
 		INSTANCE=$(echo "$PARAMS" | egrep -s "instance=" | \
 			sed "s/^.*\(--instance=[^ ][^ ]*\).*$/\1/")
 		PARAMS=$(echo "$PARAMS" | egrep -s "instance=" | \
-			sed "s/--instance=\([^ ][^ ]*\) ?//")
+			sed "s/--instance=[^ ][^ ]* *//")
 	fi
 
 	container_id=$(update.py \
@@ -239,7 +234,6 @@ SSREPI_application() {
 		)
 	[ -n "$container_id" ] || exit -1
 	
-
 	app_id=$(update.py \
 		--table=Application \
 		--id_application=$(basename $APP) \
@@ -280,6 +274,8 @@ SSREPI_call_application() {
 }
 
 SSREPI_call_bash_script_with_dependency() {
+	# $1 - Script being called
+	# $2 - Dependency
 	PARENT_COMMAND=$(_calling_script)
 	RUN=$1
 	DEPEND=$2
@@ -392,7 +388,7 @@ SSREPI_call_perl_script() {
 		)
 	[ -n "$dependency_id" ] || exit -1
 	# Could run the Perl script here eventually.
-	#eval "$RUN"
+	eval "$RUN"
 	echo $call_application_id
 }
 SSREPI_call_R_script() {
@@ -1155,7 +1151,7 @@ _mac_address() {
 	MAC=$(/sbin/ifconfig | sed -n "1p" | awk '{print $5}')
 	if [[ $(uname -s) == "Darwin" ]]
 	then
-		MAC=$(/sbin/ifconfig | sed -n "1p" | awk '{print $3}')
+		MAC=$(/sbin/ifconfig en0 | sed -n "3p" | awk '{print $2}')
 	fi
         if [ -z "$MAC" ]
         then 
