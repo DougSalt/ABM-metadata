@@ -59,13 +59,13 @@ SSREPI_require_exact() {
 }
 
 SSREPI_fails_minimum_requirement() {
-	specification_id=$(update.py \
-		--table=Specification \
-		--value="$2" \
-		--specification_of=$(hostname) \
-		--id_specification=$(hostname).$1 \
-		--label="$(hostname) - $1" \
-	)
+#	specification_id=$(update.py \
+#		--table=Specification \
+#		--value="$2" \
+#		--specification_of=$(hostname) \
+#		--id_specification=$(hostname).$1 \
+#		--label="$(hostname) - $1" \
+#	)
 	requirement=$(get_value.py \
 		--table=Specification \
 		--id_specification=$1 \
@@ -83,23 +83,24 @@ SSREPI_fails_minimum_requirement() {
 	then
 		return 0
 	fi
-	[ -n "$specification_id" ] || exit -1
+	(>&2 echo arg arg agr)
+	[ -n "$1" ] || return -1
 	meets_id=$(update.py \
 		--table=Meets \
 		--computer_specification=$(hostname).$1 \
 		--requirement_specification="$1" \
 	)
-	[ -n "$meets_id" ] || exit -1
+	[ -n "$meets_id" ] || return -1
 	return 1
 }
 SSREPI_fails_exact_requirement() {
-	specification_id=$(update.py \
-		--table=Specification \
-		--specification_of=$(hostname) \
-		--id_specification=$(hostname).$1 \
-		--label="$(hostname) - $1" \
-		--value="$2" \
-	)
+#	specification_id=$(update.py \
+#		--table=Specification \
+#		--specification_of=$(hostname) \
+#		--id_specification=$(hostname).$1 \
+#		--label="$(hostname) - $1" \
+#		--value="$2" \
+#	)
 	requirement=$(get_value.py \
 		--table=Specification \
 		--id_specification=$1 \
@@ -108,13 +109,13 @@ SSREPI_fails_exact_requirement() {
 	then
 		return 0
 	fi
-	[ -n "$specification_id" ] || exit -1
+	[ -n "$1" ] || return -1
 	meets_id=$(update.py \
 		--table=Meets \
 		--computer_specification=$(hostname).$1 \
 		--requirement_specification="$1" \
 	)
-	[ -n "$meets_id" ] || exit -1
+	[ -n "$meets_id" ] || return -1
 	return 1
 }
 SSREPI_meets() {

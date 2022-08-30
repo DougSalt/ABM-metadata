@@ -143,7 +143,6 @@ SSREPI_tag too_slow --container_type=bash
 SSREPI_tag frivilous --tag=mad
 SSREPI_tag frivilous --tag=$too_old
 
-exit
 
 # Assumptions
 # ===========
@@ -164,7 +163,7 @@ garys_2nd_assumption=$(SSREPI_person_makes_assumption $gary_polhill_id \
 # Software
 
 required_perl=$(SSREPI_require_minimum perl  "5.0")
-required_python=$(SSREPI_require_minimum python  "2.6.6")
+required_python=$(SSREPI_require_minimum python  "3.0")
 required_fearlus=$(SSREPI_require_exact fearlus "fearlus-1.1.5.2_spom-2.3")
 required_R=$(SSREPI_require_minimum "R" "3.3.1")
 #required_os=$(SSREPI_require_exact os Linux)
@@ -179,6 +178,7 @@ required_memory=$(SSREPI_require_minimum memory "4G")
 
 if SSREPI_fails_minimum_requirement $required_perl $(perl -e 'print $];')
 then
+	(>&2 echo PPPPPPPPPOOOOOOOOO)
         (>&2 echo "$0: Minimum requirement for Perl failed")
         exit -1
 fi
@@ -202,12 +202,12 @@ then
         exit -1
 fi
 
-if SSREPI_fails_exact_requirement $required_fearlus \
-	$($(which fearlus-1.1.5.2_spom-2.3) --version | tail -1 | awk '{print $1}')
-then
-        (>&2 echo "$0: Minimum requirement for fearlus-spom binary failed")
-        exit -1
-fi
+#if SSREPI_fails_exact_requirement $required_fearlus \
+#	$($(which fearlus-1.1.5.2_spom-2.3) --version | tail -1 | awk '{print $1}')
+#then
+#        (>&2 echo "$0: Minimum requirement for fearlus-spom binary failed")
+#        exit -1
+#fi
 
 if SSREPI_fails_minimum_requirement $required_R  \
 	$(R --version | head -1 | awk '{print $3}')
@@ -223,21 +223,30 @@ then
         exit -1
 fi
 
-if SSREPI_fails_minimum_requirement $required_memory \
-        $(cat /proc/meminfo | grep MemTotal | awk '{print $2}')000
+MEM=$(cat /proc/meminfo | grep MemTotal | awk '{print $2}')000
+if [[ $(uname -s) == "Darwin" ]]
+then
+	MEM=$(echo $(sysctl hw.memsize | cut -f2 -d' ')) / 1024 / 1024 / 1024 | bc
+fi
+if SSREPI_fails_minimum_requirement $required_memory ${MEM}G
 then
         (>&2 echo "$0: Minimum requirement for memory failed")
         exit -1
 fi
 
-if SSREPI_fails_minimum_requirement $required_nof_cpus \
-        $(($(cat /proc/cpuinfo | awk '/^processor/{print $3}' | tail -1) + 1))
+CPUS=$(($(cat /proc/cpuinfo | awk '/^processor/{print $3}' | tail -1) + 1))
+if [[ $(uname -s) == "Darwin" ]]
+then
+	CPUS=$(sysctl hw.ncpu | cut -f2 -d ' ')
+fi
+
+
+if SSREPI_fails_minimum_requirement $required_nof_cpus $CPUS
 then
         (>&2 echo "$0: Minimum requirement for number of cpus failed")
         exit -1
 fi
 
-fuckyou=<< FUCKYOU
 SHELL_SCRIPT_1=$(SSREPI_call_bash_script \
 	$(which SSS-StopC2-Cluster-create.sh) \
 	--purpose="
@@ -252,6 +261,7 @@ SHELL_SCRIPT_1=$(SSREPI_call_bash_script \
 pipe=$(SSREPI_add_pipeline_to_pipeline $pipe $SHELL_SCRIPT_1)
 [ -n "$pipe" ] || exit -1
 
+
 SHELL_SCRIPT_2=$(SSREPI_call_bash_script \
 	$(which SSS-StopC2-Cluster-create2.sh) \
 	--purpose="Sets up the run for the higher value rewards
@@ -263,7 +273,6 @@ SHELL_SCRIPT_2=$(SSREPI_call_bash_script \
 
 pipe=$(SSREPI_add_pipeline_to_pipeline $pipe $SHELL_SCRIPT_2)
 [ -n "$pipe" ] || exit -1
-FUCKYOU
 
 SHELL_SCRIPT_3=$(SSREPI_call_bash_script \
 	$(which SSS-StopC2-Cluster-run.sh) \
