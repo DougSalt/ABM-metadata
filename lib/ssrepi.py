@@ -23,7 +23,7 @@ __credits__ = ""
 # The "SSRepI" is a library to implement an interface between
 # an application and the SSRep.
 
-import sqlite3
+#import sqlite3
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import os, sys, subprocess, re, mimetypes, rfc3987, os.path, datetime, magic
@@ -151,15 +151,16 @@ class Table:
             sys.stderr.write(getSQL + '\n')
         cur.execute(getSQL)
         row = cur.fetchone()
-        sys.stderr.write("Row = " + str(row))
         setValues = ""
+        #sys.stderr.write("Row = " + str(row))
         self.MODIFIER = getpass.getuser()
         self.MODIFIED = datetime.datetime.now().isoformat()
         self.validate()
         for key in row:
             #sys.stderr.write("Updating: " + str(key) + " = " + str(row[key]) + " against self[" + str(key) + "] = " + str(self.__dict__[key.upper()]) + "\n")
             if self.__dict__[key.upper()] == None or self.__dict__[key.upper()] == '':
-                setValues = (setValues + key + "=null,")
+                pass
+                #setValues = (setValues + key + "=null,")
             elif (self.__dict__[key.upper()] != None and 
                 isinstance(self.__dict__[key.upper()], int)):
                 setValues = (setValues + key + "=" + 
@@ -1849,7 +1850,7 @@ DEFERRABLE INITIALLY DEFERRED
         self.ENVIRONMENT = None
         self.WORKING_DIR = None
         self.EXECUTABLE = None # Foreign key in the table Applications
-        self.USER = None # Foreign key in the table Users
+        self.SOME_USER = None # Foreign key in the table Users
         self.HOST = None # Foreign key in the table Computers
         self.PARENT = None # Foreign key in the table Processes
         Table.setValues(self,values)

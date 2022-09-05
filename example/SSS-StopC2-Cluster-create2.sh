@@ -12,8 +12,8 @@
 
 ME=$(basename $(_calling_script))
 
-SSREPI_contributor $ME gp40285 Author
-SSREPI_contributor $ME ds42723 Author
+SSREPI_contributor $ME gary_polhill Author
+SSREPI_contributor $ME doug_salt Author
 
 next=$(SSREPI_create_pipeline $ME)
 [ -n "$next" ] || exit -1
@@ -28,7 +28,7 @@ next=$(SSREPI_create_pipeline $ME)
 PROG=$(SSREPI_call_perl_script $(which SSS-StopC2-Cluster-expt.pl))
 [ -n $PROG ] || exit -1 
 
-SSREPI_contributor $PROG gp40285 Author
+SSREPI_contributor $PROG gary_polhill Author
 
 next=$(SSREPI_add_application_to_pipeline $next $PROG)
 [ -n "$next" ] || exit -1
@@ -37,7 +37,7 @@ next=$(SSREPI_add_application_to_pipeline $next $PROG)
 # ===========
 
 governance_assumption=$(SSREPI_person_makes_assumption \
-	gp40285 "The assumption for this run of the script is that the reward 
+	gary_polhill "The assumption for this run of the script is that the reward 
 	governance has more of an effect than clustering in changing behaviour
 	 of land-owners." \
 	--short_name="governance")
@@ -48,26 +48,92 @@ governance_assumption=$(SSREPI_person_makes_assumption \
 PROG=$(SSREPI_call_perl_script $(which SSS-StopC2-Cluster-expt.pl))
 [ -n $PROG ] || exit -1
 
-SSREPI_contributor $PROG gp40285 Author
+SSREPI_contributor $PROG gary_polhill Author
 
 next=$(SSREPI_add_application_to_pipeline $next $PROG)
 [ -n "$next" ] || exit -1
 
-# Requirements for this script
+# Requirements for this script 
 # ============================
 
 # Software
 
-required_perl=$(SSREPI_require_minimum perl  "5.0" "$PROG")
-required_python=$(SSREPI_require_minimum python  "2.6.6" "$PROG")
-required_os=$(SSREPI_require_exact os Linux "$PROG")
-required_shell=$(SSREPI_require_exact shell '/bin/bash' "$PROG")
+if SSREPI_require_minimum perl  "5.0" $(perl -e 'print $];')
+then
+        (>&2 echo "$0: Minimum requirement for Perl failed")
+        (>&2 echo "$0: Required at least Perl 5.0, got " \
+		$(perl -e 'print $];'))
+        exit -1
+fi
+
+
+if SSREPI_require_minimum python "3.0" $(python --version 2>&1 | cut -f2 -d' ')
+then
+        (>&2 echo "$0: Minimum requirement for Python failed")
+        (>&2 echo "$0: Required 3.0 got " \
+		$(python --version 2>&1 | cut -f2 -d' '))
+        exit -1
+fi
+
+if SSREPI_require_minimum bash 3.0 $(bash --version | sed -n 1p | awk '{print $4}' | cut -f1 -d.)
+then
+        (>&2 echo "$0: Minimum requirement for bash failed")
+        (>&2 echo "$0: Required 3.0 got " \
+		$(bash --version | sed -n 1p | awk '{print $4}' | cut -f1 -d.))
+        exit -1
+fi
 
 # Hardware
 
-required_disk_space=$(SSREPI_require_minimum disk_space "20G" "$PROG")
-required_nof_cpus=$(SSREPI_require_minimum nof_cpus $NOF_CPUS "$PROG")
-required_memory=$(SSREPI_require_minimum memory "4G" "$PROG")
+
+#if SSREPI_require_exact os Linux $(uname -s)
+if SSREPI_require_exact os Darwin $(uname -s)
+then
+        (>&2 echo "$0: Exact requirement for the OS failed")
+#	(>&2 echo "$0: Required Linux got "$(uname -s)
+	(>&2 echo "$0: Required Darwin got "$(uname -s))
+        exit -1
+fi
+
+# Hardware
+
+SPACE=$(df -k -h . | tail -1 | awk '{print $1}' | sed 's/G$//')
+if [[ $(uname -s) == "Darwin" ]]
+then
+	SPACE=$(df -k . | tail -1 | awk '{print $4}' | sed 's/G$//')
+fi
+if SSREPI_require_minimum diskspace 20G $SPACE
+then
+        (>&2 echo "$0: Minimum requirement for disk space failed")
+	(>&2 echo "$0: Required 20G of disk space got $SPACE")
+        exit -1
+fi
+
+MEM=
+if [[ $(uname -s) == "Darwin" ]]
+then
+	MEM=$(echo $(sysctl hw.memsize | cut -f2 -d' ') / 1024 / 1024 / 1024 | bc)
+else
+	MEM=$(cat /proc/meminfo | grep MemTotal | awk '{print $2}')
+fi
+if SSREPI_require_minimum memory.$PROG 4 ${MEM}
+then
+        (>&2 echo "$0: Minimum requirement for memory failed")
+	(>&2 echo "$0: Required 4G of memory got ${MEM}G")
+        exit -1
+fi
+
+CPUS=$(($(cat /proc/cpuinfo | awk '/^processor/{print $3}' | tail -1) + 1))
+if [[ $(uname -s) == "Darwin" ]]
+then
+	CPUS=$(sysctl hw.ncpu | cut -f2 -d ' ')
+fi
+if SSREPI_require_minimum nof_cpus $NOF_CPUS $CPUS 
+then
+        (>&2 echo "$0: Minimum requirement for number of cpus failed")
+	(>&2 echo "$0: Required $NOF_CPUS cpus of memory got $CPUS")
+        exit -1
+fi
 
 # Argument types
 # --------------
@@ -331,51 +397,6 @@ do
 (
 
 THIS_PROCESS=$(SSREPI_process --executable=$PROG)
-
-if SSREPI_fails_minimum_requirement $required_perl $(perl -e 'print $];')
-then
-	(>&2 echo "$0: Minimum requirement for Perl failed")
-	exit -1
-fi
-
-if SSREPI_fails_minimum_requirement $required_python \
-	$(python --version 2>&1 | cut -f2 -d' ')
-then
-	(>&2 echo "$0: Minimum requirement for Python failed")
-	exit -1
-fi
-
-# Do not need to check the shell as the hashbang insists we are running
-# under bash, so we just need to set the meets criterion.
-
-SSREPI_meets $required_shell
-
-if SSREPI_fails_exact_requirement $required_os $(uname)
-then
-	(>&2 echo "$0: Exact requirement for the OS failed")
-	exit -1
-fi
-
-if SSREPI_fails_minimum_requirement $required_disk_space \
-	$(df -k . | tail -1 | awk '{print $1}') 
-then
-	(>&2 echo "$0: Minimum requirement for disk space failed")
-	exit -1
-fi
-
-if SSREPI_fails_minimum_requirement $required_memory \
-	$(cat /proc/meminfo | grep MemTotal | awk '{print $2}')000
-then
-	(>&2 echo "$0: Minimum requirement for memory failed")
-	exit -1
-fi
-
-if SSREPI_fails_minimum_requirement $required_nof_cpus \
-	$(($(cat /proc/cpuinfo | awk '/^processor/{print $3}' | tail -1) + 1))
-then
-	(>&2 echo "$0: Minimum requirement for number of cpus failed")
-	exit -1
-fi
 
 SSREPI_argument_value $THIS_PROCESS $govt_id $govt
 SSREPI_argument_value $THIS_PROCESS $sink_id $sink

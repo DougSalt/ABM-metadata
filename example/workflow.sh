@@ -212,15 +212,13 @@ fi
 #        exit -1
 #fi
 
-
-#if SSREPI_require_exact os Linux $(uname -s)
-if SSREPI_require_exact os Darwin $(uname -s)
+if SSREPI_require_exact os.$PROG Linux $(uname -s) && SSREPI_require_exact os.$PROG Darwin $(uname -s) 
 then
         (>&2 echo "$0: Exact requirement for the OS failed")
-#	(>&2 echo "$0: Required Linux got "$(uname -s)
-	(>&2 echo "$0: Required Darwin got "$(uname -s))
+	(>&2 echo "$0: Required Linux or  Darwin got "$(uname -s))
         exit -1
 fi
+
 
 # Hardware
 
@@ -236,12 +234,14 @@ then
         exit -1
 fi
 
-MEM=$(cat /proc/meminfo | grep MemTotal | awk '{print $2}')000
+MEM=
 if [[ $(uname -s) == "Darwin" ]]
 then
-	MEM=$(echo $(sysctl hw.memsize | cut -f2 -d' ')) / 1024 / 1024 / 1024 | bc
+	MEM=$(echo $(sysctl hw.memsize | cut -f2 -d' ') / 1024 / 1024 / 1024 | bc)
+else
+	MEM=$(cat /proc/meminfo | grep MemTotal | awk '{print $2}')
 fi
-if SSREPI_require_mininum memory 4G ${MEM}G
+if SSREPI_require_minimum memory.$PROG 4 ${MEM}
 then
         (>&2 echo "$0: Minimum requirement for memory failed")
 	(>&2 echo "$0: Required 4G of memory got ${MEM}G")
@@ -260,61 +260,59 @@ then
         exit -1
 fi
 
-SHELL_SCRIPT_1=$(SSREPI_call_bash_script \
-	$(which SSS-StopC2-Cluster-create.sh) \
+SSREPI_call \
+	SSS-StopC2-Cluster-create.sh \
+	--add-to-pipeline=$pipe \
 	--purpose="
 
 		Sets up the run for the lower value rewards
 		and this is to test out multi-line,
 		to see if it works. Which it does but removes the
-		carriage returns and tabs. So you can nicely format it.")
+		carriage returns and tabs. So you can nicely format it." \
+	--version=$VERSION \
+	--licence=$LICENCE \
+	--model=fearlus-spomm
 
-[ -n "$SHELL_SCRIPT_1" ] || exit -1
-
-exit
-pipe=$(SSREPI_add_pipeline_to_pipeline $pipe $SHELL_SCRIPT_1)
-[ -n "$pipe" ] || exit -1
-
-
-SHELL_SCRIPT_2=$(SSREPI_call_bash_script \
-	$(which SSS-StopC2-Cluster-create2.sh) \
-	--purpose="Sets up the run for the higher value rewards
-
-		Add some documentary stuff here.")
-
-
-[ -n "$SHELL_SCRIPT_2" ] || exit -1
-
-pipe=$(SSREPI_add_pipeline_to_pipeline $pipe $SHELL_SCRIPT_2)
-[ -n "$pipe" ] || exit -1
-
-SHELL_SCRIPT_3=$(SSREPI_call_bash_script \
-	$(which SSS-StopC2-Cluster-run.sh) \
-	--purpose="Does the runs for the lower value rewards")
-
-[ -n "$SHELL_SCRIPT_3" ] || exit -1
-
-pipe=$(SSREPI_add_pipeline_to_pipeline $pipe $SHELL_SCRIPT_3)
-[ -n "$pipe" ] || exit -1
-
-SHELL_SCRIPT_4=$(SSREPI_call_bash_script \
-	$(which SSS-StopC2-Cluster-run2.sh) \
-	--purpose="Does the runs for the higher value rewards")
-
-[ -n "$SHELL_SCRIPT_4" ] || exit -1
-
-pipe=$(SSREPI_add_pipeline_to_pipeline $pipe $SHELL_SCRIPT_4)
-[ -n "$pipe" ] || exit -1
-
-SHELL_SCRIPT_5=$(SSREPI_call_bash_script_with_dependency \
-	$(which postprocessing.sh) \
-	"$POST_DEPENDENCIES" \
-	--purpose="Post processing to almagamate results and produce pretty diagrams")
-
-[ -n "$SHELL_SCRIPT_5" ] || exit -1
-
-pipe=$(SSREPI_add_pipeline_to_pipeline $pipe $SHELL_SCRIPT_5)
-[ -n "$pipe" ] || exit -1
+#
+#SHELL_SCRIPT_2=$(SSREPI_call_bash_script \
+#	$(which SSS-StopC2-Cluster-create2.sh) \
+#	--purpose="Sets up the run for the higher value rewards
+#
+#		Add some documentary stuff here.")
+#
+#
+#[ -n "$SHELL_SCRIPT_2" ] || exit -1
+#
+#pipe=$(SSREPI_add_pipeline_to_pipeline $pipe $SHELL_SCRIPT_2)
+#[ -n "$pipe" ] || exit -1
+#
+#SHELL_SCRIPT_3=$(SSREPI_call_bash_script \
+#	$(which SSS-StopC2-Cluster-run.sh) \
+#	--purpose="Does the runs for the lower value rewards")
+#
+#[ -n "$SHELL_SCRIPT_3" ] || exit -1
+#
+#pipe=$(SSREPI_add_pipeline_to_pipeline $pipe $SHELL_SCRIPT_3)
+#[ -n "$pipe" ] || exit -1
+#
+#SHELL_SCRIPT_4=$(SSREPI_call_bash_script \
+#	$(which SSS-StopC2-Cluster-run2.sh) \
+#	--purpose="Does the runs for the higher value rewards")
+#
+#[ -n "$SHELL_SCRIPT_4" ] || exit -1
+#
+#pipe=$(SSREPI_add_pipeline_to_pipeline $pipe $SHELL_SCRIPT_4)
+#[ -n "$pipe" ] || exit -1
+#
+#SHELL_SCRIPT_5=$(SSREPI_call_bash_script_with_dependency \
+#	$(which postprocessing.sh) \
+#	"$POST_DEPENDENCIES" \
+#	--purpose="Post processing to almagamate results and produce pretty diagrams")
+#
+#[ -n "$SHELL_SCRIPT_5" ] || exit -1
+#
+#pipe=$(SSREPI_add_pipeline_to_pipeline $pipe $SHELL_SCRIPT_5)
+#[ -n "$pipe" ] || exit -1
 
 SSREPI_study \
 	--id_study=$study_id \

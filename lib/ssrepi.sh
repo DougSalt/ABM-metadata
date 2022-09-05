@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # A series of functions to update ssrep.db with an actual run. 
 
@@ -25,7 +25,7 @@ SSREPI_require_minimum() {
 	# $2 - desired version literal
 	# $3 - actual version literal
 	# $4 - calling script (optional)
-	PARENT_COMMAND=$(basename $(_calling_script))
+	PARENT_COMMAND=$(basename $(_parent_script))
 	if [ -n "$4" ]
 	then
 		PARENT_COMMAND=$(basename "$4")
@@ -77,7 +77,7 @@ SSREPI_require_exact() {
 	# $2 - desired version literal
 	# $3 - actual version literal
 	# $4 - calling script (optional)
-	PARENT_COMMAND=$(basename $(_calling_script))
+	PARENT_COMMAND=$(basename $(_parent_script))
 	if [ -n "$4" ]
 	then
 		PARENT_COMMAND=$(basename "$4")
@@ -122,7 +122,7 @@ SSREPI_process() {
 	EXEC=
 	if [[ "$@" != *--executable* ]]
 	then
-		EXEC='--executable='$(basename $0)
+		EXEC="--executable="$(basename $0)
 	else
 		EXEC=''
 	fi
@@ -133,24 +133,12 @@ SSREPI_process() {
 			$@ \
 			)
 	else
-		process_id=$(update.py \
-			--table=Process \
-			--id_process=process.$(uniq) \
-			--start_time=$(date "+%Y%m%dT%H%M%S") \
-			--working_dir=$PWD \
-			$EXEC \
-			--user=$USER \
-			--host=$(hostname) \
-			$@)
-		[ -n "$process_id" ] || exit -1
-
-		NAME=$(getent passwd $USER | cut -f 5 -d:) 
-		EMAIL=$(echo $NAME | sed "s/ /./g")"@hutton.ac.uk"
+		NAME=$(_getent passwd $USER | cut -f 5 -d:) 
 		person_id=$(update.py \
 			--table=Person \
+			--email=$USER@$(hostname) \
 			--id_person=$USER \
 			--name="$NAME" \
-			--email=$EMAIL \
 			)
 		[ -n "$person_id" ] || exit -1
 
@@ -161,6 +149,17 @@ SSREPI_process() {
 			--id_user=$USER \
 			)
 		[ -n "$user_id" ] || exit -1
+
+		process_id=$(update.py \
+			--table=Process \
+			--id_process=process.$(uniq) \
+			--some_user=$USER \
+			--start_time=$(date "+%Y%m%dT%H%M%S") \
+			--working_dir=$PWD \
+			--host=$(hostname) \
+			$EXEC $@)
+		[ -n "$process_id" ] || exit -1
+		
 
 		computer_id=$(update.py \
 			--table=Computer \
@@ -188,6 +187,7 @@ SSREPI_application() {
 	else
 		shift
 	fi
+
 	PARAMS=$@
 
 	model_id=
@@ -213,22 +213,22 @@ SSREPI_application() {
 
 	container_id=$(update.py \
 		--table=Container \
-		--id_container=$(basename $APP) \
-		--location_value=$(readlink -f $APP) \
+		--id_container=$(basename $(which $APP)) \
+		--location_value=$(which $APP) \
 		--location_type="relative_ref" \
-		--encoding=$(file -b --mime-encoding $APP) \
-		--size=$(stat --printf="%s" $APP) \
-		--modification_time=$(stat --printf="%y" $APP | \
+		--encoding=$(file -b --mime-encoding $(which $APP)) \
+		--size=$(stat --printf="%s" $(which $APP)) \
+		--modification_time=$(stat --printf="%y" $(which $APP) | \
 			sed "s/://g" | \
 			sed "s/-//g" | \
 			sed "s/ /T/" | \
 			cut -b1-15 ) \
-		--update_time=$(stat --printf="%z" $APP | \
+		--update_time=$(stat --printf="%z" $(which $APP) | \
 			sed "s/://g" | \
 			sed "s/-//g" | \
 			sed "s/ /T/" | \
 			cut -b1-15 ) \
-		--hash=$(cksum $APP | cut -f 1 -d' ') \
+		--hash=$(cksum $(which $APP) | cut -f 1 -d' ') \
 		$INSTANCE \
 		$GENERATED_BY \
 		)
@@ -236,7 +236,7 @@ SSREPI_application() {
 	
 	app_id=$(update.py \
 		--table=Application \
-		--id_application=$(basename $APP) \
+		--id_application=$(basename $(which $APP)) \
 		--location=$container_id \
 		$PARAMS
 		)
@@ -254,29 +254,239 @@ SSREPI_application() {
 	echo $app_id
 }
 
-SSREPI_call_application() {
-	PARENT_COMMAND=$(_calling_script)
-	RUN=$1
+SSREPI_me() {
+	id_container=$(get_value.py \
+		--table=Container \
+		--location_value="$0"\
+		--id_container \
+	)
+	[ -n "$id_container" ] || exit -1
+	id_application=$(get_value.py \
+		--table=Application \
+		--location=$id_container \
+		--id_application \
+	)
+	[ -n "$id_application" ] || exit -1
+	echo $id_application
+}
+
+SSREPI_get_app() {
+	id_application=$1
 	shift
+	PARAMS=
+	for arg in $@
+	do
+		if [[ "$arg" != *--SSREPI- ]]
+		then
+			PARAM="$PARAM $arg"
+		fi
+	done
+	APP=
+	CON=$(get_value.py \
+		--table=Application \
+		--id_application=$id_application \
+		--location \
+	)
+	if [ ! -n "id_container" ]
+	then
+		APP=$id_container
+		id_container=$(SSREPI_application $(which SSS-StopC2-Cluster-expt.pl) $PARAMS)
+		[ -n "$id_application" ] || exit -1
+	elif [ "$CON" != "None" ] || exit -1
+	then
+		APP=$(get_value.py \
+			--table=Container \
+			--id_container=$CON \
+			--location_value \
+		)
+		[ "$APP" != "None" ] || exit -1
+	fi
+	echo $APP
+}
+SSREPI_call() {
+	id_application=$1
+	shift
+	APP=$(SSREPI_get_app $id_application)
+	if [[ "$@" == *--add-to-pipeline=* ]]
+	then
+		PIPE=$(echo "$@" | egrep -s "add-to-pipeline=" | \
+			sed "s/^.*\(--add-to-pipeline=[^ ][^ ]*\).*$/\1/")
+		pipe=$(SSREPI_add_pipeline_to_pipeline $PIPE $id_application)
+		[ -n "$pipe" ] || exit -1
+	fi
+		
+	if [[ "$@" == *--dependency=* ]]
+	then
+		# This is for something that must be run before this part can
+		# be run. For instance we may have some post processing to be
+		# done, or pre-processing. We need some way of determing
+		# whether this has been run. I think we we will have to look
+		# through the database looking to see if there is a record of
+		# the dependency have been executed successfully this time.
 
-	call_application_id=$(SSREPI_application $RUN $@)
-	[ -n "$call_application_id" ] || exit -1
+		DEPENDENCY=$(echo "$@" | egrep -s "dependency=" | \
+			sed "s/^.*\(--dependency=[^ ][^ ]*\).*$/\1/")
+		call_id_application=$(SSREPI_application $DEPENDENCY \
+			--instance=$(which $DEPENDENCY) \
+		)
+		[ -n "$call_id_application" ] || exit -1
+		dependency_id=$(update.py \
+			--table=Dependency \
+			--optionality=required \
+			--dependant=$id_application \
+			--dependency=$call_id_application \
+		)
+		[ -n "$dependency_id" ] || exit -1
+	fi	
+	proper_args=
+	position_arg=()
+	position_arg_id=()
+	for arg in $@
+	do
+		if [[ "$arg" == *--SSREPI-arg-* ]]
+		then
+			value=$(echo $arg | cut -f2 -d=)
+			arg_id=$(echo $arg | cut -f1 -d= | sed 's/--SSREPI-arg-//')
+			pos=$(get_value.py \
+				--table=Argument \
+				--application=$id_application \
+				--id_argument=$arg_id \
+				--order_value \
+			)
+			[ -n "$pos" ] || exit -1
+			if [[ $pos = 'None' ]]
+			then
+				name=$(get_value.py \
+					--table Argument \
+					--application=$id_application \
+					--id_argument=$arg_id)
+					--name
+				[ -n "$name" ] || exit -1
+				proper_args="$proper_args --$name=$value"
+			else
+				position_arg[$pos]=$value
+				position_arg_id[$pos]=$arg_id
+			fi
+		fi
+	done
 
-        application_id=$(update.py \
-                --table=Application \
-                --id_application=$(basename $PARENT_COMMAND) \
-		--calls_application=$call_application_id \
-		)	
-	[ -n "$application_id" ] || exit -1
+	LANGUAGE=
+	container_type_id=
+	if [[ $(file $(which $APP)) == *Bourne-Again* ]]
+	then
+		container_type_id=$(update.py \
+			--table=ContainerType \
+			--id_container_type=bash \
+			--description="A Bourne-again bash script" \
+			--format='text/x-shellscript' \
+			--identifier=magic:'^.*shell script text executable.*$' \
+		)
+		LANGUAGE="Bash"
+	elif [[ $(file $(which $APP)) == *Perl* ]]
+	then
+		container_type_id=$(update.py \
+			--table=ContainerType \
+			--id_container_type=perl \
+			--description="A Perl script" \
+			--format='text/x-perl' \
+			--identifier=magic:'^.*perl script text executable$' \
+		)
+		LANGUAGE="Perl"
+	elif  [[ $(file $(which $APP)) == *Rscript* ]]
+	then
+		container_type_id=$(update.py \
+			--table=ContainerType \
+			--id_container_type=R \
+			--description="An R  script" \
+			--format='text/plain' \
+			--identifier=magic:'^.*Rscript script text executable.*'
+		)
+		LANGUAGE="R"
+	elif  [[ $(file $(which $APP)) == *"ELF 64"* ]]
+	then
+		container_type_id=$(update.py \
+			--table=ContainerType \
+			--id_container_type=elf \
+			--description="64bit Linux Executable" \
+			--format='application/x-executable' \
+			--identifier=magic:'^.*ELF 64-bit LSB executable\, x86-64.*$'
+		)
+		LANGUAGE="Unknown"
+	else
+		(>&2 echo "$FUNCNAME: Trying to call a script $APP we recognise "$(file $(which $APP)))
+	fi
+	[ -n "$container_type_id" ] || exit -1
 
-	eval "$RUN"
-	echo $call_application_id
+	id_application=$(SSREPI_application $id_application \
+		--instance=$container_type_id \
+		--language=$LANGUAGE \
+	)
+	[ -n "$id_application" ] || exit -1
+
+	dependency_id=$(update.py \
+		--table=Dependency \
+		--optionality=required \
+		--dependant=$(basename $PARENT_COMMAND) \
+		--dependency=$id_application \
+	)
+	[ -n "$dependency_id" ] || exit -1
+
+	# The bracket means that this in-between code is sub-processed, thus
+	# retaining the process's separate identity for terms of provenance.
+	# That is each run of the perl script is associated with a separate
+	(
+		THIS_PROCESS=$(SSREPI_process --executable=$id_application)
+
+		if (( ${#position_arg[*]} != 0 ))
+		then
+			for pos in $(seq ${#position_arg[*]})
+			do
+				SSREPI_argument_value $THIS_PROCESS ${position_arg_id[$pos]} ${position_arg[$pos]}
+			done
+		fi
+		for arg in $proper_args 
+		do
+			id=$(echo $arg | cut -f 1 -d= | sed 's^--//')
+			value=$(echo $arg | cut -f 2 -d=)
+			(>&2 echo "NOT NOT NOT TESTED "$arg)
+			SSREPI_argument_value $THIS_PROCESS $id $value
+		done
+
+		eval $APP $proper_args ${position_arg[*]}
+		if [ $? -ne 0 ]
+		then
+			exit -1
+		fi
+		for arg in $@
+		do
+			if [[ "$arg" == *--SSREPI-output-* ]]
+			then
+				value=$(echo $arg | cut -f2 -d=)
+				kind=$(echo $arg | cut -f1 -d= | sed 's/--SSREPI-output-//')
+				SSREPI_argument_output_file $id_application $THIS_PROCESS $kind $kind $value
+				(>&2 echo JLFDSJJFLSJFJSDSLSLJF SSREPI_argument_output_file $id_application $THIS_PROCESS $kind $kind $value)
+			fi
+		done
+
+		THIS_PROCESS=$(SSREPI_process \
+			--id_process=$THIS_PROCESS \
+			--executable=$id_application \
+			--end_time=$(date "+%Y%m%dT%H%M%S"))
+
+
+	)
+	if [ $? -ne 0 ]
+	then
+		(>&2 echo "$FUNCNAME: Problem setting up a run for $APP")
+		exit -1
+	fi
+	echo $call_id_application
 }
 
 SSREPI_call_bash_script_with_dependency() {
 	# $1 - Script being called
 	# $2 - Dependency
-	PARENT_COMMAND=$(_calling_script)
+	PARENT_COMMAND=$(_parent_script)
 	RUN=$1
 	DEPEND=$2
 	shift 2
@@ -318,152 +528,7 @@ SSREPI_call_bash_script_with_dependency() {
 	fi
 	echo $call_application_id
 }
-SSREPI_call_bash_script() {
-	PARENT_COMMAND=$(_calling_script)
-	RUN=$1
-	shift 
 
-	bash_container_type_id=$(update.py \
-		--table=ContainerType \
-		--id_container_type=bash \
-		--description="A bash shell script" \
-		--format='text/x-shellscript' \
-		--identifier=magic:'^.*Bourne-Again shell script.*$' \
-	)
-	[ -n "$bash_container_type_id" ] || exit -1
-	
-	call_application_id=$(SSREPI_application $RUN \
-		--instance=$bash_container_type_id $@)
-	[ -n "$call_application_id" ] || exit -1
-
-        application_id=$(update.py \
-                --table=Application \
-		--language=bash \
-                --id_application=$(basename $PARENT_COMMAND) \
-		--calls_application=$call_application_id \
-		)	
-	[ -n "$application_id" ] || exit -1
-
-	dependency_id=$(update.py \
-		--table=Dependency \
-		--optionality=required \
-		--dependant=$(basename $PARENT_COMMAND) \
-		--dependency=$call_application_id \
-		)
-	[ -n "$dependency_id" ] || exit -1
-	eval "$RUN"
-	echo $call_application_id
-}
-SSREPI_call_perl_script() {
-	PARENT_COMMAND=$(_calling_script)
-	RUN=$1
-	shift
-
-	perl_container_type_id=$(update.py \
-		--table=ContainerType \
-		--id_container_type=perl \
-		--description="A Perl script" \
-		--format='text/x-perl' \
-		--identifier=magic:'^.*perl script text executable$' \
-	)
-	[ -n "$perl_container_type_id" ] || exit -1
-	
-	call_application_id=$(SSREPI_application $RUN \
-		--instance=$perl_container_type_id $@)
-	[ -n "$call_application_id" ] || exit -1
-
-        application_id=$(update.py \
-                --table=Application \
-		--language=Perl \
-                --id_application=$(basename $PARENT_COMMAND) \
-		--calls_application=$call_application_id \
-		)	
-	[ -n "$application_id" ] || exit -1
-
-	dependency_id=$(update.py \
-		--table=Dependency \
-		--optionality=required \
-		--dependant=$(basename $PARENT_COMMAND) \
-		--dependency=$call_application_id \
-		)
-	[ -n "$dependency_id" ] || exit -1
-	# Could run the Perl script here eventually.
-	eval "$RUN"
-	echo $call_application_id
-}
-SSREPI_call_R_script() {
-	PARENT_COMMAND=$(_calling_script)
-	RUN=$1
-	shift
-
-	r_container_type_id=$(update.py \
-		--table=ContainerType \
-		--id_container_type=R \
-		--description="R Script" \
-		--format='text/plain' \
-		--identifier=magic:'^.*Rscript.*$'
-	)
-	[ -n "$r_container_type_id" ] || exit -1
-	
-	call_application_id=$(SSREPI_application $RUN \
-		--instance=$r_container_type_id $@)
-	[ -n "$call_application_id" ] || exit -1
-
-        application_id=$(update.py \
-                --table=Application \
-		--language=R \
-                --id_application=$(basename $PARENT_COMMAND) \
-		--calls_application=$call_application_id \
-		)	
-	[ -n "$application_id" ] || exit -1
-
-	dependency_id=$(update.py \
-		--table=Dependency \
-		--optionality=required \
-		--dependant=$(basename $PARENT_COMMAND) \
-		--dependency=$call_application_id \
-		)
-	[ -n "$dependency_id" ] || exit -1
-	# Could run the R script here eventually.
-	#eval "$RUN"
-	echo $call_application_id
-}
-SSREPI_call_elf() {
-	PARENT_COMMAND=$(_calling_script)
-	RUN=$1
-	shift
-
-	elf_container_type_id=$(update.py \
-		--table=ContainerType \
-		--id_container_type=elf \
-		--description="64bit Linux Executable" \
-		--format='application/x-executable' \
-		--identifier=magic:'^.*ELF 64-bit LSB executable\, x86-64.*$'
-	)
-	[ -n "$elf_container_type_id" ] || exit -1
-	
-	call_application_id=$(SSREPI_application $RUN \
-		--instance=$elf_container_type_id $@)
-	[ -n "$call_application_id" ] || exit -1
-
-        application_id=$(update.py \
-                --table=Application \
-                --id_application=$(basename $PARENT_COMMAND) \
-		--calls_application=$call_application_id \
-		)	
-	[ -n "$application_id" ] || exit -1
-
-	dependency_id=$(update.py \
-		--table=Dependency \
-		--optionality=required \
-		--dependant=$(basename $PARENT_COMMAND) \
-		--dependency=$call_application_id \
-		)
-	[ -n "$dependency_id" ] || exit -1
-	# Could run the Perl script here eventually.
-	#eval "$RUN"
-	echo $call_application_id
-}
 SSREPI_argument() {
 	argument_id=$(update.py \
 		--table=Argument \
@@ -497,16 +562,21 @@ SSREPI_argument_input_file() {
 SSREPI_argument_output_file() {
 	app=$1
 	process=$2
-	kind=$3
-	var=$4
+	var=$3
+	kind=$4
 	filename=$5
+	if [ -x "$5" ]
+	then
+		(>&2 echo $_parent_name":$FUNCNAME: Something failed. No output from $app for $var")
+		exit -1 
+	fi
 	SSREPI_output $app $process $kind $filename
-	argument_value_id=$(update.py \
-		--table=ArgumentValue \
-		--for_process=$process \
-		--for_argument=$var \
-		--container=$filename \
-	)	
+#	argument_value_id=$(update.py \
+#		--table=ArgumentValue \
+#		--for_process=$process \
+#		--for_argument=$var \
+#		--container=$filename \
+#	)	
 }
 SSREPI_container_type() {
 	container_type_id=$(update.py \
@@ -575,10 +645,11 @@ SSREPI_working_directory() {
 
 SSREPI_output() {
  
-# 1 - application path
-# 2 - output_of
-# 3 - how to identify the object
-# 4 - 
+	# 1 - application path
+	# 2 - output_of
+	# 3 - container type
+	# 4 - path to object
+
 	if [ ! -e $4 ]
 	then
 		(>&2 echo "$FUNCNAME: Something seriously wrong in $0 at $BASH_LINENO: $4 does not exist")
@@ -730,15 +801,15 @@ SSREPI_input() {
 	[ -n "$input_id" ] || exit -1
 }
 SSREPI_hutton_person() {
-	if ! getent passwd $1 >/dev/null 2>/dev/null 
+	if ! _getent passwd $1 >/dev/null 2>/dev/null 
 	then
 		(>&2 echo "$FUNCNAME: $0 at $BASH_LINENO: Invalid user supplied: $1")
 		echo ""
 		exit 1
 	fi
-        NAME=$(getent passwd $1 | cut -f 5 -d:)
+        NAME=$(_getent passwd $1 | cut -f 5 -d:)
         EMAIL=$(echo $NAME | sed "s/ /./g")"@hutton.ac.uk"
-	USER_HOME=$(getent passwd $1 | cut -f 6 -d:)
+	USER_HOME=$(_getent passwd $1 | cut -f 6 -d:)
 
         person_id=$(update.py \
                 --table=Person \
@@ -924,7 +995,8 @@ SSREPI_create_pipeline() {
 	echo $pipeline_id
 }
 SSREPI_add_application_to_pipeline() {
-
+	# $1 - pipeline
+	# $2 - called application
         pipeline_id=$(update.py \
 		--table=Pipeline \
 		--id_pipeline=application.$2 \
@@ -1132,7 +1204,7 @@ SSREPI_run() {
 
 			run=$(($run + 1))
 		    else
-			(>&2 echo "Waiting...")
+		    	(>&2 echo $_parent_name":$FUNCNAME: Waiting...")
 		    fi
 		    sleep 20
 		done
@@ -1175,14 +1247,12 @@ _fqdn() {
 	fi
 }
 
-_calling_script() {
+_parent_script() {
 	# Should be able to do this in one line, but bash doesn't like it for
 	# some reason
-	BASH_PROB=$(ps -o args= $BASHPID)
-	if [[ $(uname -s) == "Darwin" ]]
-	then
-		RESULT=$(basename $0)
-	elif [[ "$BASH_PROB" == *-xv* ]]
+	ME=$BASHPID
+	BASH_PROB=$(ps -o args= $ME)
+	if [[ "$BASH_PROB" == *-xv* ]]
 	then
 		RESULT=$(echo $BASH_PROB | awk '{print $3}') 
 	else
@@ -1194,3 +1264,34 @@ _calling_script() {
 uniq() {
 cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1
 }
+
+_getent() {
+	if [[ "$1" != "passwd" ]]
+	then
+		echo "This only works for 'passwd'"
+		exit -1
+	fi
+	if [[ $(uname -s) != "Darwin" ]]
+	then
+		getent $user
+	else
+		if [ -z $2 ];
+		then
+			USERS=`dscl . list /Users | grep -v “^_”`
+		else
+			USERS="$2"
+		fi
+		for user in $USERS
+		do
+			result=`dscl . -read /Users/$user RecordName | \
+				sed 's/RecordName: //g'`:*:`dscl . -read /Users/$user UniqueID | \
+				sed 's/UniqueID: //g'`:`dscl . -read /Users/$user PrimaryGroupID | \
+				sed 's/PrimaryGroupID: //g'`:`dscl . -read /Users/$user RealName | \
+				sed -e 's/RealName://g' -e 's/^ //g' | \
+				awk '{printf("%s", $0 (NR==1 ? "" : ""))}'`:/Users/$user:`dscl . -read /Users/$user UserShell | \
+				sed 's/UserShell: //g'`
+			echo $result
+		done
+	fi
+}
+

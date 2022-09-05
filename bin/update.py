@@ -129,13 +129,12 @@ if __name__ == "__main__":
 	row = tableClass(columns) 
 	try:
 		row.add(conn.cursor())
-	except (sqlite3.IntegrityError, psycopg2.errors.UniqueViolation) as e:
+	except (sqlite3.IntegrityError, psycopg2.errors.UniqueViolation, psycopg2.errors.NotNullViolation) as e:
 		try:
 			row.update(conn.cursor())
 		except:
 			raise
 	except Exception as e:
-		sys.stderr.write("Pickle\n")
 		sys.stderr.write("Error: " + 
 			type(e).__name__ + 
 			" - " +

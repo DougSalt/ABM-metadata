@@ -51,6 +51,11 @@ or at the prompt, type
 `\connect some-database-name`
 `\q` or '\quit' to quit
 
+`\dt *table_name*` to show a list of tables.
+`select * from *table_name* where false;`
+
+To get the table structure.
+
 # NOTES
 
 ## 2017-07-28
