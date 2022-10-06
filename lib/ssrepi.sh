@@ -7,8 +7,15 @@
 # Remember because this is in-line, exit causes a stop program, return to abort
 # to calling program.
 
-export NOF_CPUS=2
+# The convention here is that any function that starts with an underscore, "_"
+# is an internal function.
+
+export SSREPI_NOF_CPUS=2
 export SSREP_DBNAME="$PWD"/ssrep.db
+export DEBUG=1
+export PRCESSSES_STARTED=()
+export PROCESSES_DONE=()
+
 
 if which create_database.py >/dev/null 2>&1
 then
@@ -19,18 +26,23 @@ else
 	exit -1
 fi
 
+# Some sanity checking
 
-SSREPI_require_minimum() {
-	# $1 - executable
-	# $2 - desired version literal
-	# $3 - actual version literal
-	# $4 - calling script (optional)
-	PARENT_COMMAND=$(basename $(_parent_script))
-	if [ -n "$4" ]
+if [ -z "$SSREPI_SLURM" ]
+then
+	if [ -z "$SSREPI_MAX_PROCESSES" ]
 	then
-		PARENT_COMMAND=$(basename "$4")
+		(>&2 echo $0: No max processes and not using a scheduler will assume 1.)
+		SSREPI_MAX_PROCESSES=1
 	fi
-	computer_id=$(update.py \
+fi
+SSREPI_require_minimum() {
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	# $1 - app id
+	# $2 - spec name
+	# $3 - desired version literal
+	# $4 - actual version literal
+	id_computer=$(update.py \
 		--table=Computer \
 		--id_computer=$(hostname) \
 		--name=$(hostname) \
@@ -38,51 +50,50 @@ SSREPI_require_minimum() {
 		--ip_address=$(_ip_address) \
 		--mac_address=$(_mac_address) \
 	)
-	[ -n "$computer_id" ] || exit -1
-	specification_id=$(update.py \
+	[ -n "$id_computer" ] || exit -1
+	id_specification=$(update.py \
 		--table=Specification \
-		--id_specification=$1 \
-		--specification_of=$computer_id \
-		--value="$2" \
+		--id_specification=$2 \
+		--specification_of=$id_computer \
+		--value="$3" \
 	)	
-	[ -n "$specification_id" ] || exit -1
-	requirement_id=$(update.py \
+	[ -n "$id_specification" ] || exit -1
+	id_requirement=$(update.py \
 		--table=Requirement \
-		--minimum=$specification_id \
-		--application=$PARENT_COMMAND \
+		--minimum=$id_specification \
+		--application=$1 \
 	)		
-	[ -n "$requirement_id" ] || exit -1
-	if echo $2 | egrep -q "^[0-9]+(\.[0-9]+)?$" && \
-	   echo $3 | egrep -q "^[0-9]+(\.[0-9]+)?$"
+	[ -n "$id_requirement" ] || exit -1
+	if echo $3 | egrep -q "^[0-9]+(\.[0-9]+)?$" && \
+	   echo $4 | egrep -q "^[0-9]+(\.[0-9]+)?$"
 	then 
-	     	if (( $(echo $2'>'$3 | bc -lq 2>/dev/null) ))
+	     	if (( $(echo $3'>'$4 | bc -lq 2>/dev/null) ))
 	     	then
+			[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 			return 0
 		fi
-	elif [[ "$2" > "$3" ]]
+	elif [[ "$3" > "$4" ]]
 	then
+		[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 		return 0
 	fi
-	meets_id=$(update.py \
+	id_meets=$(update.py \
 		--table=Meets \
-		--computer_specification=$computer_id \
-		--requirement_specification=$specification_id \
+		--computer_specification=$id_computer \
+		--requirement_specification=$id_specification \
 	)
-	[ -n "$meets_id" ] || exit -1
+	[ -n "$id_meets" ] || exit -1
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 	return 1
 }
 
 SSREPI_require_exact() {
-	# $1 - executable
-	# $2 - desired version literal
-	# $3 - actual version literal
-	# $4 - calling script (optional)
-	PARENT_COMMAND=$(basename $(_parent_script))
-	if [ -n "$4" ]
-	then
-		PARENT_COMMAND=$(basename "$4")
-	fi
-	computer_id=$(update.py \
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	# $1 - app id
+	# $2 - spec name
+	# $3 - desired version literal
+	# $4 - actual version literal
+	id_computer=$(update.py \
 		--table=Computer \
 		--id_computer=$(hostname) \
 		--name=$(hostname) \
@@ -90,35 +101,38 @@ SSREPI_require_exact() {
 		--ip_address=$(_ip_address) \
 		--mac_address=$(_mac_address) \
 	)
-	[ -n "$computer_id" ] || exit -1
-	specification_id=$(update.py \
+	[ -n "$id_computer" ] || exit -1
+	id_specification=$(update.py \
 		--table=Specification \
-		--id_specification=$1 \
-		--specification_of=$computer_id \
-		--value="$2" \
+		--id_specification=$2 \
+		--specification_of=$id_computer \
+		--value="$3" \
 	)	
-	[ -n "$specification_id" ] || exit -1
-	requirement_id=$(update.py \
+	[ -n "$id_specification" ] || exit -1
+	id_requirement=$(update.py \
 		--table=Requirement \
-		--exact=$specification_id \
-		--application=$PARENT_COMMAND \
+		--exact=$id_specification \
+		--application=$1 \
 	)		
-	[ -n "$requirement_id" ] || exit -1
-	if [[ "$2" != "$3" ]]
+	[ -n "$id_requirement" ] || exit -1
+	if [[ "$3" != "$4" ]]
 	then
+		[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 		return 0
 	fi
-	meets_id=$(update.py \
+	id_meets=$(update.py \
 		--table=Meets \
-		--computer_specification=$computer_id \
-		--requirement_specification=$specification_id \
+		--computer_specification=$id_computer \
+		--requirement_specification=$id_specification \
 	)
-	[ -n "$meets_id" ] || exit -1
+	[ -n "$id_meets" ] || exit -1
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 	return 1
 }
 
 SSREPI_process() {
-	process_id=
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	id_process=
 	EXEC=
 	if [[ "$@" != *--executable* ]]
 	then
@@ -128,29 +142,29 @@ SSREPI_process() {
 	fi
 	if [[ "$@" == *--id_process* ]]
 	then
-   		process_id=$(update.py \
+   		id_process=$(update.py \
 			--table=Process \
 			$@ \
 			)
 	else
 		NAME=$(_getent passwd $USER | cut -f 5 -d:) 
-		person_id=$(update.py \
+		id_person=$(update.py \
 			--table=Person \
 			--email=$USER@$(hostname) \
 			--id_person=$USER \
 			--name="$NAME" \
 			)
-		[ -n "$person_id" ] || exit -1
+		[ -n "$id_person" ] || exit -1
 
-		user_id=$(update.py \
+		id_user=$(update.py \
 			--table=User \
 			--home_dir=$HOME \
-			--account_of=$person_id \
+			--account_of=$id_person \
 			--id_user=$USER \
 			)
-		[ -n "$user_id" ] || exit -1
+		[ -n "$id_user" ] || exit -1
 
-		process_id=$(update.py \
+		id_process=$(update.py \
 			--table=Process \
 			--id_process=process.$(uniq) \
 			--some_user=$USER \
@@ -158,10 +172,10 @@ SSREPI_process() {
 			--working_dir=$PWD \
 			--host=$(hostname) \
 			$EXEC $@)
-		[ -n "$process_id" ] || exit -1
+		[ -n "$id_process" ] || exit -1
 		
 
-		computer_id=$(update.py \
+		id_computer=$(update.py \
 			--table=Computer \
 			--id_computer=$(hostname) \
 			--name=$(hostname) \
@@ -169,12 +183,14 @@ SSREPI_process() {
 			--ip_address=$(_ip_address) \
 			--mac_address=$(_mac_address) \
 		)
-		[ -n "$computer_id" ] || exit -1
+		[ -n "$id_computer" ] || exit -1
 	fi
-	echo $process_id
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
+	echo $id_process
 }
 
 SSREPI_application() {
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	# $1 - executable
 	# Free form except for --instance  which gets deleted as a prefix and
 	# used to update the container and --model which is also deleted and
@@ -190,17 +206,17 @@ SSREPI_application() {
 
 	PARAMS=$@
 
-	model_id=
+	id_model=
 	if [[ "$@" == *--model=* ]]
 	then	
 		MODEL=$(echo "$PARAMS" | egrep -s "model=" | \
 			sed "s/^.*--model=\([^ ][^ ]*\).*$/\1/")
 		
-		model_id=$(update.py \
+		id_model=$(update.py \
 			--table=Model\
 			--id_model=$MODEL
 			)
-		[ -n "$model_id" ] || exit -1
+		[ -n "$id_model" ] || exit -1
 	fi
 
 	if [[ "$PARAMS" == *--instance=* ]]
@@ -211,9 +227,9 @@ SSREPI_application() {
 			sed "s/--instance=[^ ][^ ]* *//")
 	fi
 
-	container_id=$(update.py \
+	id_container=$(update.py \
 		--table=Container \
-		--id_container=$(basename $(which $APP)) \
+		--id_container=container.$(cksum $(which $APP) | awk '{print $1}') \
 		--location_value=$(which $APP) \
 		--location_type="relative_ref" \
 		--encoding=$(file -b --mime-encoding $(which $APP)) \
@@ -231,48 +247,40 @@ SSREPI_application() {
 		--hash=$(cksum $(which $APP) | cut -f 1 -d' ') \
 		$INSTANCE \
 		$GENERATED_BY \
-		)
-	[ -n "$container_id" ] || exit -1
+	)
+	[ -n "$id_container" ] || exit -1
 	
-	app_id=$(update.py \
+	id_app=$(update.py \
 		--table=Application \
-		--id_application=$(basename $(which $APP)) \
-		--location=$container_id \
+		--id_application=application.$(cksum $(which $APP) | awk '{print $1}') \
+		--location=$id_container \
 		$PARAMS
-		)
-	[ -n "$app_id" ] || exit -1
+	)
+	[ -n "$id_app" ] || exit -1
 
-	container_id=$(update.py \
+	id_container=$(update.py \
 		--table=Container \
-		--id_container=$container_id \
+		--id_container=$id_container \
 		--location_type="relative_ref" \
 		--location_value=$(readlink -f $APP) \
-		--location_application=$app_id \
-		)
-	[ -n "$container_id" ] || exit -1
+		--location_application=$id_app \
+	)
+	[ -n "$id_container" ] || exit -1
 
-	echo $app_id
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
+	echo $id_app
 }
 
 SSREPI_me() {
-	id_container=$(get_value.py \
-		--table=Container \
-		--location_value="$0"\
-		--id_container \
-	)
-	[ -n "$id_container" ] || exit -1
-	id_application=$(get_value.py \
-		--table=Application \
-		--location=$id_container \
-		--id_application \
-	)
-	[ -n "$id_application" ] || exit -1
-	echo $id_application
-}
-
-SSREPI_get_app() {
-	id_application=$1
-	shift
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	id_application=
+	if [ -n "$1" ]
+	then
+		id_application=$1
+		shift
+	else
+		id_application=$(_parent_script)
+	fi
 	PARAMS=
 	for arg in $@
 	do
@@ -281,39 +289,145 @@ SSREPI_get_app() {
 			PARAM="$PARAM $arg"
 		fi
 	done
-	APP=
-	CON=$(get_value.py \
-		--table=Application \
-		--id_application=$id_application \
-		--location \
-	)
-	if [ ! -n "id_container" ]
+	if [[ $(exists.py --table=Application --id_application=$id_application)  = True ]]
 	then
-		APP=$id_container
-		id_container=$(SSREPI_application $(which SSS-StopC2-Cluster-expt.pl) $PARAMS)
-		[ -n "$id_application" ] || exit -1
-	elif [ "$CON" != "None" ] || exit -1
+		id_application=$id_application
+	elif [ -f $(which $id_application) ]
 	then
-		APP=$(get_value.py \
+		id_application=$(SSREPI_application \
+			$id_application \
+			$PARAMS \
+		)
+		[ -n $id_application ] || exit -1
+	else
+		(>&2 echo "$FUNCNAME: Application $id_application does not exist")
+		exit -1
+	fi
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
+	echo $id_application
+}
+
+SSREPI_application_get_executable() {
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	PARAMS=
+	for arg in $@
+	do
+		if [[ "$arg" != *--SSREPI- ]]
+		then
+			PARAM="$PARAM $arg"
+		fi
+	done
+	id_application=
+	if [ -n "$1" ]
+	then
+		id_application=$1
+		shift
+	else
+		id_application=$(SSREPI_me)
+	fi
+	executable=
+	if [[ $(exists.py --table=Application --id_application=$id_application)  = True ]]
+	then
+		id_container=$(get_value.py \
+			--table=Application \
+			--id_application=$id_application \
+			--location \
+		)
+		executable=$(get_value.py \
 			--table=Container \
-			--id_container=$CON \
+			--id_container=$id_container \
 			--location_value \
 		)
-		[ "$APP" != "None" ] || exit -1
-	fi
-	echo $APP
-}
-SSREPI_call() {
-	id_application=$1
-	shift
-	APP=$(SSREPI_get_app $id_application)
-	if [[ "$@" == *--add-to-pipeline=* ]]
+
+	elif [ -x $(which $id_application) ]
 	then
-		PIPE=$(echo "$@" | egrep -s "add-to-pipeline=" | \
-			sed "s/^.*\(--add-to-pipeline=[^ ][^ ]*\).*$/\1/")
-		pipe=$(SSREPI_add_pipeline_to_pipeline $PIPE $id_application)
-		[ -n "$pipe" ] || exit -1
+		executable=$id_application
+		id_application=$(SSREPI_application \
+			$id_application \
+			$PARAMS \
+		)
+		[ -n $id_application ] || exit -1
+
+	else
+		(>&2 echo "$FUNCNAME: Application $id_application does not exist")
+		exit -1
 	fi
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
+	echo $executable
+}
+
+SSREPI_call() {
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	if [ -z "$SSREPI_SLURM" ]
+	then
+		wait
+	fi
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
+}
+
+SSREPI_invoke() {
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	if [ -z "$SSREPI_SLURM" ]
+	then
+		pipe=$(_run $@ $STANDARD_ARGS)
+	else
+		pipe=$(_run $@ $STANDARD_ARGS) &
+	fi
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
+}
+
+_run() {
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+
+	id_application=$1
+	if [ -z "$SSREPI_pipe" ]
+	then
+		export SSREPI_pipe=$(SSREPI_pipeline $(SSREPI_me $(_parent_script)))
+	fi
+
+	# The reasoning behind the next two lines is that the argument may be
+	# an id_application or a path may be passed as the first argument
+
+	APP=$(SSREPI_application_get_executable $@)
+	id_application=$(SSREPI_me $@)
+
+	shift
+
+	# Remove cwd
+	CWD=
+	if [[ "$@" == *--cwd* ]]
+	then	
+		CWD=$(echo "$@" | egrep -s "cwd=" | \
+			sed "s/^.*--cwd=\([^ ][^ ]*\).*$/\1/")
+		PARAMS=$(echo "$PARAMS" | egrep -s "cwd=" | \
+			sed "s/--cwd=[^ ][^ ]* *//")
+	fi
+
+	inline=
+	# Remove --inline
+	if [[ "$@" == *--inline* ]]
+	then	
+		inline=1
+		PARAMS=$(echo "$PARAMS" | egrep -s "\-\-inline" | \
+			sed "s/--inline\s*//")
+	fi
+
+	# So PIPE is the pipe line we want to attach to
+        id_pipeline=$(update.py \
+		--table=Pipeline \
+		--id_pipeline=calls.$id_application \
+		--calls_application=$id_application \
+	)
+	[ -n "id_pipeline" ] || exit -1
+	# Now we attach this new pipe to the existing pipe and replace
+	# PIPE with this value.
+        SSREPI_pipe=$(update.py \
+		--table=Pipeline \
+		--id_pipeline=$SSREPI_PIPE \
+		--next=$id_pipeline \
+	)
+	[ -n "SSREPI_pipe" ] || exit -1
+	export SSREPI_pipe=$id_pipeline
 		
 	if [[ "$@" == *--dependency=* ]]
 	then
@@ -326,55 +440,82 @@ SSREPI_call() {
 
 		DEPENDENCY=$(echo "$@" | egrep -s "dependency=" | \
 			sed "s/^.*\(--dependency=[^ ][^ ]*\).*$/\1/")
-		call_id_application=$(SSREPI_application $DEPENDENCY \
+		id_call_application=$(SSREPI_application $DEPENDENCY \
 			--instance=$(which $DEPENDENCY) \
 		)
-		[ -n "$call_id_application" ] || exit -1
-		dependency_id=$(update.py \
+		[ -n "$id_call_application" ] || exit -1
+		id_dependency=$(update.py \
 			--table=Dependency \
 			--optionality=required \
 			--dependant=$id_application \
-			--dependency=$call_id_application \
+			--dependency=$id_call_application \
 		)
-		[ -n "$dependency_id" ] || exit -1
+		[ -n "$id_dependency" ] || exit -1
 	fi	
+
+	# Arguably all this could be done from with the the thing that is being
+	# called here, i.e. at a level lower than this (and we may do this
+	# later), but for now we are going to assume that the thing being
+	# called has no provenance primitives and we are having to do this
+	# external to the script. It makes the coding slightly awkward but
+	# leaves a lot of room for speed improvement at a later date. This
+	# means the primitives could be embedeed in Perl, R, NetLogo, and elf
+	# exectuables.	I will put this comment everywhere where we stoop to do
+	# provenance at a level higher than it should. I am doing this because
+	# this got very confused in my head to start with. To be clear,
+	# provenance for a bunch of code should explicitly be done by that code
+	# if at all possible.						
+
 	proper_args=
 	position_arg=()
-	position_arg_id=()
+	id_position_arg=()
 	for arg in $@
 	do
 		if [[ "$arg" == *--SSREPI-arg-* ]]
 		then
-			value=$(echo $arg | cut -f2 -d=)
-			arg_id=$(echo $arg | cut -f1 -d= | sed 's/--SSREPI-arg-//')
-			pos=$(get_value.py \
-				--table=Argument \
-				--application=$id_application \
-				--id_argument=$arg_id \
-				--order_value \
-			)
-			[ -n "$pos" ] || exit -1
-			if [[ $pos = 'None' ]]
+			if [[ "$arg" == *=* ]]
 			then
-				name=$(get_value.py \
-					--table Argument \
+				value=$(echo $arg | cut -f2 -d=)
+				id_arg=$(echo $arg | cut -f1 -d= | sed 's/--SSREPI-arg-//')
+				pos=$(get_value.py \
+					--table=Argument \
 					--application=$id_application \
-					--id_argument=$arg_id)
-					--name
-				[ -n "$name" ] || exit -1
-				proper_args="$proper_args --$name=$value"
+					--id_argument=$id_arg \
+					--order_value \
+				)
+				[ -n "$pos" ] || exit -1
+				if [[ $pos = 'None' ]]
+				then
+					name=$(get_value.py \
+						--table=Argument \
+						--application=$id_application \
+						--id_argument=$id_arg \
+						--name)
+					[ -n "$name" ] || exit -1
+					proper_args="$proper_args --$name=$value"
+				else
+					position_arg[$pos]=$value
+					id_position_arg[$pos]=$id_arg
+				fi
 			else
-				position_arg[$pos]=$value
-				position_arg_id[$pos]=$arg_id
+				id_arg=$(echo $arg | sed 's/--SSREPI-arg-//')
+				name=$(get_value.py \
+					--table=Argument \
+					--application=$id_application \
+					--id_argument=$id_arg \
+					--name
+				)
+				[ -n "$name" ] || exit -1
+				proper_args="$proper_args --$name"
 			fi
 		fi
 	done
 
 	LANGUAGE=
-	container_type_id=
+	id_container_type=
 	if [[ $(file $(which $APP)) == *Bourne-Again* ]]
 	then
-		container_type_id=$(update.py \
+		id_container_type=$(update.py \
 			--table=ContainerType \
 			--id_container_type=bash \
 			--description="A Bourne-again bash script" \
@@ -384,7 +525,7 @@ SSREPI_call() {
 		LANGUAGE="Bash"
 	elif [[ $(file $(which $APP)) == *Perl* ]]
 	then
-		container_type_id=$(update.py \
+		id_container_type=$(update.py \
 			--table=ContainerType \
 			--id_container_type=perl \
 			--description="A Perl script" \
@@ -394,7 +535,7 @@ SSREPI_call() {
 		LANGUAGE="Perl"
 	elif  [[ $(file $(which $APP)) == *Rscript* ]]
 	then
-		container_type_id=$(update.py \
+		id_container_type=$(update.py \
 			--table=ContainerType \
 			--id_container_type=R \
 			--description="An R  script" \
@@ -404,7 +545,7 @@ SSREPI_call() {
 		LANGUAGE="R"
 	elif  [[ $(file $(which $APP)) == *"ELF 64"* ]]
 	then
-		container_type_id=$(update.py \
+		id_container_type=$(update.py \
 			--table=ContainerType \
 			--id_container_type=elf \
 			--description="64bit Linux Executable" \
@@ -415,21 +556,21 @@ SSREPI_call() {
 	else
 		(>&2 echo "$FUNCNAME: Trying to call a script $APP we recognise "$(file $(which $APP)))
 	fi
-	[ -n "$container_type_id" ] || exit -1
+	[ -n "$id_container_type" ] || exit -1
 
 	id_application=$(SSREPI_application $id_application \
-		--instance=$container_type_id \
+		--instance=$id_container_type \
 		--language=$LANGUAGE \
 	)
 	[ -n "$id_application" ] || exit -1
 
-	dependency_id=$(update.py \
+	id_dependency=$(update.py \
 		--table=Dependency \
 		--optionality=required \
-		--dependant=$(basename $PARENT_COMMAND) \
+		--dependant=$(SSREPI_me $(_parent_script)) \
 		--dependency=$id_application \
 	)
-	[ -n "$dependency_id" ] || exit -1
+	[ -n "$id_dependency" ] || exit -1
 
 	# The bracket means that this in-between code is sub-processed, thus
 	# retaining the process's separate identity for terms of provenance.
@@ -437,34 +578,74 @@ SSREPI_call() {
 	(
 		THIS_PROCESS=$(SSREPI_process --executable=$id_application)
 
+		if [ -n "$CWD" ]
+		then
+			cd "$CWD"
+		fi
 		if (( ${#position_arg[*]} != 0 ))
 		then
 			for pos in $(seq ${#position_arg[*]})
 			do
-				SSREPI_argument_value $THIS_PROCESS ${position_arg_id[$pos]} ${position_arg[$pos]}
+				SSREPI_argument_value $THIS_PROCESS ${id_position_arg[$pos]} ${position_arg[$pos]}
 			done
 		fi
 		for arg in $proper_args 
 		do
-			id=$(echo $arg | cut -f 1 -d= | sed 's^--//')
-			value=$(echo $arg | cut -f 2 -d=)
-			(>&2 echo "NOT NOT NOT TESTED "$arg)
+			if [[ "$arg" == *=* ]]
+			then
+				id=$(echo $arg | cut -f 1 -d= | sed 's/^\-\-//')
+				value=$(echo $arg | cut -f 2 -d=)
+			else
+				id=$(echo $arg | sed 's/^\-\-//')
+				value="True"
+			fi
 			SSREPI_argument_value $THIS_PROCESS $id $value
 		done
 
-		eval $APP $proper_args ${position_arg[*]}
-		if [ $? -ne 0 ]
+		for arg in $@
+		do
+			if [[ "$arg" == *--SSREPI-input-* ]]
+			then
+				value=$(echo $arg | cut -f2 -d=)
+				input_type_id=$(echo $arg | cut -f1 -d= | sed 's/--SSREPI-input-//')
+				SSREPI_input $id_application $THIS_PROCESS $input_type_id $value
+			fi
+		done
+
+		if [ -n "$inline" ]
 		then
-			exit -1
+			eval $APP $proper_args ${position_arg[*]}
+			SYS=$?
+			if [ $SYS -ne 0 ]
+			then
+				exit -1
+			fi
+		elif [ -n "$SSREPI_SLURM" ]
+		then
+			(>&2 echo "SLURMING IT: TBC")
+			
+			srun $APP $proper_args ${position_arg[*]}
+		else
+			(>&2 echo "HOMEBREWING IT: TBC")
+
+			# Check the number of processes running. And if it exceeded then sit here and wait.
+			instances=$(ps -A -o command | grep $APP | grep -v grep | wc -l)
+			while [ $instances -ge $SSREPI_NOF_CPUS ]
+			do
+				(>&2 echo "$FUNCNAME: Waiting...")
+				sleep 60
+			done
+			echo $PWD
+			eval $APP $proper_args ${position_arg[*]}
 		fi
+
 		for arg in $@
 		do
 			if [[ "$arg" == *--SSREPI-output-* ]]
 			then
 				value=$(echo $arg | cut -f2 -d=)
-				kind=$(echo $arg | cut -f1 -d= | sed 's/--SSREPI-output-//')
-				SSREPI_argument_output_file $id_application $THIS_PROCESS $kind $kind $value
-				(>&2 echo JLFDSJJFLSJFJSDSLSLJF SSREPI_argument_output_file $id_application $THIS_PROCESS $kind $kind $value)
+				output_type_id=$(echo $arg | cut -f1 -d= | sed 's/--SSREPI-output-//')
+				SSREPI_output $THIS_PROCESS $output_type_id $value
 			fi
 		done
 
@@ -473,123 +654,55 @@ SSREPI_call() {
 			--executable=$id_application \
 			--end_time=$(date "+%Y%m%dT%H%M%S"))
 
+		if [ -z "$SSREPI_SLURM" ]
+		then
+			wait
+		fi
 
 	)
 	if [ $? -ne 0 ]
 	then
-		(>&2 echo "$FUNCNAME: Problem setting up a run for $APP")
+		(>&2 echo "$FUNCNAME: Problem with run for $APP")
 		exit -1
 	fi
-	echo $call_id_application
-}
-
-SSREPI_call_bash_script_with_dependency() {
-	# $1 - Script being called
-	# $2 - Dependency
-	PARENT_COMMAND=$(_parent_script)
-	RUN=$1
-	DEPEND=$2
-	shift 2
-	bash_container_type_id=$(update.py \
-		--table=ContainerType \
-		--id_container_type=bash \
-		--description="A bash shell script" \
-		--format='text/x-shellscript' \
-		--identifier=magic:'^.*Bourne-Again shell script.*$' \
-	)
-	[ -n "$bash_container_type_id" ] || exit -1
-	
-	call_application_id=$(SSREPI_application $RUN \
-		--instance=$bash_container_type_id $@)
-	[ -n "$call_application_id" ] || exit -1
-
-        application_id=$(update.py \
-                --table=Application \
-		--language=bash \
-                --id_application=$(basename $PARENT_COMMAND) \
-		--calls_application=$call_application_id \
-		)	
-	[ -n "$application_id" ] || exit -1
-
-	dependency_id=$(update.py \
-		--table=Dependency \
-		--optionality=required \
-		--dependant=$(basename $PARENT_COMMAND) \
-		--dependency=$call_application_id \
-		)
-	[ -n "$dependency_id" ] || exit -1
-	if [ -z "$NOQSUB" ]
-	then
-		#qsub -hold_jid $(tr "\n" "," < $DEPEND) -cwd "$RUN"
-		# https://www.depts.ttu.edu/hpcc/userguides/general_guides/Conversion_Table_1.pdf
-		srun ---dependency=afterany$(tr "\n" "," < $DEPEND) --chdir ./ "$RUN"
-	else
-		exec "$RUN"
-	fi
-	echo $call_application_id
+	echo $PIPE
 }
 
 SSREPI_argument() {
-	argument_id=$(update.py \
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	id_argument=$(update.py \
 		--table=Argument \
 		$@ \
 	)	
-	echo $argument_id
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
+	echo $id_argument
 }
 
 SSREPI_argument_value() {
-	argument_value_id=$(update.py \
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	id_argument_value=$(update.py \
 		--table=ArgumentValue \
 		--for_process=$1 \
 		--for_argument=$2 \
 		--has_value=$3 \
 	)	
 }
-SSREPI_argument_input_file() {
-	app=$1
-	process=$2
-	kind=$3
-	var=$4
-	filename=$5
-	SSREPI_input $app $process $kind $filename
-	argument_value_id=$(update.py \
-		--table=ArgumentValue \
-		--for_process=$process \
-		--for_argument=$var \
-		--container=$filename \
-	)	
-}
-SSREPI_argument_output_file() {
-	app=$1
-	process=$2
-	var=$3
-	kind=$4
-	filename=$5
-	if [ -x "$5" ]
-	then
-		(>&2 echo $_parent_name":$FUNCNAME: Something failed. No output from $app for $var")
-		exit -1 
-	fi
-	SSREPI_output $app $process $kind $filename
-#	argument_value_id=$(update.py \
-#		--table=ArgumentValue \
-#		--for_process=$process \
-#		--for_argument=$var \
-#		--container=$filename \
-#	)	
-}
+
 SSREPI_container_type() {
-	container_type_id=$(update.py \
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	id_container_type=$(update.py \
 		--table=ContainerType \
 		--id_container_type=$1 \
 		--format='text/plain' \
 		--identifier=$2 \
 	)	
-	echo $container_type_id
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
+	echo $id_container_type
 }
 
 SSREPI_product() {
-	product_id=$(update.py \
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	id_product=$(update.py \
 		--table=Product \
 		--optionality=always \
 		--container_type=$1 \
@@ -597,155 +710,155 @@ SSREPI_product() {
 		--in_file=$3 \
 		--locator=$4 \
 	)	
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
+	echo $id_product
 }
 
 SSREPI_output_type() {
-	output_type_id=$(update.py \
+
+	# $1 - id_application
+	# $2 - id_container_type
+	# $3 - pattern
+
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	id_output_type=$(update.py \
 		--table=ContainerType \
 		--id_container_type=$2 \
 		--format='text/plain' \
 		--identifier="name:$3" \
 	)	
-	[ -n "$output_type_id" ] || exit -1
+	[ -n "$id_output_type" ] || exit -1
 
-	product_id=$(update.py \
+	id_product=$(update.py \
 		--table=Product \
 		--optionality=always \
 		--application=$1 \
 		--container_type=$2 \
-		--in_file=$output_type_id \
+		--in_file=$id_output_type \
 		--locator="CWD PATH REGEX:$3" \
 	)	
-	[ -n "$product_id" ] || (unset $output_product_id && exit -1)
+	[ -n "$id_product" ] || (unset $id_output_product && exit -1)
 
-	echo $output_type_id
-}
-
-SSREPI_working_directory() {
-	output_type_id=$(update.py \
-		--table=ContainerType \
-		--id_container_type=CWD \
-		--format='application/x-directory' \
-		--identifier="name:$2" \
-	)	
-	[ -n "$output_type_id" ] || exit -1
-
-	product_id=$(update.py \
-		--table=Product \
-		--optionality=always \
-		--application=$1 \
-		--container_type=CWD \
-		--in_file=$output_type_id \
-		--locator="CWD" \
-	)	
-	[ -n "$product_id" ] || (unset $output_type_id && exit -1)
-
-	echo $output_type_id
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
+	echo $id_output_type
 }
 
 SSREPI_output() {
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
  
-	# 1 - application path
-	# 2 - output_of
-	# 3 - container type
-	# 4 - path to object
+	# $1 - process_id - specifically output of
+	# $2 - container_type_id - type of output
+	# $3 - path to object
 
-	if [ ! -e $4 ]
+	if [ ! -e $3 ]
 	then
-		(>&2 echo "$FUNCNAME: Something seriously wrong in $0 at $BASH_LINENO: $4 does not exist")
+		(>&2 echo "$FUNCNAME: Something seriously wrong in $0 at $BASH_LINENO: $3 does not exist")
 		exit -1 
 	fi
 
-	container_id=
-	if [ -d $4 ]
+	id_container=
+	if [ -d $3 ]
 	then
-		container_id=$(update.py \
+		id_container=$(update.py \
 			--table=Container \
-			--id_container=$(basename $4) \
-			--location_value=$(readlink -f $4) \
+			--id_container=container.$(cksum "$3" | awk '{print $1}') \
+			--location_value=$(readlink -f "$3") \
 			--location_type="relative_ref" \
-			--location_application=$1 \
-			--encoding=$(file -b --mime-encoding $4) \
+			--encoding=$(file -b --mime-encoding "$3") \
 			--size=4096 \
-			--modification_time=$(stat --printf="%y" $4 | \
+			--modification_time=$(stat --printf="%y" "$3" | \
 				sed "s/://g" | \
 				sed "s/-//g" | \
 				sed "s/ /T/" | \
 				cut -b1-15 ) \
-			--update_time=$(stat --printf="%z" $4 | \
+			--update_time=$(stat --printf="%z" "$3" | \
 				sed "s/://g" | \
 				sed "s/-//g" | \
 				sed "s/ /T/" | \
 				cut -b1-15 ) \
-			--output_of=$2 \
-			--instance=$3 \
+			--output_of=$1 \
+			--instance=$2 \
 			$GENERATED_BY \
-			)
+		)
 	else	
-		container_id=$(update.py \
+		id_container=$(update.py \
 			--table=Container \
-			--id_container=$(basename $4) \
-			--location_value=$(readlink -f $4) \
+			--id_container=container.$(cksum "$3" | awk '{print $1}') \
+			--location_value=$(readlink -f "$3") \
 			--location_type="relative_ref" \
-			--location_application=$1 \
-			--encoding=$(file -b --mime-encoding $4) \
-			--size=$(stat --printf="%s" $4) \
-			--modification_time=$(stat --printf="%y" $4 | \
+			--encoding=$(file -b --mime-encoding "$3") \
+			--size=$(stat --printf="%s" "$3") \
+			--modification_time=$(stat --printf="%y" "$3" | \
 				sed "s/://g" | \
 				sed "s/-//g" | \
 				sed "s/ /T/" | \
 				cut -b1-15 ) \
-			--update_time=$(stat --printf="%z" $4 | \
+			--update_time=$(stat --printf="%z" "$3" | \
 				sed "s/://g" | \
 				sed "s/-//g" | \
 				sed "s/ /T/" | \
 				cut -b1-15 ) \
-			--hash=$(cksum $4 | cut -f 1 -d' ') \
-			--output_of=$2 \
-			--instance=$3 \
+			--hash=$(cksum "$3" | cut -f 1 -d' ') \
+			--output_of=$1 \
+			--instance=$2 \
 			$GENERATED_BY \
-			)
+		)
 			
 	fi
-	[ -n "$container_id" ] || exit -1
+	[ -n "$id_container" ] || exit -1
 
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 }
 	
 SSREPI_input_type() {
-	input_type_id=$(update.py \
+
+	# $1 - id_application
+	# $2 - id_container_type
+	# $3 - pattern
+
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	id_input_type=$(update.py \
 		--table=ContainerType \
 		--id_container_type=$2 \
 		--format='text/plain' \
 		--identifier="name:$3" \
 	)	
-	[ -n "$input_type_id" ] || exit -1
+	[ -n "$id_input_type" ] || exit -1
 
-	uses_id=$(update.py \
+	id_uses=$(update.py \
 		--table=Uses \
 		--optionality=required \
 		--application=$1 \
 		--container_type=$2 \
-		--in_file=$input_type_id \
+		--in_file=$id_input_type \
 		--locator="CWD PATH REGEX:$3" \
 	)	
-	[ -n "$uses_id" ] || (unset $input_type_id && exit -1)
+	[ -n "$id_uses" ] || (unset $id_input_type && exit -1)
 
-	echo $input_type_id
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
+	echo $id_input_type
 }
 
 SSREPI_input() {
+
+	# $1 - id_application
+	# $2 - id_process
+	# $3 - id_container_type
+	# $4 - path to object
+
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	if [ ! -e $4 ]
 	then
 		(>&2 echo "$FUNCNAME: Something seriously wrong in $0 at $BASH_LINENO: $4 does not exist")
 		exit -1 
 	fi
 
-	container_id=
+	id_container=
 	if [ -d $4 ]
 	then
-		container_id=$(update.py \
+		id_container=$(update.py \
 			--table=Container \
-			--id_container=$(basename $4) \
+			--id_container=container.$(cksum $4 | awk '{print $1}') \
 			--location_value=$(readlink -f $4) \
 			--location_type="relative_ref" \
 			--location_application=$1 \
@@ -763,11 +876,11 @@ SSREPI_input() {
 				cut -b1-15 ) \
 			--instance=$3 \
 			$GENERATED_BY \
-			)
+		)
 	else	
-		container_id=$(update.py \
+		id_container=$(update.py \
 			--table=Container \
-			--id_container=$(basename $4) \
+			--id_container=container.$(cksum $4 | awk '{print $1}') \
 			--location_value=$(readlink -f $4) \
 			--location_type="relative_ref" \
 			--location_application=$1 \
@@ -789,90 +902,119 @@ SSREPI_input() {
 			)
 			
 	fi
-	[ -n "$container_id" ] || exit -1
+	[ -n "$id_container" ] || exit -1
 	
 
-	input_id=$(update.py \
+	id_input=$(update.py \
 		--table=Input \
 		--usage=data \
 		--process=$2 \
-		--container=$4 \
+		--container=$id_container \
 	)
-	[ -n "$input_id" ] || exit -1
+	[ -n "$id_input" ] || exit -1
 }
 SSREPI_hutton_person() {
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	if ! _getent passwd $1 >/dev/null 2>/dev/null 
 	then
 		(>&2 echo "$FUNCNAME: $0 at $BASH_LINENO: Invalid user supplied: $1")
-		echo ""
 		exit 1
 	fi
         NAME=$(_getent passwd $1 | cut -f 5 -d:)
         EMAIL=$(echo $NAME | sed "s/ /./g")"@hutton.ac.uk"
 	USER_HOME=$(_getent passwd $1 | cut -f 6 -d:)
 
-        person_id=$(update.py \
+        id_person=$(update.py \
                 --table=Person \
                 --id_person=$1 \
                 --name="$NAME" \
                 --email=$EMAIL \
                 )
-        [ -n "$person_id" ] || exit -1
+        [ -n "$id_person" ] || exit -1
 
-        user_id=$(update.py \
+        id_user=$(update.py \
                 --table=User \
                 --home_dir=$USER_HOME \
-                --account_of=$person_id \
+                --account_of=$id_person \
                 --id_user=$1 \
                 )
-        [ -n "$user_id" ] || exit -1
+        [ -n "$id_user" ] || exit -1
 
-	echo $person_id
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
+	echo $id_person
 }
 SSREPI_person() {
-	person_id=$(update.py \
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	id_person=$(update.py \
 		--table=Person \
 		$@ \
 	)	
-	echo $person_id
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
+	echo $id_person
 }
 SSREPI_project() {
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	if [[ "$@" != *--id_project* ]]
 	then
 		(>&2 echo "$FUNCNAME: $0 at $BASH_LINENO: No project id has been provided")
 		echo ""
 		exit -1
 	fi
-	project_id=$(update.py \
+	id_project=$(update.py \
 		--table=Project \
 		$@
 	)	
-	echo $project_id
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
+	echo $id_project
 }
 SSREPI_study() {
-	study_id=$(update.py \
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	id_study=$(update.py \
 		--table=Study \
 		$@ \
 	)
-	echo $study_id
+	echo $id_study
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 }
-SSREPI_set_study() {
+SSREPI_set() {
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	# You would think that this should be done in the function above.
 	# However the script above is called by command substitution, which is
 	# a subprocess. A subprocess for which all environment variables are
 	# wiped out, as soon as it terminates. So we have to do this directly.
-	export SSREPI_STUDY=$1
-	export GENERATED_BY=--generated_by=$SSREP_STUDY
+	STANDARD_ARGS=
+	while [[ $# -gt 0 ]]; do
+		case $1 in
+			--study*) 
+				STUDY=$(echo $1 | sed 's/\-\-study=//')
+				export SSREPI_STUDY=$STUDY
+				export GENERATED_BY=--generated_by=$SSREPI_STUDY
+				shift;;
+		        --model*) 
+				export STANDARD_ARGS="$STANDARD_ARGS $1"
+				shift;;
+		        --licence*) 
+				export STANDARD_ARGS="$STANDARD_ARGS $1"
+				shift;;
+			--version*) 
+				export STANDARD_ARGS="$STANDARD_ARGS $1"
+				shift;;
+		esac
+	done
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 }
 SSREPI_involvement() {
-	involvement_id=$(update.py \
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	id_involvement=$(update.py \
 		--table=Involvement \
 		--study=$1 \
 		--person=$2 \
 		--role=$3 \
 	)
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 }
 SSREPI_paper() {
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	DOC="$1"
 	if [[ ! -f "$DOC" ]]
 	then
@@ -892,18 +1034,18 @@ SSREPI_paper() {
 		esac
 	done
 
-	paper_container_type_id=$(update.py \
+	id_paper_container_type=$(update.py \
 		--table=ContainerType \
 		--id_container_type=paper \
 		--description="Published or draft paper" \
 		--format='application/pdf;application/msword' \
 		--identifier=magic:'^.*Microsoft Word*$;magic:^.*PDF Document.*$' \
 	)
-	[ -n "$paper_container_type_id" ] || exit -1
+	[ -n "$id_paper_container_type" ] || exit -1
 
-	container_id=$(update.py \
+	id_container=$(update.py \
 		--table=Container \
-		--id_container=$(basename "$DOC") \
+		--id_container=container.$(cksum "$DOC" | awk '{print $1}') \
 		--location_value=$(readlink -f "$DOC") \
 		--held_by=$held_bv \
 	        --sourced_from=$sourced_from \
@@ -921,149 +1063,135 @@ SSREPI_paper() {
 			sed "s/ /T/" | \
 			cut -b1-15 ) \
 		--hash=$(cksum "$DOC" | cut -f 1 -d' ') \
-		--instance=$paper_container_type_id \
+		--instance=$id_paper_container_type \
 		$GENERATED_BY \
 		)
-	[ -n "$container_id" ] || exit -1
+	[ -n "$id_container" ] || exit -1
 	
 
-	paper_id=$(update.py \
+	id_paper=$(update.py \
 		--table=Documentation \
 		--id_documentation="$DOC" \
 		--title=$(basename "$DOC") \
 		--describes=$describes \
 		)
 		#--date=$date \
-		#--location=$container_id \
-	[ -n "$paper_id" ] || exit -1
+		#--location=$id_container \
+	[ -n "$id_paper" ] || exit -1
 
-	container_id=$(update.py \
+	id_container=$(update.py \
 		--table=Container \
-		--id_container=$container_id \
+		--id_container=$id_container \
 		--location_type="relative_ref" \
 		--location_value=$(readlink -f "$DOC") \
-		--location_documentation=$paper_id \
+		--location_documentation=$id_paper \
 		)
-	[ -n "$container_id" ] || exit -1
+	[ -n "$id_container" ] || exit -1
 
-	echo $container_id
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
+	echo $id_container
 
 }
 SSREPI_make_tag() {
-	tag_id=$(update.py \
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	id_tag=$(update.py \
 		--table=Tag \
 		--id_tag=$1 \
 		--description=$2 \
 	)
-	echo $tag_id
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
+	echo $id_tag
 }
 SSREPI_tag() {
-	tag_map_id=$(update.py \
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	id_tag_map=$(update.py \
 		--table=TagMap \
 		--target_tag=$1 \
 		$2
 	)
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 }
 SSREPI_contributor() {
-	instance=$(get_value.py \
-		--table=Container \
-	        --id_container="$1" \
-		--instance)
-	if [[ "$instance" == "paper" ]]
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	# $1 id_application
+	# $2 contributor
+	# $3 type of contribution
+
+	id_contributor=$(update.py \
+		--table=Person \
+		--email=$2@$(hostname) \
+		--id_person=$2 \
+		--name=$2 \
+	)
+	if [[ $(exists.py --table=Application --id_application=$1) == True ]]
 	then
-		contributor_id=$(update.py \
+		id_contributor=$(update.py \
+			--table=Contributor \
+			--application="$1" \
+			--contributor=$id_contributor \
+			--contribution="$3" \
+		)
+	elif [[ $(exists.py --table=Container --id_container=$1) == True ]]
+	then
+		id_contributor=$(update.py \
 			--table=Contributor \
 			--documentation="$1" \
-			--contributor="$2" \
+			--contributor=$id_contributor \
 			--contribution="$3" \
 		)
 	else
-		contributor_id=$(update.py \
-			--table=Contributor \
-			--application="$1" \
-			--contributor="$2" \
-			--contribution="$3" \
-		)
+		(>&2 echo "$FUNCNAME: $1 neither application nor container")
+		exit -1
 	fi
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 }
-SSREPI_create_pipeline() {
-        pipeline_id=$(update.py \
+SSREPI_pipeline() {
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	id_pipeline=$(update.py \
 		--table=Pipeline \
-		--id_pipeline=application.$1 \
+		--id_pipeline=pipeline.$1 \
 		--calls_application=$1 \
-		)
-	echo $pipeline_id
-}
-SSREPI_add_application_to_pipeline() {
-	# $1 - pipeline
-	# $2 - called application
-        pipeline_id=$(update.py \
-		--table=Pipeline \
-		--id_pipeline=application.$2 \
-		--calls_application=$2 \
-		)
-	[ -n "$pipeline_id" ] || exit -1
-	old_pipeline_id=$(update.py \
-		--table=Pipeline \
-		--id_pipeline=$1 \
-		--next=$pipeline_id \
-		)
-	if [ -z "$old_pipeline_id" ] 
-	then
-		unset pipeline_id
-		exit -1
-	fi
-	echo $pipeline_id
-}
-SSREPI_add_pipeline_to_pipeline() {
-
-        pipeline_id=$(update.py \
-		--table=Pipeline \
-		--id_pipeline=pipeline.$2 \
-		--calls_pipeline=$2 \
-		)
-	[ -n "$pipeline_id" ] || exit -1
-	old_pipeline_id=$(update.py \
-		--table=Pipeline \
-		--id_pipeline=$1 \
-		--next=$pipeline_id \
-		)
-	if [ -z "$old_pipeline_id" ] 
-	then
-		unset pipeline_id
-		exit -1
-	fi
-	echo $pipeline_id
+	)
+	[ -n "$id_pipeline" ] || exit -1
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
+	echo $id_pipeline
 }
 SSREPI_statistical_method() {
-	statistical_method_id=$(update.py \
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	id_statistical_method=$(update.py \
 		--table=StatisticalMethod \
 		--id_statistical_method=$1 \
 		--description=$2 \
 		)
-	echo "$statistical_method_id"
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
+	echo "$id_statistical_method"
 }
 SSREPI_visualisation_method() {
-	visualisation_method_id=$(update.py \
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	id_visualisation_method=$(update.py \
 		--table=VisualisationMethod \
 		--id_visualisation_method=$1 \
 		--description=$2 \
 		)
-	echo "$visualisation_method_id"
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
+	echo "$id_visualisation_method"
 }
 
 SSREPI_statistics() {
-	statistics_id=$(update.py \
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	id_statistics=$(update.py \
 		--table="Statistics" \
 		--id_statistics=$1 \
 		--date=$(date "+%Y%m%dT%H%M%S") \
 		--used=$2 \
 		--query=$3 \
 	)
-	echo $statistics_id
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
+	echo $id_statistics
 }
 SSREPI_visualisation() {
-	visualisation_id=$(update.py \
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	id_visualisation=$(update.py \
 		--table="Visualisation" \
 		--id_visualisation=$1 \
 		--date=$(date "+%Y%m%dT%H%M%S") \
@@ -1071,155 +1199,153 @@ SSREPI_visualisation() {
 		--query=$3 \
 		--contained_in=$4 \
 	)
-	echo $visualisation_id
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
+	echo $id_visualisation
 }
 SSREPI_employs() {
-	employs_id=$(update.py \
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	id_employs=$(update.py \
 		--table=Employs \
 		--statistical_variable=$1 \
 		$2 \
 		)
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 }
 
 SSREPI_implements() {
-	implements_id=$(update.py \
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	id_implements=$(update.py \
 		--table=Implements \
 		--application=$1 \
 		$2 \
-		)
+	)
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 }
 
 SSREPI_parameter() {
-	parameter_id=$(update.py \
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	id_parameter=$(update.py \
 		--table=Parameter \
 		--id_parameter=$1 \
 		--description=$2 \
 		--data_type=$3 \
 		$4 \
-		)
-	echo $parameter_id
+	)
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
+	echo $id_parameter
 }
 SSREPI_statistical_variable() {
-	statistical_variable_id=$(update.py \
-		--table=Variable \
-		--id_variable=$1 \
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+
+	# $1 - id_statistical_variable
+        # $2 - Description
+        # $3 - data type	
+	# $4 - generated_by
+
+	id_statistical_variable=$(update.py \
+		--table=StatisticalVariable \
+		--id_statistical_variable=$1 \
 		--description=$2 \
 		--data_type=$3 \
 		--generated_by=$4 \
-		)
-	echo $statistical_variable_id
+	)
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
+	echo $id_statistical_variable
 }
 SSREPI_variable() {
-	variable_id=$(update.py \
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+
+	# $1 - id_variable
+	# $2 - description
+	# $3 - data_type
+
+	# So a variable may be one of:
+
+	# * Argument
+	# * Assumes
+	# * Content
+	# * Value
+
+	extra=
+	if [[ "$@" = *--link* ]]
+	then 
+		extra==--is_link=1
+	elif [[ "$@" = *--space* ]]
+	then 
+		extra==--is_space=1
+	elif [[ "$@" = *--time* ]]
+	then 
+		extra==--is_time=1
+	elif [[ "$@" = *--agent* ]]
+	then 
+		extra==--is_agent=1
+	fi
+	id_variable=$(update.py \
 		--table=Variable \
 		--id_variable=$1 \
 		--description=$2 \
-		--data_type=$3 \
-		--visualisation_method=$4 \
-		)
-	echo $variable_id
+		--data_type=$3 $extra \
+	)
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
+	echo $id_variable
 }
 SSREPI_value() {
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	val=$1
 	shift 1
-	value_id=$(update.py \
+	id_value=$(update.py \
 		--table=Value \
 		--id_value=$val \
 		$@)
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 }
 SSREPI_content() {
-	content_id=$(update.py \
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	id_content=$(update.py \
 		--table=Content \
 		$@)
-	echo $content_id
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
+	echo $id_content
 }
 
 SSREPI_person_makes_assumption() {
-	assumption_id=$(update.py \
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	id_assumption=$(update.py \
 		--table=Assumption \
 		--id_assumption=$2 \
 		--description=$3 \
 		)
-	if [ -z "$assumption_id" ] 
+	if [ -z "$id_assumption" ] 
 	then
-		unset assumption_id
+		unset id_assumption
 		exit -1
 	fi
-	assumes_id=$(update.py \
+	id_assumes=$(update.py \
 		--table=Assumes \
 		--person=$1 \
-		--assumption=$assumption_id)
-	if [ -z "$assumes_id" ] 
+		--assumption=$id_assumption)
+	if [ -z "$id_assumes" ] 
 	then
-		unset assumption_id
+		unset id_assumption
 		exit -1
 	fi
-	echo "$assumption_id"
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
+	echo "$id_assumption"
 }
 
-SSREPI_run() {
-	run=0
-	MAX_RUNS=5
-	runcmd=$1
-
-	if [ -z "$NOQSUB" ]
-	then
-		while (($run < $count))
-		do
-			(>&2 echo "==========================")
-			(>&2 echo "Run number: "$(($run + 1))" of $count")
-			(>&2 echo "==========================")
-			(>&2 echo "Running ${runcmd[$run]}...")
-			chmod +x "${runcmd[$run]}"
-			#qsub -N $(basename ${runcmd[$run]}) -cwd "${runcmd[$run]}"
-			# https://www.depts.ttu.edu/hpcc/userguides/general_guides/Conversion_Table_1.pdf
-			srun -J $(basename ${runcmd[$run]}) --chdir ./ "${runcmd[$run]}"
-			
-			echo $(basename ${runcmd[$run]}) >> $POST_DEPENDENCIES
-
-			run=$(($run + 1))
-		done
-
-		# The code below is the old way of doing it. 
-
-		exit 0
-
-		# I am doing this use shell scripting but qsub looks really quite
-		# promising.  I need to discuss this with Gary. This means a change of
-		# database to start with, and a change in how the preparation is done.
-	else
-		run=0
-		while (($run < $count)) && (($run < $MAX_RUNS ))
-		do
-		    instances=$(ps -Ao cmd | grep $FEARLUS | grep -v grep | wc -l)
-		    if [ $instances -lt $NOF_CPUS ]
-		    then
-
-			chmod +x "${runcmd[$run]}"
-			(>&2 echo "==========================")
-			(>&2 echo "Run number: $run of $count")
-			(>&2 echo "==========================")
-			(>&2 echo "Running ${runcmd[$run]}...")
-			eval "sh ${runcmd[$run]} 2> ${runcmd[$run]}.out"
-
-			run=$(($run + 1))
-		    else
-		    	(>&2 echo $_parent_name":$FUNCNAME: Waiting...")
-		    fi
-		    sleep 20
-		done
-	fi
-}
 _ip_address() {
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	IP=$(/sbin/ifconfig | sed -n "2p" | awk '{print $2}' |cut -f2 -d:)
 	if [[ $(uname -s) == "Darwin" ]]
 	then
 		IP=$(/sbin/ifconfig en0 | sed -n "5p" | awk '{print $2}' |cut -f2 -d:)
 	fi
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 	echo "$IP"
 }
 
 _mac_address() {
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	MAC=$(/sbin/ifconfig | sed -n "1p" | awk '{print $5}')
 	if [[ $(uname -s) == "Darwin" ]]
 	then
@@ -1229,15 +1355,17 @@ _mac_address() {
         then 
 		MAC=$(/sbin/ifconfig | sed -n "4p" | awk '{print $2}')
 	fi
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 	echo "$MAC"
 }
 
 _fqdn() {
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 
-# I have had to write this because of the way /etc/hosts have been set
-# up wth the canonical name for the machine is first and in our /etc/hosts
-# this is the shortname rather than the long name, so I am going to 
-# use nslookup to get around this.
+	# I have had to write this because of the way /etc/hosts have been set
+	# up wth the canonical name for the machine is first and in our
+	# /etc/hosts this is the shortname rather than the long name, so I am
+	# going to use nslookup to get around this.
 
 	if hostname -f | grep -qs "\."
 	then 
@@ -1245,27 +1373,38 @@ _fqdn() {
 	else
 		nslookup -host $(hostname) | grep ^Name | awk '{print $2}'
 	fi
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 }
 
 _parent_script() {
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+
 	# Should be able to do this in one line, but bash doesn't like it for
 	# some reason
+
 	ME=$BASHPID
 	BASH_PROB=$(ps -o args= $ME)
 	if [[ "$BASH_PROB" == *-xv* ]]
 	then
 		RESULT=$(echo $BASH_PROB | awk '{print $3}') 
+	elif [[ "$BASH_PROB" = *-zsh* ]]
+	then
+		RESULT=$0
 	else
 		RESULT=$(echo $BASH_PROB | awk '{print $2}') 
 	fi
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 	echo $RESULT
 }
 
 uniq() {
-cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 }
 
 _getent() {
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	if [[ "$1" != "passwd" ]]
 	then
 		echo "This only works for 'passwd'"
@@ -1293,5 +1432,42 @@ _getent() {
 			echo $result
 		done
 	fi
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 }
 
+disk_space() {
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	SPACE=$(df -k -h . | tail -1 | awk '{print $1}' | sed 's/G$//')
+	if [[ $(uname -s) == "Darwin" ]]
+	then
+		SPACE=$(df -k . | tail -1 | awk '{print $4}' | sed 's/G$//')
+	fi
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
+	echo $SPACE
+}
+
+memory() {
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	MEM=
+	if [[ $(uname -s) == "Darwin" ]]
+	then
+		MEM=$(echo $(sysctl hw.memsize | cut -f2 -d' ') / 1024 / 1024 / 1024 | bc)
+	else
+		MEM=$(cat /proc/meminfo | grep MemTotal | awk '{print $2}')
+	fi
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
+	echo $MEM
+}
+cpus() {
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	CPUS=
+	if [[ $(uname -s) == "Darwin" ]]
+	then
+		CPUS=$(sysctl hw.ncpu | cut -f2 -d ' ')
+	else
+		CPUS=$(($(cat /proc/cpuinfo | awk '/^processor/{print $3}' | tail -1) + 1))
+	fi
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
+	echo $CPUS
+
+}

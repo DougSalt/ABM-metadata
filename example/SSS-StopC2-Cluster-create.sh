@@ -4,20 +4,17 @@
 # to cover sinks/nosinks and RewardActivity/RewardSpecies, at various BETs and
 # ASPs, and for flat and var2 market. There will be 20 runs each
 
-
-
 . lib/ssrepi.sh
 
 # Identity (stuff about this script)
 # ========
 
-ME=$(basename $0)
+ME=$(SSREPI_me)
 
 SSREPI_contributor $ME gary_polhill Author
 SSREPI_contributor $ME doug_salt Author
 
-next=$(SSREPI_create_pipeline $ME)
-[ -n "$next" ] || exit -1
+pipe=$(SSREPI_pipeline $ME)
 
 # Called script
 # =============
@@ -26,17 +23,14 @@ next=$(SSREPI_create_pipeline $ME)
 # this instance of generating metadata, I have done everything in the shell
 # scripts.
 
-PROG=$(SSREPI_application $(which SSS-StopC2-Cluster-expt.pl) \
-	--version=$VERSION \
-	--licence=$LICENCE \
-	--purpose="Perl script to create the SSS preliminary experiments. These are designed to cover sinks/nosinks and RewardActivity/RewardSpecies, at various BETs and ASPs, and for flat and var2 market. There will be 20 runs each" \
-        --model=fearlus-spomm)
+PROG=$(SSREPI_application SSS-StopC2-Cluster-expt.pl \
+	--purpose="Perl script to create the SSS preliminary experiments. These are designed to cover sinks/nosinks and RewardActivity/RewardSpecies, at various BETs and ASPs, and for flat and var2 market." \
+	--version=1.0 \
+	--licence=GPLv3 \
+)
 [ -n $PROG ] || exit -1 
 
 SSREPI_contributor $PROG gary_polhill Author
-
-next=$(SSREPI_add_application_to_pipeline $next $PROG)
-[ -n "$next" ] || exit -1
 
 # Assumptions
 # ===========
@@ -53,13 +47,12 @@ garys_2nd_assumption=$(SSREPI_person_makes_assumption gary_polhill \
 	"There are bugs in this software." \
 	--short_name=reasonable)
 
-
 # Requirements for this script 
 # ============================
 
 # Software
 
-if SSREPI_require_minimum perl.$PROG  "5.0" $(perl -e 'print $];')
+if SSREPI_require_minimum $PROG perl  "5.0" $(perl -e 'print $];')
 then
         (>&2 echo "$0: Minimum requirement for Perl failed")
         (>&2 echo "$0: Required at least Perl 5.0, got " \
@@ -68,7 +61,7 @@ then
 fi
 
 
-if SSREPI_require_minimum python.$PROG "3.0" $(python --version 2>&1 | cut -f2 -d' ')
+if SSREPI_require_minimum $PROG python "3.0" $(python --version 2>&1 | cut -f2 -d' ')
 then
         (>&2 echo "$0: Minimum requirement for Python failed")
         (>&2 echo "$0: Required 3.0 got " \
@@ -76,15 +69,15 @@ then
         exit -1
 fi
 
-if SSREPI_require_minimum bash.$PROG 3.0 $(bash --version | sed -n 1p | awk '{print $4}' | cut -f1 -d.)
+if SSREPI_require_minimum $PROG bash 3 $(bash --version | sed -n 1p | awk '{print $4}' | cut -f1 -d.)
 then
         (>&2 echo "$0: Minimum requirement for bash failed")
-        (>&2 echo "$0: Required 3.0 got " \
+        (>&2 echo "$0: Required 3 got " \
 		$(bash --version | sed -n 1p | awk '{print $4}' | cut -f1 -d.))
         exit -1
 fi
 
-if SSREPI_require_exact os.$PROG Linux $(uname -s) && SSREPI_require_exact os.$PROG Darwin $(uname -s) 
+if SSREPI_require_exact $PROG os Linux $(uname -s) && SSREPI_require_exact $PROG os Darwin $(uname -s) 
 then
         (>&2 echo "$0: Exact requirement for the OS failed")
 	(>&2 echo "$0: Required Linux or  Darwin got "$(uname -s))
@@ -93,41 +86,24 @@ fi
 
 # Hardware
 
-SPACE=$(df -k -h . | tail -1 | awk '{print $1}' | sed 's/G$//')
-if [[ $(uname -s) == "Darwin" ]]
-then
-	SPACE=$(df -k . | tail -1 | awk '{print $4}' | sed 's/G$//')
-fi
-if SSREPI_require_minimum diskspace.$PROG 20G $SPACE
+if SSREPI_require_minimum $PROG disk_space 20G $(disk_space)
 then
         (>&2 echo "$0: Minimum requirement for disk space failed")
-	(>&2 echo "$0: Required 20G of disk space got $SPACE")
+	(>&2 echo "$0: Required 20G of disk space got "$(disk_space))
         exit -1
 fi
 
-MEM=
-if [[ $(uname -s) == "Darwin" ]]
-then
-	MEM=$(echo $(sysctl hw.memsize | cut -f2 -d' ') / 1024 / 1024 / 1024 | bc)
-else
-	MEM=$(cat /proc/meminfo | grep MemTotal | awk '{print $2}')
-fi
-if SSREPI_require_minimum memory.$PROG 4 ${MEM}
+if SSREPI_require_minimum $PROG memory 4 $(memory)
 then
         (>&2 echo "$0: Minimum requirement for memory failed")
-	(>&2 echo "$0: Required 4G of memory got ${MEM}G")
+	(>&2 echo "$0: Required 4G of memory got $(memory)G")
         exit -1
 fi
 
-CPUS=$(($(cat /proc/cpuinfo | awk '/^processor/{print $3}' | tail -1) + 1))
-if [[ $(uname -s) == "Darwin" ]]
-then
-	CPUS=$(sysctl hw.ncpu | cut -f2 -d ' ')
-fi
-if SSREPI_require_minimum nof_cpus.$PROG $NOF_CPUS $CPUS 
+if SSREPI_require_minimum $PROG cpus $SSREPI_NOF_CPUS $(cpus) 
 then
         (>&2 echo "$0: Minimum requirement for number of cpus failed")
-	(>&2 echo "$0: Required $NOF_CPUS cpus of memory got $CPUS")
+	(>&2 echo "$0: Required $SSREPI_NOF_CPUS cpus of memory got $(cpus)")
         exit -1
 fi
 
@@ -368,10 +344,6 @@ SSS_trigger_id=$(SSREPI_output_type $PROG \
 	"________[^_]+___.trig")
 [ -n "$SSS_trigger_id" ] || exit -1 
 
-SSS_CWD_id=$(SSREPI_working_directory $PROG \
-	"SSS__dir_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_")
-[ -n "$SSS_CWD_id" ] || exit -1 
-
 #for run in 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020
 for run in 001
 do
@@ -396,7 +368,7 @@ do
 	      for rat in 1.0
 	      do 
 
-		DIR="SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0.0_${asp}_"
+		DIR="SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_"
 		ARGS="""--SSREPI-arg-govt=$govt
 		--SSREPI-arg-${sink_id}=NO
 		--SSREPI-arg-${market_id}=$market
@@ -416,7 +388,7 @@ do
 		--SSREPI-output-${SSS_luhab_id}="$DIR/SSS_luhab___________.csv"
 		--SSREPI-output-${SSS_climateprob_id}="$DIR/SSS_climateprob___________.prob"
 		--SSREPI-output-${SSS_patch_id}="$DIR/SSS_patch_${sink}__________${run}.csv"
-		--SSREPI-output-${SSS_report_config_id}="$DIR/SSS_report-config_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0.0_${asp}_${run}.repcfg"
+		--SSREPI-output-${SSS_report_config_id}="$DIR/SSS_report-config_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.repcfg"
 		--SSREPI-output-${SSS_yielddata_id}="$DIR/SSS_yielddata___________.data"
 		--SSREPI-output-${SSS_spom_id}="$DIR/SSS_spom_${sink}__________${run}.spom"
 		--SSREPI-output-${SSS_economyprob_id}="$DIR/SSS_economyprob___________.prob"
@@ -433,6 +405,7 @@ do
 		"""
 
 		SSREPI_call $PROG $ARGS
+			
 	      done
 	    done
 	  done
@@ -441,3 +414,5 @@ do
     done
   done
 done
+
+echo $pipe

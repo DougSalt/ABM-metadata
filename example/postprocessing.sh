@@ -3,100 +3,92 @@
 # This is the workflow script used tie all the results together in the post
 # processing for this experiment.
 
-# This worries me slightly, because I thought the original experiments were run
-# on fgridln06, but I have store the files and run everything on fgridln01. I
-# think this may be convention, but I will have to confirm this with Gary
-
 # Author: Doug Salt
 
 # Date: Jan 2017
 
+. lib/ssrepi.sh
 
-export PATH=bin:lib:$PATH
+ME=$(SSREPI_me)
 
-. lib/ssrepi_lib.sh
+SSREPI_contributor $ME doug_salt Author
+SSREPI_contributor $ME doug_salt Developer
 
-VERSION=1.0
-LICENCE=GPLv3
-ME=$(SSREPI_application \
-        --language=bash \
-        --version=$VERSION \
-        --licence=$LICENCE )
-[ -n "$ME" ] || exit -1
-
-SSREPI_contributor $ME ds42723 Author
-SSREPI_contributor $ME ds42723 Developer
+pipe=$(SSREPI_pipeline $ME)
 
 # Requirements for this script
 # ============================
 
 # Software
 
-required_perl=$(SSREPI_require_minimum perl "5.0")
-required_python=$(SSREPI_require_minimum python "2.6.6")
-required_shell=$(SSREPI_require_exact shell '/bin/bash')
-required_R=$(SSREPI_require_minimum R 3.3.3)
-required_os=$(SSREPI_require_exact os Linux)
+if SSREPI_require_minimum $ME perl  "5.0" $(perl -e 'print $];')
+then
+        (>&2 echo "$0: Minimum requirement for Perl failed")
+        (>&2 echo "$0: Required at least Perl 5.0, got " \
+		$(perl -e 'print $];'))
+        exit -1
+fi
+
+
+if SSREPI_require_minimum $ME python "3.0" $(python --version 2>&1 | cut -f2 -d' ')
+then
+        (>&2 echo "$0: Minimum requirement for Python failed")
+        (>&2 echo "$0: Required 3.0 got " \
+		$(python --version 2>&1 | cut -f2 -d' '))
+        exit -1
+fi
+
+if SSREPI_require_minimum $ME "R" "3.3.1" $(R --version | head -1 | awk '{print $3}')
+then
+        (>&2 echo "$0: Minimum requirement for R failed")
+        (>&2 echo "$0: Required 3.3.1 got " \
+		$(R --version | head -1 | awk '{print $3}'))
+        exit -1
+fi
+
+
+
+if SSREPI_require_minimum $ME bash 3.0 $(bash --version | sed -n 1p | awk '{print $4}' | cut -f1 -d.)
+then
+        (>&2 echo "$0: Minimum requirement for bash failed")
+        (>&2 echo "$0: Required 3.0 got " \
+		$(bash --version | sed -n 1p | awk '{print $4}' | cut -f1 -d.))
+        exit -1
+fi
 
 # Hardware
 
-required_disk_space=$(SSREPI_require_minimum disk_space 20G)
-required_nof_cpus=$(SSREPI_require_minimum nof_cpus $NOF_CPUS)
-required_memory=$(SSREPI_require_minimum memory 4G)
-
-# Make sure this script meets the requirements.
-
-if SSREPI_fails_minimum_requirement $required_perl $(perl -e 'print $];')
-then
-        (>&2 echo "$0: Minimum requirement for Perl failed")
-        exit -1
-fi
-
-if SSREPI_fails_minimum_requirement $required_python \
-	$(python --version 2>&1 | cut -f2 -d' ')
-then
-        (>&2 echo "$0: Minimum requirement for Python failed")
-        exit -1
-fi
-
-# Don't need to check the shell as the hashbang insists we are running
-# under bash, so we just need to set the meets criterion.
-
-SSREPI_meets $required_shell
-
-if SSREPI_fails_exact_requirement $required_os $(uname)
+if SSREPI_require_exact $ME os Linux $(uname -s) && SSREPI_require_exact $ME os Darwin $(uname -s) 
 then
         (>&2 echo "$0: Exact requirement for the OS failed")
+	(>&2 echo "$0: Required Linux or  Darwin got "$(uname -s))
         exit -1
 fi
 
-if SSREPI_fails_minimum_requirement $required_R \
-        $(R --version | head -1 | awk '{print $3}')
-then
-        (>&2 echo "$0: Exact requirement for R failed")
-        exit -1
-fi
 
-if SSREPI_fails_minimum_requirement $required_disk_space \
-	$(df -k . | tail -1 | awk '{print $1}')
+# Hardware
+
+if SSREPI_require_minimum $ME disk_space 20G $(disk_space)
 then
         (>&2 echo "$0: Minimum requirement for disk space failed")
+	(>&2 echo "$0: Required 20G of disk space got $(disk_space)G")
         exit -1
 fi
 
-if SSREPI_fails_minimum_requirement $required_memory \
-        $(cat /proc/meminfo | grep MemTotal | awk '{print $2}')000
+if SSREPI_require_minimum $ME memory 4 $(memory)
 then
         (>&2 echo "$0: Minimum requirement for memory failed")
+	(>&2 echo "$0: Required 4G of memory got $(memory)G")
         exit -1
 fi
 
-if SSREPI_fails_minimum_requirement $required_nof_cpus \
-        $(($(cat /proc/cpuinfo | awk '/^processor/{print $3}' | tail -1) + 1))
+if SSREPI_require_minimum $ME cpus $SSREPI_NOF_CPUS $(cpus)
 then
         (>&2 echo "$0: Minimum requirement for number of cpus failed")
+	(>&2 echo "$0: Required $SSREPI_NOF_CPUS cpus of memory got $(cpus)")
         exit -1
 fi
+
 
 # Methods
 # =======
@@ -167,7 +159,8 @@ general_additive_model_id=$(SSREPI_visualisation_method \
 par_partitioning_complexity_id=$(SSREPI_parameter complexity \
 	"Prune all nodes with a complexity less than cp from the output." \
 	"x \in \Re: x \in [0,1]" \
-	--statistical_method="$recursive_partitioning_id")
+	--statistical_method="$recursive_partitioning_id" \
+)
 
 # So a variable is in a container of some description and can act as an 
 # input to VisualisationMethod, as opposed to a parameter, which is provided
@@ -179,10 +172,9 @@ par_partitioning_complexity_id=$(SSREPI_parameter complexity \
 var_scenario_id=$(SSREPI_variable  \
 	scenario  \
 	"The combination of government, market, 
-		break-even threshold and aspiration" String \
-	$sunflower_plot_id \
-	)
-
+		break-even threshold and aspiration" \
+	String \
+)
 
 # Statistical Variables
 # =====================
@@ -190,21 +182,13 @@ var_scenario_id=$(SSREPI_variable  \
 # These are produced by a statiscal method only.
 
 
-
-# Create a pipeline for this script
-
-next=$(SSREPI_create_pipeline $ME)
-[ -n "$next" ] || exit -1
-
-THIS_PROCESS=$(SSREPI_process)
-[ -n "$THIS_PROCESS" ] || exit -1
-
+# Now run the all important scripts...
 
 # analysege_gpLU2.pl
 # ==================
 
-some_script=$(SSREPI_call_perl_script ./bin/analysege_gpLU2.pl \
-		--description="
+PROG=$(SSREPI_application analysege_gpLU2.pl \
+	--purpose="
 Analysis script to analyse results from SSS runs. The output is a CSV format
 summary of the results from each run, listing the parameters first, then
 the results: the number of bankruptcies, the amount of land use change,
@@ -212,12 +196,8 @@ the year of extinction of each species, and the abundance of each species.
 
 Number of species at a given time step
 Level of occupancy at each time step
-Shannon index and evenness measure
-")
-[ -n "$some_script" ] || exit -1
-
-next=$(SSREPI_add_application_to_pipeline $next $some_script)
-[ -n "$next" ] || exit -1
+Shannon index and evenness measure." \
+)
 
 # Arguments
 # ---------
@@ -225,9 +205,9 @@ next=$(SSREPI_add_application_to_pipeline $next $some_script)
 experiment=$(SSREPI_argument \
         --id_argument=experiment \
         --description="The experimental run for this model. In the range 1-9." \
-        --application=$some_script \
+        --application=$PROG \
         --type=required \
-        --order=1 \
+        --order_value=1 \
         --arity=1 \
         --range="^[0-9]$")
 [ -n "$experiment" ] || exit -1
@@ -235,17 +215,17 @@ experiment=$(SSREPI_argument \
 # Input types
 # -----------
 
-SSS_report_id=$(SSREPI_input_type $some_script \
+SSS_report_id=$(SSREPI_input_type $PROG \
         SSS_report \
         "SSS_report_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_].txt")
 [ -n "$SSS_report_id" ] || exit -1
 
-SSS_report_grd_id=$(SSREPI_input_type $some_script \
+SSS_report_grd_id=$(SSREPI_input_type $PROG \
         SSS_report_grd \
         "SSS_report_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_].grd")
 [ -n "$SSS_report_grd_id" ] || exit -1
 
-SSS_spomresult_extinct_id=$(SSREPI_input_type $some_script \
+SSS_spomresult_extinct_id=$(SSREPI_input_type $PROG \
         SSS_spomresult_extinct \
         "SSS_spomresult_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]-nspp.csv")
 [ -n "$SSS_spomresult_extinct_id" ] || exit -1
@@ -258,11 +238,15 @@ SSS_spomresult_lspp_id=$(SSREPI_output_type $ME \
 # Output types
 # ------------
 
-result_id=$(SSREPI_output_type  $some_script result "^(batch1|batch2).csv$")
+result_id=$(SSREPI_output_type  $PROG result "^(batch1|batch2).csv$")
 [ -n "$result_id" ] || exit -1
+
 
 # Metadata
 # --------
+
+# Admittedly the next is not a statistical method, but I have used it as such
+# to illustrate how these primitives might be employed.
 
 analysege_gpLU2_id=$(SSREPI_statistical_method \
 	"Post-run analysis script" \
@@ -275,273 +259,270 @@ analysege_gpLU2_id=$(SSREPI_statistical_method \
  Level of occupancy at each time step
  Shannon index and evenness measure.")
 
-svar_bankruptcies_id=$(SSREPI_statistical_variable \ \
+svar_bankruptcies_id=$(SSREPI_statistical_variable \
 	bankruptcies \
-	"Some documentary explanation." \
+	"A column containing the number of bankruptcies." \
 	"\mathbb{R}" \
 	"$analysege_gpLU2_id" \
-	)
+)
 
 svar_land_use_change_id=$(SSREPI_statistical_variable \
 	land_use_change \
-	"Some documentary explanation." \
+	"A column containing land use change." \
 	"\mathbb{R}" \
 	"$analysege_gpLU2_id" \
-	)
+)
 
 svar_occupancy_lu1_id=$(SSREPI_statistical_variable \
 	occupancy_lu1 \
-	"Some documentary explanation." \
+	"A column containing occupancy for landuse 1." \
 	"\mathbb{R}" \
 	"$analysege_gpLU2_id" \
-	)
+)
 
 svar_occupancy_lu2_id=$(SSREPI_statistical_variable \
 	occupancy_lu2 \
-	"Some documentary explanation." \
+	"A column containing occupancy for landuse 3." \
 	"\mathbb{R}" \
 	"$analysege_gpLU2_id" \
-	)
+)
 
 svar_occupancy_lu3_id=$(SSREPI_statistical_variable \
 	occupancy_lu3 \
-	"Some documentary explanation." \
+	"A column containing occupancy for landuse 3." \
 	"\mathbb{R}" \
 	"$analysege_gpLU2_id" \
-	)
+)
 
 svar_occupancy_lu4_id=$(SSREPI_statistical_variable \
 	occupancy_lu4 \
-	"Some documentary explanation." \
+	"A column containing occupancy for landuse 4." \
 	"\mathbb{R}" \
 	"$analysege_gpLU2_id" \
-	)
+)
 
 svar_occupancy_lu5_id=$(SSREPI_statistical_variable \
 	occupancy_lu5 \
-	"Some documentary explanation." \
+	"A column containing occupancy for landuse 5." \
 	"\mathbb{R}" \
 	"$analysege_gpLU2_id" \
-	)
+)
 
 svar_occupancy_lu6_id=$(SSREPI_statistical_variable \
 	occupancy_lu6 \
-	"Some documentary explanation." \
+	"A column containing occupancy for landuse 6." \
 	"\mathbb{R}" \
 	"$analysege_gpLU2_id" \
-	)
+)
 
 svar_extinction_spp_1_id=$(SSREPI_statistical_variable \
 	extinction_spp_1 \
-	"Some documentary explanation." \
+	"A column containing the number of extinctions for species 1 per patch." \
 	"\mathbb{R}" \
 	"$analysege_gpLU2_id" \
-	)
+)
 
 
 svar_extinction_spp_2_id=$(SSREPI_statistical_variable \
 	extinction_spp_2 \
-	"Some documentary explanation." \
+	"A column containing the number of extinctions for species 2 per patch." \
 	"\mathbb{R}" \
 	"$analysege_gpLU2_id" \
-	)
+)
 
 svar_extinction_spp_3_id=$(SSREPI_statistical_variable \
 	extinction_spp_3 \
-	"Some documentary explanation." \
+	"A column containing the number of extinctions for species 3 per patch." \
 	"\mathbb{R}" \
 	"$analysege_gpLU2_id" \
-	)
+)
 
 svar_extinction_spp_4_id=$(SSREPI_statistical_variable \
 	extinction_spp_4 \
-	"Some documentation." \
+	"A column containing the number of extinctions for species 4 per patch." \
 	"\mathbb{R}" \
 	"$analysege_gpLU2_id" \
-	)
+)
 
 svar_extinction_spp_5_id=$(SSREPI_statistical_variable \
 	extinction_spp_5 \
-	"Some documentation." \
+	"A column containing the number of extinctions for species 5 per patch." \
 	"\mathbb{R}" \
 	"$analysege_gpLU2_id" \
-	)
+)
 
 svar_extinction_spp_6_id=$(SSREPI_statistical_variable \
 	extinction_spp_6 \
-	"Some documentation." \
+	"A column containing the number of extinctions for species 6 per patch." \
 	"\mathbb{R}" \
 	"$analysege_gpLU2_id" \
-	)
+)
 
 svar_extinction_spp_7_id=$(SSREPI_statistical_variable \
 	extinction_spp_7 \
-	"Some documentation." \
+	"A column containing the number of extinctions for species 7 per patch." \
 	"\mathbb{R}" \
 	"$analysege_gpLU2_id" \
-	)
+)
 
 svar_extinction_spp_8_id=$(SSREPI_statistical_variable \
 	extinction_spp_8 \
-	"Some documentation." \
+	"A column containing the number of extinctions for species 8 per patch." \
 	"\mathbb{R}" \
 	"$analysege_gpLU2_id" \
-	)
+)
 
 svar_extinction_spp_9_id=$(SSREPI_statistical_variable \
 	extinction_spp_9 \
-	"Some documentation." \
+	"A column containing the number of extinctions for species 9 per patch." \
 	"\mathbb{R}" \
 	"$analysege_gpLU2_id" \
-	)
+)
 
 svar_extinction_spp_10_id=$(SSREPI_statistical_variable \
 	extinction_spp_10 \
-	"Some documentation." \
+	"A column containing the number of extinctions for species 10 per patch." \
 	"\mathbb{R}" \
 	"$analysege_gpLU2_id" \
-	)
+)
 
 
 svar_occupancy_spp_1_id=$(SSREPI_statistical_variable \
 	occupancy_spp_1 \
-	"Some documentation." \
+	"A column containing the occupancy for species 1 per patch." \
 	"\mathbb{R}" \
 	"$analysege_gpLU2_id" \
-	)
+)
 
 svar_occupancy_spp_2_id=$(SSREPI_statistical_variable \
 	occupancy_spp_2 \
-	"Some documentation." \
+	"A column containing the occupancy for species 2 per patch." \
 	"\mathbb{R}" \
 	"$analysege_gpLU2_id" \
-	)
+)
 
 svar_occupancy_spp_3_id=$(SSREPI_statistical_variable \
 	occupancy_spp_3 \
-	"Some documentation." \
+	"A column containing the occupancy for species 3 per patch." \
 	"\mathbb{R}" \
 	"$analysege_gpLU2_id" \
-	)
+)
 
 svar_occupancy_spp_4_id=$(SSREPI_statistical_variable \
 	occupancy_spp_4 \
-	"Some documentation." \
+	"A column containing the occupancy for species 4 per patch." \
 	"\mathbb{R}" \
 	"$analysege_gpLU2_id" \
-	)
+)
 
 svar_occupancy_spp_5_id=$(SSREPI_statistical_variable \
 	occupancy_spp_5 \
-	"Some documentation." \
+	"A column containing the occupancy for species 5 per patch." \
 	"\mathbb{R}" \
 	"$analysege_gpLU2_id" \
-	)
+)
 
 svar_occupancy_spp_6_id=$(SSREPI_statistical_variable \
 	occupancy_spp_6 \
-	"Some documentation." \
+	"A column containing the occupancy for species 6 per patch." \
 	"\mathbb{R}" \
 	"$analysege_gpLU2_id" \
-	)
+)
 
 svar_occupancy_spp_7_id=$(SSREPI_statistical_variable \
 	occupancy_spp_7 \
-	"Some documentation." \
+	"A column containing the occupancy for species 7 per patch." \
 	"\mathbb{R}" \
 	"$analysege_gpLU2_id" \
-	)
+)
 
 svar_occupancy_spp_8_id=$(SSREPI_statistical_variable \
 	occupancy_spp_8 \
-	"Some documentation." \
+	"A column containing the occupancy for species 8 per patch." \
 	"\mathbb{R}" \
 	"$analysege_gpLU2_id" \
-	)
+)
 
 svar_occupancy_spp_9_id=$(SSREPI_statistical_variable \
 	occupancy_spp_9 \
-	"Some documentation." \
+	"A column containing the occupancy for species 9 per patch." \
 	"\mathbb{R}" \
 	"$analysege_gpLU2_id" \
-	)
+)
 
 svar_occupancy_spp_10_id=$(SSREPI_statistical_variable \
 	occupancy_spp_10 \
-	"Some documentation." \
+	"A column containing the occupancy for species 10 per patch." \
 	"\mathbb{R}" \
 	"$analysege_gpLU2_id" \
-	)
+)
 
 svar_Shannon_id=$(SSREPI_statistical_variable \
 	Shannon \
-	"Some documentation." \
+	"A column containing the Shannon number." \
 	"\mathbb{R}" \
 	"$analysege_gpLU2_id" \
-	)
+)
 
 svar_Equitability_id=$(SSREPI_statistical_variable \
 	Equitability \
-	"Some documentation." \
+	"A column containing the equitabilty." \
 	"\mathbb{R}" \
 	"$analysege_gpLU2_id" \
-	)
+)
 
 svar_richness_id=$(SSREPI_statistical_variable \
 	richness \
-	"Some documentation." \
+	"A column containing the number of bankruptcies." \
 	"\mathbb{R}" \
 	"$analysege_gpLU2_id" \
-	)
-
-(
-some_process=$(SSREPI_process --executable=$some_script)
-[ -n "$some_process" ] || exit -1
-
-SSREPI_argument_value $some_process $experiment 8
+)
 
 #for run in 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020
-#do
-#  for govt in ClusterActivity ClusterSpecies RewardActivity RewardSpecies
-#  do
-#    for sink in nosink
-#    do
-#      for market in flat var2
-#      do
-#        for bet in 25.0 30.0
-#        do
-#          for asp in 1.0 5.0
-#          do
-#            for rwd in 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0
-#            do
-#              for rat in 1.0 2.0 10.0
-#              do
 for run in 001
 do
+#  for govt in ClusterActivity ClusterSpecies RewardActivity RewardSpecies
   for govt in ClusterActivity 
   do
     for sink in nosink
     do
-      for market in flat var2
+#      for market in flat var2
+      for market in flat
       do
+#        for bet in 25.0 30.0
         for bet in 25.0 
         do
+#          for asp in 1.0 5.0
           for asp in 1.0
           do
+#            for rwd in 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0
             for rwd in 1.0
             do
+#              for rat in 1.0 2.0 10.0
               for rat in 1.0
               do
-		DIR="SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0.0_${asp}_"
-		IN_1="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0.0_${asp}_${run}.txt"
-		IN_2="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0.0_${asp}_${run}.grd";
-		IN_3="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0.0_${asp}_${run}-extinct.csv";
-		IN_4="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0.0_${asp}_${run}-lspp.csv";
 
-		SSREPI_input $some_script $some_process $SSS_report_id $DIR/$IN_1
-		SSREPI_input $some_script $some_process $SSS_report_grd_id $DIR/$IN_1
-		SSREPI_input $some_script $some_process $SSS_sompresult_extinct_id eport $DIR/$IN_1
-		SSREPI_input $some_script $some_process $SSS_spomresult_lspp_id $DIR/$IN_1
+		DIR="SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_"
+		IN_1="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.txt"
+		IN_2="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.grd"
+		IN_3="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-extinct.csv"
+		IN_4="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-lspp.csv"
+
+		ARGS="""
+		--SSREPI-arg-$experiment=8
+		"""
+
+		ARGS="""$ARGS
+		--SSREPI-input-${SSS_report_id}=$IN_1
+		--SSREPI-input-${SSS_report_grd_id}=$IN_2
+		--SSREPI-input-${SSS_sompresult_extinct_id}=$IN_3
+		--SSREPI-input-${SSS_spomresult_lspp_id}=$IN_4
+		"""
+
+		ARGS="""$ARGS
+		--SSREPI-output-${result_id}=batch.csv
+		"""
+		SSREPI_call $PROG --cwd=$DIR $ARGS
               done
             done
           done
@@ -551,22 +532,14 @@ do
   done
 done
 
-perl ./bin/analysege_gpLU2.pl 8 > batch1.csv
 statiscs_set_1=$(SSREPI_statistics statistics.$(uniq)\
 	"$analysege_gpLU2_id" \
 	"perl ./bin/analysege_gpLU2.pl 8") 
 
-SSREPI_output $some_script $some_process $result_id batch1.csv
 
-SSREPI_process \
-        --process_id=$some_process \
-        --end_time=$(date "+%Y%m%dT%H%M%S") > /dev/null
-
-)
-[ $? -eq 0 ] || exit -1
-
+exit -2
 (
-some_process=$(SSREPI_process --executable=$some_script)
+some_process=$(SSREPI_process --executable=$PROG)
 [ -n "$some_process" ] || exit -1
 
 SSREPI_argument_value $some_process $experiment 9
@@ -609,10 +582,10 @@ do
 		IN_3="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0.0_${asp}_${run}-extinct.csv";
 		IN_4="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0.0_${asp}_${run}-lspp.csv";
 
-		SSREPI_input $some_script $some_process $SSS_report_id $DIR/$IN_1
-		SSREPI_input $some_script $some_process $SSS_report_grd_id $DIR/$IN_1
-		SSREPI_input $some_script $some_process $SSS_sompresult_extinct_id eport $DIR/$IN_1
-		SSREPI_input $some_script $some_process $SSS_spomresult_lspp_id $DIR/$IN_1
+		SSREPI_input $PROG $some_process $SSS_report_id $DIR/$IN_1
+		SSREPI_input $PROG $some_process $SSS_report_grd_id $DIR/$IN_1
+		SSREPI_input $PROG $some_process $SSS_sompresult_extinct_id eport $DIR/$IN_1
+		SSREPI_input $PROG $some_process $SSS_spomresult_lspp_id $DIR/$IN_1
 	      done
 	    done
 	  done
@@ -627,7 +600,7 @@ statiscs_set_2=$(SSREPI_statistics statistics.$(uniq)\
 	"$analysege_gpLU2_id" \
 	"perl ./bin/analysege_gpLU2.pl 9") 
 
-SSREPI_output $some_script $some_process $result_id batch2.csv
+SSREPI_output $PROG $some_process $result_id batch2.csv
 
 SSREPI_process \
         --process_id=$some_process \
@@ -667,13 +640,13 @@ arg_input_file_id=$(SSREPI_argument \
         --application=$some_command \
 	--container_type=$result_id \
         --type=required \
-        --order=1 \
+        --order_value=1 \
         --arity="+" \
         --range=relative_ref)
 [ -n "$arg_input_file_id" ] || exit -1
 
 (
-some_process=$(SSREPI_process --executable=$some_script)
+some_process=$(SSREPI_process --executable=$PROG)
 [ -n "$some_process" ] || exit -1
 
 SSREPI_input $some_command $some_process $result_id batch1.csv
@@ -693,7 +666,7 @@ SSREPI_process \
 # postprocessing.R
 # ================
 
-some_script=$(SSREPI_call_R_script $(which postprocessing.R) \
+PROG=$(SSREPI_call_R_script $(which postprocessing.R) \
 		--licence=$LICENCE \
 		--version=1.0 \
 		--description="
@@ -713,10 +686,8 @@ some_script=$(SSREPI_call_R_script $(which postprocessing.R) \
 	3. Removes the high bankruptcy rates.
 
 	4. Removes high expenditure.")
-[ -n "$some_script" ] || exit - 1
+[ -n "$PROG" ] || exit - 1
 
-next=$(SSREPI_add_application_to_pipeline $next $some_script)
-[ -n "$next" ] || exit -1
 
 # Input types
 # -----------
@@ -725,16 +696,16 @@ next=$(SSREPI_add_application_to_pipeline $next $some_script)
 # a function can access an output/input type. In this case the results
 # files have already been defined above.
 
-all_results_id=$(SSREPI_input_type  $some_script all_results '^all_results.csv$')
+all_results_id=$(SSREPI_input_type  $PROG all_results '^all_results.csv$')
 [ -n "$all_results_id" ] || exit -1
 
-scenarios_id=$(SSREPI_input_type $some_script scenarios '^cfg/scenarios.cfg$')
+scenarios_id=$(SSREPI_input_type $PROG scenarios '^cfg/scenarios.cfg$')
 [ -n "$scenarios_id" ] || exit -1
 
 # Output types
 # ------------
 
-final_results_id=$(SSREPI_output_type $some_script final_results ^final_results.csv$)
+final_results_id=$(SSREPI_output_type $PROG final_results ^final_results.csv$)
 [ -n "$final_results_id" ] || exit -1
 
 # Arguments
@@ -743,10 +714,10 @@ final_results_id=$(SSREPI_output_type $some_script final_results ^final_results.
 arg_all_results=$(SSREPI_argument \
         --id_argument=arg_result \
         --description="All the results from all the runs" \
-        --application=$some_script \
+        --application=$PROG \
 	--container_type=$all_results_id \
         --type=required \
-        --order=1 \
+        --order_value=1 \
         --arity=1 \
         --range=relative_ref)
 [ -n "$arg_all_results" ] || exit -1
@@ -755,10 +726,10 @@ arg_all_results=$(SSREPI_argument \
 arg_scenarios=$(SSREPI_argument \
         --id_argument=scenarios \
         --description="The scenarios that are required for processing" \
-        --application=$some_script \
+        --application=$PROG \
 	--container_type=$scenarios_id \
         --type=required \
-        --order=2 \
+        --order_value=2 \
         --arity=1 \
         --range=relative_ref)
 [ -n "$arg_scenarios" ] || exit -1
@@ -766,24 +737,24 @@ arg_scenarios=$(SSREPI_argument \
 arg_final_results=$(SSREPI_argument \
         --id_argument=experiment \
         --description="The actual results from which diagrams will be created." \
-        --application=$some_script \
+        --application=$PROG \
 	--container_type=$final_results_id \
         --type=required \
-        --order=3 \
+        --order_value=3 \
         --arity=1 \
         --range=relative_ref)
 [ -n "$arg_final_results" ] || exit -1
 
 (
-some_process=$(SSREPI_process --executable=$some_script)
+some_process=$(SSREPI_process --executable=$PROG)
 [ -n "$some_process" ] || exit -1
 
-SSREPI_argument_input_file $some_script $some_process $all_results_id $arg_all_results all_results.csv
-SSREPI_argument_input_file $some_script $some_process $scenarios_id $arg_scenarios cfg/scenarios.cfg
+SSREPI_argument_input_file $PROG $some_process $all_results_id $arg_all_results all_results.csv
+SSREPI_argument_input_file $PROG $some_process $scenarios_id $arg_scenarios cfg/scenarios.cfg
 
 postprocessing.R all_results.csv cfg/scenarios.cfg final_results.csv
 
-SSREPI_argument_output_file $some_script $some_process $final_results_id $arg_final_results final_results.csv
+SSREPI_argument_output_file $PROG $some_process $final_results_id $arg_final_results final_results.csv
 
 SSREPI_process \
         --process_id=$some_process \
@@ -798,28 +769,25 @@ SSREPI_process \
 # Figure 3
 # ========
 
-some_script=$(SSREPI_call_R_script $(which figure2-3part.R) \
+PROG=$(SSREPI_call_R_script $(which figure2-3part.R) \
 		--description="This needs filling in.")
-[ -n "$some_script" ] || exit -1
-
-next=$(SSREPI_add_application_to_pipeline $next $some_script)
-[ -n "$next" ] || exit -1
+[ -n "$PROG" ] || exit -1
 
 # Input types
 # -----------
 
-final_results_id=$(SSREPI_input_type $some_script final_results \
+final_results_id=$(SSREPI_input_type $PROG final_results \
 	'^final_results.csv$')
 [ -n "$final_results_id" ] || exit -1
 
-figure3_cfg_id=$(SSREPI_input_type $some_script figure3_cfg \
+figure3_cfg_id=$(SSREPI_input_type $PROG figure3_cfg \
 	'^cfg\/figure3\.cfg$')
 [ -n "$figure3_cfg_id" ] || exit -1
 
 # Output types
 # ------------
 
-figure3_id=$(SSREPI_input_type $some_script figure3 '^figure3.pdf$')
+figure3_id=$(SSREPI_input_type $PROG figure3 '^figure3.pdf$')
 [ -n "$figure3_id" ] || exit -1
 
 # Argument types
@@ -828,10 +796,10 @@ figure3_id=$(SSREPI_input_type $some_script figure3 '^figure3.pdf$')
 arg_final_results=$(SSREPI_argument \
         --id_argument=arg_final_results \
         --description="Results files with selected scenarios" \
-        --application=$some_script \
+        --application=$PROG \
 	--container=$final_results_file \
         --type=required \
-        --order=1 \
+        --order_value=1 \
         --arity=1 \
         --range=relative_ref)
 [ -n "$arg_final_results" ] || exit -1
@@ -839,9 +807,9 @@ arg_final_results=$(SSREPI_argument \
 arg_figure3_cfg=$(SSREPI_argument \
         --id_argument=figure3_cfg \
         --description="Configuration to pick correct scenarios for figure 3" \
-        --application=$some_script \
+        --application=$PROG \
         --type=required \
-        --order=2 \
+        --order_value=2 \
         --arity=1 \
         --range=relative_ref)
 [ -n "$arg_figure3_cfg" ] || exit -1
@@ -849,9 +817,9 @@ arg_figure3_cfg=$(SSREPI_argument \
 arg_figure3=$(SSREPI_argument \
         --id_argument=figure3 \
         --description="Figure 3 pdf" \
-        --application=$some_script \
+        --application=$PROG \
         --type=required \
-        --order=1 \
+        --order_value=1 \
         --arity=3 \
         --range=relative_ref)
 [ -n "$arg_figure3" ] || exit -1
@@ -864,14 +832,14 @@ visualisation_method_figure3_id=$(SSREPI_visualisation_method \
 	"A sunflower plot with curve fitting, plotting incentive (x-axis)
 	against landscape scale species richness (y-axis)")
 
-SSREPI_implements $some_script \
+SSREPI_implements $PROG \
 	--visualisation_method="$visualisation_method_figure3_id"
 
-SSREPI_implements $some_script \
+SSREPI_implements $PROG \
 	--visualisation_method="$sunflower_plot_id"
-SSREPI_implements $some_script \
+SSREPI_implements $PROG \
 	--statistical_method="$recursive_partitioning_id"
-SSREPI_implements $some_script \
+SSREPI_implements $PROG \
 	--visualisation_method="$general_additive_models_id"
 
 var_min_incentive_id=$(SSREPI_variable \
@@ -906,17 +874,17 @@ con_max_incentive_id=$(SSREPI_content \
 	--locator='grep -v ^scenario | cut -f3 -d,')
 
 (
-some_process=$(SSREPI_process --executable=$some_script)
+some_process=$(SSREPI_process --executable=$PROG)
 [ -n "$some_process" ] || exit -1
 
-SSREPI_argument_input_file $some_script $some_process \
+SSREPI_argument_input_file $PROG $some_process \
 	$final_results_id $arg_final_results final_results.csv
-SSREPI_argument_input_file $some_script $some_process \
+SSREPI_argument_input_file $PROG $some_process \
 	$figure3_cfg_id $arg_figure3_cfg cfg/figure3.cfg
 
 figure2-3part.R final_results.csv cfg/figure3.cfg figure3.pdf
 
-SSREPI_argument_output_file $some_script $some_process \
+SSREPI_argument_output_file $PROG $some_process \
 	$figure3_id $arg_figure3 figure3.pdf
 
 some_visualisation=$(SSREPI_visualisation \
@@ -989,23 +957,20 @@ SSREPI_process \
 # table 4 for presentation
 # ========================
 
-some_script=$(SSREPI_call_R_script $(which nonlinearK4bsI.R) \
+PROG=$(SSREPI_call_R_script $(which nonlinearK4bsI.R) \
 		--description="This needs supplying")
-[ -n "$some_script" ] || exit - 1
-
-next=$(SSREPI_add_application_to_pipeline $next $some_script)
-[ -n "$next" ] || exit -1
+[ -n "$PROG" ] || exit - 1
 
 # Input types
 # -----------
 
-final_results_id=$(SSREPI_input_type $some_script final_results '^final_results.csv$')
+final_results_id=$(SSREPI_input_type $PROG final_results '^final_results.csv$')
 [ -n "$final_results_id" ] || exit -1
 
 # Output types
 # ------------
 
-table4_id=$(SSREPI_output_type $some_script table4 '^table4.csv$')
+table4_id=$(SSREPI_output_type $PROG table4 '^table4.csv$')
 [ -n "$table4_id" ] || exit -1
 
 # Argument types
@@ -1014,10 +979,10 @@ table4_id=$(SSREPI_output_type $some_script table4 '^table4.csv$')
 arg_final_results=$(SSREPI_argument \
         --id_argument=final_results \
         --description="Results files with selected scenarios" \
-        --application=$some_script \
+        --application=$PROG \
 	--container=$final_results_file \
         --type=required \
-        --order=1 \
+        --order_value=1 \
         --arity=1 \
         --range=relative_ref)
 [ -n "$arg_final_results" ] || exit -1
@@ -1025,10 +990,10 @@ arg_final_results=$(SSREPI_argument \
 arg_table4=$(SSREPI_argument \
         --id_argument=table4 \
         --description="Results for table 4 in the paper" \
-        --application=$some_script \
+        --application=$PROG \
 	--container=$table4_id \
         --type=required \
-        --order=2 \
+        --order_value=2 \
         --arity=1 \
         --range=relative_ref)
 [ -n "$arg_table4" ] || exit -1
@@ -1036,24 +1001,24 @@ arg_table4=$(SSREPI_argument \
 # Metadata
 # --------
 
-SSREPI_implements $some_script \
+SSREPI_implements $PROG \
 	--statistical_method="$aic_id"
-SSREPI_implements $some_script \
+SSREPI_implements $PROG \
 	--statistical_method="$bic_id"
-SSREPI_implements $some_script \
+SSREPI_implements $PROG \
 	--statistical_method="$edf_id"
-SSREPI_implements $some_script \
+SSREPI_implements $PROG \
 	--statistical_method="$anova_gam_id"
 
 (
-some_process=$(SSREPI_process=$some_script)
+some_process=$(SSREPI_process=$PROG)
 [ -n "$some_process" ] || exit -1
 
-SSREPI_argument_input_file $some_script $some_process $final_results_id $arg_final_results final_results.csv
+SSREPI_argument_input_file $PROG $some_process $final_results_id $arg_final_results final_results.csv
 
 nonlinearK4bsI.R final_results.csv table4.csv
 
-SSREPI_argument_output_file $some_script $some_process $table4_id $arg_table4 table4.csv
+SSREPI_argument_output_file $PROG $some_process $table4_id $arg_table4 table4.csv
 
 SSREPI_statistics "nonlinearK4bsI.R final_results.csv table4.csv" $aic_id 
 SSREPI_statistics "nonlinearK4bsI.R final_results.csv table4.csv" $bic_id 
@@ -1068,22 +1033,19 @@ SSREPI_process \
 # table 4 paper CSV
 # =================
 
-some_script=$(SSREPI_call_R_script $(which table4.R) \
+PROG=$(SSREPI_call_R_script $(which table4.R) \
 		--description="Need to put some explanation here.")
-[ -n "$some_script" ] || exit - 1
-
-next=$(SSREPI_add_application_to_pipeline $next $some_script)
-[ -n "$next" ] || exit -1
+[ -n "$PROG" ] || exit - 1
 
 # Input types
 # -----------
 
-table4_id=$(SSREPI_input_type $some_script table4 '^table4.csv$')
+table4_id=$(SSREPI_input_type $PROG table4 '^table4.csv$')
 
 # Output types
 # ------------
 
-table4_paper_id=$(SSREPI_input_type $some_script table4_paper '^table4.paper.csv$')
+table4_paper_id=$(SSREPI_input_type $PROG table4_paper '^table4.paper.csv$')
 
 # Argument types
 # --------------
@@ -1091,10 +1053,10 @@ table4_paper_id=$(SSREPI_input_type $some_script table4_paper '^table4.paper.csv
 arg_table4=$(SSREPI_argument \
         --id_argument=table4 \
         --description="Unprocessed table 4" \
-        --application=$some_script \
+        --application=$PROG \
 	--container=$table4_id \
         --type=required \
-        --order=1 \
+        --order_value=1 \
         --arity=1 \
         --range=relative_ref)
 [ -n "$arg_table4" ] || exit -1
@@ -1102,23 +1064,23 @@ arg_table4=$(SSREPI_argument \
 arg_table4_paper=$(SSREPI_argument \
         --id_argument=table4_paper \
         --description="Results for table 4 in the paper" \
-        --application=$some_script \
+        --application=$PROG \
 	--container=$table4_paper_id \
         --type=required \
-        --order=2 \
+        --order_value=2 \
         --arity=1 \
         --range=relative_ref)
 [ -n "$arg_table4" ] || exit -1
 
 (
-some_process=$(SSREPI_process --executable=$some_script)
+some_process=$(SSREPI_process --executable=$PROG)
 [ -n "$some_process" ] || exit -1
 
-SSREPI_argument_output_file $some_script $some_process $table4_id $arg_table4 table4.csv
+SSREPI_argument_output_file $PROG $some_process $table4_id $arg_table4 table4.csv
 
 table4.R table4.csv table4.paper.csv
 
-SSREPI_argument_output_file $some_script $some_process $table4_paper_id $arg_table4_paper table4.paper.csv
+SSREPI_argument_output_file $PROG $some_process $table4_paper_id $arg_table4_paper table4.paper.csv
 
 SSREPI_process \
         --process_id=$some_process \
@@ -1129,23 +1091,20 @@ SSREPI_process \
 # figure 4
 # ========
 
-some_script=$(SSREPI_call_R_script $(which figure2-3s.R) \
+PROG=$(SSREPI_call_R_script $(which figure2-3s.R) \
 		--description="Need some stuff here.")
-[ -n "$some_script" ] || exit - 1
-
-next=$(SSREPI_add_application_to_pipeline $next $some_script)
-[ -n "$next" ] || exit -1
+[ -n "$PROG" ] || exit - 1
 
 # Input types
 # -----------
 
-final_results_id=$(SSREPI_input_type $some_script final_results '^final_results.csv$')
+final_results_id=$(SSREPI_input_type $PROG final_results '^final_results.csv$')
 [ -n "$final_results_id" ] || exit -1
 
 # Output types
 # ------------
 
-figure4_id=$(SSREPI_input_type $some_script figure4 '^figure4.*\.pdf$')
+figure4_id=$(SSREPI_input_type $PROG figure4 '^figure4.*\.pdf$')
 [ -n "$figure4_id" ] || exit -1
 
 # Argument types
@@ -1154,7 +1113,7 @@ figure4_id=$(SSREPI_input_type $some_script figure4 '^figure4.*\.pdf$')
 arg_splits=$(SSREPI_argument \
         --id_argument=splits \
         --description="I think this might be split the data" \
-        --application=$some_script \
+        --application=$PROG \
 	--name="--splits" \
         --type=flag \
         --arity=0 )
@@ -1163,10 +1122,10 @@ arg_splits=$(SSREPI_argument \
 arg_final_results=$(SSREPI_argument \
         --id_argument=final_results \
         --description="Results files with selected scenarios" \
-        --application=$some_script \
+        --application=$PROG \
 	--container=$final_results_file \
         --type=required \
-        --order=1 \
+        --order_value=1 \
         --arity=1 \
         --range=relative_ref)
 [ -n "$arg_final_results" ] || exit -1
@@ -1174,9 +1133,9 @@ arg_final_results=$(SSREPI_argument \
 arg_main_scenario=$(SSREPI_argument \
         --id_argument=main_scenario \
         --description="Main scenario" \
-        --application=$some_script \
+        --application=$PROG \
         --type=required \
-        --order=2 \
+        --order_value=2 \
         --arity=1 \
         --range='^.*$')
 [ -n "$arg_main_scenario" ] || exit -1
@@ -1184,9 +1143,9 @@ arg_main_scenario=$(SSREPI_argument \
 arg_small_scenarios=$(SSREPI_argument \
         --id_argument=small_scenarios \
         --description="Small scenarios" \
-        --application=$some_script \
+        --application=$PROG \
         --type=required \
-        --order=3 \
+        --order_value=3 \
         --arity=5 \
 	--argsep=' ' \
         --range='^A-ZA-Z?\/(V|F)\/[0-9][0-9]\/[0-9]$')
@@ -1195,9 +1154,9 @@ arg_small_scenarios=$(SSREPI_argument \
 arg_figure4=$(SSREPI_argument \
         --id_argument=figure5 \
         --description="PDF for figure 4" \
-        --application=$some_script \
+        --application=$PROG \
         --type=required \
-        --order=4 \
+        --order_value=4 \
 	--container=$figure4_id \
         --arity=1 \
         --range=relative_ref)
@@ -1206,7 +1165,7 @@ arg_figure4=$(SSREPI_argument \
 # Metadata
 # --------
 
-SSREPI_implements $some_script --visualisation_method=$sunflower_plot_id
+SSREPI_implements $PROG --visualisation_method=$sunflower_plot_id
 
 con_figure4_sunflower_plot_id=$(SSREPI_content \
 	--visualisation_method=$sunflower_plot_id \
@@ -1219,20 +1178,20 @@ con_varscenario_id=$(SSREPI_content \
 
 (
 
-some_process=$(SSREPI_process --executable=$some_script)
+some_process=$(SSREPI_process --executable=$PROG)
 [ -n "$some_process" ] || exit -1
 
 SSREPI_argument_value $some_process $arg_splits 
 SSREPI_argument_value $some_process $arg_main_scenario Richness
 SSREPI_argument_value $some_process $arg_small_scenarios \
 	"A/F/25/5 A/F/25/1 A/F/30/5 O/F/25/5 CA/F/25/5"
-SSREPI_argument_input_file $some_script $some_process $final_results_id \
+SSREPI_argument_input_file $PROG $some_process $final_results_id \
 	$arg_final_results final_results.csv
 
 figure2-3s.R -splits final_results.csv Richness \
 	A/F/25/5 A/F/25/1 A/F/30/5 O/F/25/5 CA/F/25/5 figure4.a_and_b.pdf
 
-SSREPI_argument_output_file $some_script $some_process \
+SSREPI_argument_output_file $PROG $some_process \
 	$figure4_id $arg_figure4 figure4.a_and_b.pdf
 
 some_visualistaiton=$(SSREPI_visualisation \
@@ -1249,20 +1208,20 @@ SSREPI_process \
 [ $? -eq 0 ] || exit -1
 
 (
-some_process=$(SSREPI_process --executable=$some_script)
+some_process=$(SSREPI_process --executable=$PROG)
 [ -n "$some_process" ] || exit -1
 
 SSREPI_argument_value $some_process $arg_splits 
 SSREPI_argument_value $some_process $arg_main_scenario Richness
 SSREPI_argument_value $some_process $arg_small_scenarios \
 	"O/V/25/5 O/V/25/1 O/V/30/5 A/V/25/5 CO/V/25/5"
-SSREPI_argument_input_file $some_script $some_process $final_results_id \
+SSREPI_argument_input_file $PROG $some_process $final_results_id \
 	$arg_final_results final_results.csv
 
 figure2-3s.R -splits final_results.csv Richness \
 	O/V/25/5 O/V/25/1 O/V/30/5 A/V/25/5 CO/V/25/5 figure4.c_and_d.pdf
 
-SSREPI_argument_output_file $some_script $some_process $figure4_id \
+SSREPI_argument_output_file $PROG $some_process $figure4_id \
 	$arg_figure4 figure4.c_and_d.pdf
 
 SSREPI_process \
@@ -1274,23 +1233,20 @@ SSREPI_process \
 # figure 5
 # ========
 
-some_script=$(SSREPI_call_perl_script $(which treehist3.pl) \
+PROG=$(SSREPI_call_perl_script $(which treehist3.pl) \
 		--description="Some documentation here, please.")
-[ -n "$some_script" ] || exit - 1
-
-next=$(SSREPI_add_application_to_pipeline $next $some_script)
-[ -n "$next" ] || exit -1
+[ -n "$PROG" ] || exit - 1
 
 # Input types
 # -----------
 
-final_results_id=$(SSREPI_input_type $some_script final_results '^final_results.csv$')
+final_results_id=$(SSREPI_input_type $PROG final_results '^final_results.csv$')
 [ -n "$final_results_id" ] || exit -1
 
 # Output types
 # ------------
 
-figure5_id=$(SSREPI_input_type $some_script figure5 '^.*.PDF$')
+figure5_id=$(SSREPI_input_type $PROG figure5 '^.*.PDF$')
 [ -n "$figure5_id" ] || exit -1
 
 # Argument types
@@ -1299,7 +1255,7 @@ figure5_id=$(SSREPI_input_type $some_script figure5 '^.*.PDF$')
 arg_complexity_variable=$(SSREPI_argument \
         --id_argument=complexity_variable \
         --description="Complexity Parameter" \
-        --application=$some_script \
+        --application=$PROG \
 	--name="--cp" \
         --type=option \
         --arity=1 \
@@ -1309,10 +1265,10 @@ arg_complexity_variable=$(SSREPI_argument \
 arg_final_results=$(SSREPI_argument \
         --id_argument=final_results \
         --description="Results files with selected scenarios" \
-        --application=$some_script \
+        --application=$PROG \
 	--container=$final_results_file \
         --type=required \
-        --order=1 \
+        --order_value=1 \
         --arity=1 \
         --range=relative_ref)
 [ -n "$arg_final_results" ] || exit -1
@@ -1320,9 +1276,9 @@ arg_final_results=$(SSREPI_argument \
 arg_figure5=$(SSREPI_argument \
         --id_argument=figure5 \
         --description="PDF for figure 5" \
-        --application=$some_script \
+        --application=$PROG \
         --type=required \
-        --order=2 \
+        --order_value=2 \
 	--container=$figure5_id \
         --arity=1 \
         --range=relative_ref)
@@ -1331,9 +1287,9 @@ arg_figure5=$(SSREPI_argument \
 arg_response_variable=$(SSREPI_argument \
         --id_argument=response_variable \
         --description="Response variable" \
-        --application=$some_script \
+        --application=$PROG \
         --type=required \
-        --order=2 \
+        --order_value=2 \
         --arity=1 \
         --range=".*")
 [ -n "$arg_response_variable" ] || exit -1
@@ -1341,10 +1297,10 @@ arg_response_variable=$(SSREPI_argument \
 arg_explanatory_variables=$(SSREPI_argument \
         --id_argument=explanatory_variables \
         --description="Explanatory variables" \
-        --application=$some_script \
+        --application=$PROG \
         --name=expiriment \
         --type=required \
-        --order=3 \
+        --order_value=3 \
         --arity=+ \
 	--argsep="," \
         --range="^.*$")
@@ -1353,7 +1309,7 @@ arg_explanatory_variables=$(SSREPI_argument \
 # Metadata
 # --------
 
-SSREPI_implements $some_script \
+SSREPI_implements $PROG \
 	--statistical_method="$recursive_partitioning_id"
 SSREPI_value --value="0.0075" \
 	--statistical_parameter="$par_partitioning_complexity_id"
@@ -1361,10 +1317,10 @@ SSREPI_value --value="0.0075" \
 exit
 (
 
-some_process=$(SSREPI_process --executable=$some_script)
+some_process=$(SSREPI_process --executable=$PROG)
 [ -n "$some_process" ] || exit -1
 
-SSREPI_argument_input_file $some_script $some_process $final_results_id \
+SSREPI_argument_input_file $PROG $some_process $final_results_id \
 	$arg_final_results final_results.csv
 SSREPI_argument_value $some_process $arg_complexity_variable 0.0075
 SSREPI_argument_value $some_process $arg_response_variable Richness
@@ -1377,7 +1333,7 @@ treehist3.pl \
 	LOBEC.rpart3Xfr.pdf  \
 	Richness Government,Market,BET,ASP,Expenditure 
 
-SSREPI_argument_output_file $some_script $some_process $figure5_id \
+SSREPI_argument_output_file $PROG $some_process $figure5_id \
 	$arg_figure5 LOBEC.rpart3Xfr.pdf 
 
 SSREPI_process \
@@ -1389,23 +1345,20 @@ SSREPI_process \
 # Appendix 
 # ========
 
-some_script=$(SSREPI_call_R_script $(which figure2-3small.R) \
+PROG=$(SSREPI_call_R_script $(which figure2-3small.R) \
 		--description="Some words of wisdom about this script.")
-[ -n "$some_script" ] || exit - 1
-
-next=$(SSREPI_add_application_to_pipeline $next $some_script)
-[ -n "$next" ] || exit -1
+[ -n "$PROG" ] || exit - 1
 
 # Input types
 # -----------
 
-final_results_id=$(SSREPI_input_type $some_script final_results '^final_results.csv$')
+final_results_id=$(SSREPI_input_type $PROG final_results '^final_results.csv$')
 [ -n "$final_results_id" ] || exit -1
 
 # Output types
 # ------------
 
-appendix_id=$(SSREPI_input_type $some_script appendix '^appendix.pdf$')
+appendix_id=$(SSREPI_input_type $PROG appendix '^appendix.pdf$')
 [ -n "$appendix_id" ] || exit -1
 
 
@@ -1415,7 +1368,7 @@ appendix_id=$(SSREPI_input_type $some_script appendix '^appendix.pdf$')
 arg_splits=$(SSREPI_argument \
         --id_argument=splits \
         --description="I think this might be split the data" \
-        --application=$some_script \
+        --application=$PROG \
 	--name="--splits" \
         --type=flag \
         --arity=0)
@@ -1424,10 +1377,10 @@ arg_splits=$(SSREPI_argument \
 arg_final_results=$(SSREPI_argument \
         --id_argument=final_results \
         --description="Results files with selected scenarios" \
-        --application=$some_script \
+        --application=$PROG \
 	--container=$final_results_file
         --type=required \
-        --order=1 \
+        --order_value=1 \
         --arity=1 \
         --range=relative_ref)
 [ -n "$arg_final_results" ] || exit -1
@@ -1435,9 +1388,9 @@ arg_final_results=$(SSREPI_argument \
 arg_y_axis=$(SSREPI_argument \
         --id_argument=y_axis \
         --description="y-axis label" \
-        --application=$some_script \
+        --application=$PROG \
         --type=required \
-        --order=2 \
+        --order_value=2 \
         --arity=1 \
         --range='.*')
 [ -n "$arg_y_axis" ] || exit -1
@@ -1445,10 +1398,10 @@ arg_y_axis=$(SSREPI_argument \
 arg_appendix=$(SSREPI_argument \
         --id_argument=appendix \
         --description="The diagram for inclusion in the appendix" \
-        --application=$some_script \
+        --application=$PROG \
         --type=required \
 	--container=$appendix_id \
-        --order=3 \
+        --order_value=3 \
         --arity=1 \
         --range='^.*pdf$')
 [ -n "$appendix" ] || exit -1
@@ -1456,9 +1409,9 @@ arg_appendix=$(SSREPI_argument \
 arg_scenarios=$(SSREPI_argument \
         --id_argument=scenarios \
         --description="The Scenarios to include in the diagram" \
-        --application=$some_script \
+        --application=$PROG \
         --type=required \
-        --order=4 \
+        --order_value=4 \
         --arity=+ \
 	--argsep=' ' \
         --range='^A-ZA-Z?\/(V|F)\/[0-9][0-9]\/[0-9]$')
@@ -1466,10 +1419,10 @@ arg_scenarios=$(SSREPI_argument \
 
 (
 
-some_process=$(SSREPI_process --executable=$some_script)
+some_process=$(SSREPI_process --executable=$PROG)
 [ -n "$some_process" ] || exit -1
 
-SSREPI_argument_input_file $some_script $some_process  $final_results_id $arg_final_results final_results.csv
+SSREPI_argument_input_file $PROG $some_process  $final_results_id $arg_final_results final_results.csv
 SSREPI_argument_value $some_process $arg_y_axis Richness
 SSREPI_argument_value $some_process $arg_splits 
 SSREPI_argument_value $some_process $arg_scenarios " 
@@ -1486,7 +1439,7 @@ figure2-3small.R -splits final_results.csv \
 	CA/V/30/5 CO/F/25/1 CO/F/25/5 CO/F/30/1 CO/F/30/5 CO/V/25/1 CO/V/30/1 \
 	CO/V/30/5
 
-SSREPI_argument_output_file $some_script $some_process $appendix_id \
+SSREPI_argument_output_file $PROG $some_process $appendix_id \
 	$arg_appendix appendix.pdf
 
 SREPI_process \

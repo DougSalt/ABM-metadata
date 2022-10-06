@@ -13,10 +13,7 @@ date
 
 . lib/ssrepi.sh
 
-export NOF_CPUS=2
-export POST_DEPENDENCIES=/tmp/postprocessing.sh.dependencies
-touch "$POST_DEPENDENCIES"
-> "$POST_DEPENDENCIES"
+export SSREPI_NOF_CPUS=2
 
 # Global Identity
 # ===============
@@ -44,7 +41,6 @@ study_id=$(SSREPI_study \
 	--label="SSS-cluster2 reconstruction" \
 )
 [ -n "$study_id" ] || exit -1
-SSREPI_set_study $study_id
 
 # People
 # ======
@@ -55,13 +51,13 @@ then
 	gary_polhill_id=$(SSREPI_person \
 		--id_person=gary_polhill \
 		--name="Gary Polhill" \
-		--email=gary.polhill@hutton.ac.uk
-		)
+		--email=gary.polhill@hutton.ac.uk \
+	)
 	doug_salt_id=$(SSREPI_person \
 		--id_person=doug_salt \
 		--name="Doug Salt" \
-		--email=doug.salt@hutton.ac.uk
-		)
+		--email=doug.salt@hutton.ac.uk \
+	)
 else
 	gary_polhill_id=$(SSREPI_hutton_person gp40285)
 	doug_salt_id=$(SSREPI_hutton_person ds42723)
@@ -88,20 +84,25 @@ SSREPI_involvement $study_id $doug_salt_id \
 # Local Identity (particulars of this script)
 # ==============
 
-VERSION=1.0
-LICENCE=GPLv3
 ME=$(SSREPI_application \
 	--language=bash \
 	--version=$VERSION \
 	--licence=$LICENCE \
 	--purpose="Overall workflow shell script" \
-        --model=fearlus-spomm)
+        --model=fearlus-spom)
 [ -n "$ME" ] || exit -1
 
 SSREPI_contributor $ME $doug_salt_id Developer
 SSREPI_contributor $ME $doug_salt_id Author
 
-pipe=$(SSREPI_create_pipeline $ME)
+# This sets the value of the study_id as a global variable, SSREPI_study and
+# sets the GENERATED_BY variable to --generated_by=SSREPI_study which is used
+# internally.
+
+SSREPI_set --study=$study_id \
+	--model=fearlus-spom \
+	--licence=GPLv3 \
+	--version=1.0 \
 
 # Some metadata
 # =============
@@ -168,7 +169,7 @@ garys_2nd_assumption=$(SSREPI_person_makes_assumption $gary_polhill_id \
 
 # Software
 
-if SSREPI_require_minimum perl  "5.0" $(perl -e 'print $];')
+if SSREPI_require_minimum $ME perl  "5.0" $(perl -e 'print $];')
 then
         (>&2 echo "$0: Minimum requirement for Perl failed")
         (>&2 echo "$0: Required at least Perl 5.0, got " \
@@ -177,7 +178,7 @@ then
 fi
 
 
-if SSREPI_require_minimum python "3.0" $(python --version 2>&1 | cut -f2 -d' ')
+if SSREPI_require_minimum $ME python "3.0" $(python --version 2>&1 | cut -f2 -d' ')
 then
         (>&2 echo "$0: Minimum requirement for Python failed")
         (>&2 echo "$0: Required 3.0 got " \
@@ -185,7 +186,7 @@ then
         exit -1
 fi
 
-if SSREPI_require_minimum "R" "3.3.1" $(R --version | head -1 | awk '{print $3}')
+if SSREPI_require_minimum $ME "R" "3.3.1" $(R --version | head -1 | awk '{print $3}')
 then
         (>&2 echo "$0: Minimum requirement for R failed")
         (>&2 echo "$0: Required 3.3.1 got " \
@@ -195,7 +196,7 @@ fi
 
 
 
-if SSREPI_require_minimum bash 3.0 $(bash --version | sed -n 1p | awk '{print $4}' | cut -f1 -d.)
+if SSREPI_require_minimum $ME bash 3.0 $(bash --version | sed -n 1p | awk '{print $4}' | cut -f1 -d.)
 then
         (>&2 echo "$0: Minimum requirement for bash failed")
         (>&2 echo "$0: Required 3.0 got " \
@@ -203,7 +204,7 @@ then
         exit -1
 fi
 
-#if SSREPI_require_exact fearlus "fearlus-1.1.5.2_spom-2.3") \
+#if SSREPI_require_exact $ME fearlus "fearlus-1.1.5.2_spom-2.3") \
 #	$($(which fearlus-1.1.5.2_spom-2.3) --version | tail -1 | awk '{print $1}')
 #then
 #        (>&2 echo "$0: Minimum requirement for fearlus-spom binary failed")
@@ -212,7 +213,7 @@ fi
 #        exit -1
 #fi
 
-if SSREPI_require_exact os.$PROG Linux $(uname -s) && SSREPI_require_exact os.$PROG Darwin $(uname -s) 
+if SSREPI_require_exact $ME os Linux $(uname -s) && SSREPI_require_exact $ME os Darwin $(uname -s) 
 then
         (>&2 echo "$0: Exact requirement for the OS failed")
 	(>&2 echo "$0: Required Linux or  Darwin got "$(uname -s))
@@ -222,97 +223,59 @@ fi
 
 # Hardware
 
-SPACE=$(df -k -h . | tail -1 | awk '{print $1}' | sed 's/G$//')
-if [[ $(uname -s) == "Darwin" ]]
-then
-	SPACE=$(df -k . | tail -1 | awk '{print $4}' | sed 's/G$//')
-fi
-if SSREPI_require_minimum diskspace 20G $SPACE
+if SSREPI_require_minimum $ME disk_space 20G $(disk_space)
 then
         (>&2 echo "$0: Minimum requirement for disk space failed")
-	(>&2 echo "$0: Required 20G of disk space got $SPACE")
+	(>&2 echo "$0: Required 20G of disk space got $(disk_space)G")
         exit -1
 fi
 
-MEM=
-if [[ $(uname -s) == "Darwin" ]]
-then
-	MEM=$(echo $(sysctl hw.memsize | cut -f2 -d' ') / 1024 / 1024 / 1024 | bc)
-else
-	MEM=$(cat /proc/meminfo | grep MemTotal | awk '{print $2}')
-fi
-if SSREPI_require_minimum memory.$PROG 4 ${MEM}
+if SSREPI_require_minimum $ME memory 4 $(memory)
 then
         (>&2 echo "$0: Minimum requirement for memory failed")
-	(>&2 echo "$0: Required 4G of memory got ${MEM}G")
+	(>&2 echo "$0: Required 4G of memory got $(memory)G")
         exit -1
 fi
 
-CPUS=$(($(cat /proc/cpuinfo | awk '/^processor/{print $3}' | tail -1) + 1))
-if [[ $(uname -s) == "Darwin" ]]
-then
-	CPUS=$(sysctl hw.ncpu | cut -f2 -d ' ')
-fi
-if SSREPI_require_minimum nof_cpus $NOF_CPUS $CPUS 
+if SSREPI_require_minimum $ME cpus $SSREPI_NOF_CPUS $(cpus)
 then
         (>&2 echo "$0: Minimum requirement for number of cpus failed")
-	(>&2 echo "$0: Required $NOF_CPUS cpus of memory got $CPUS")
+	(>&2 echo "$0: Required $SSREPI_NOF_CPUS cpus of memory got $(cpus)")
         exit -1
 fi
 
 SSREPI_call \
 	SSS-StopC2-Cluster-create.sh \
-	--add-to-pipeline=$pipe \
 	--purpose="
 
 		Sets up the run for the lower value rewards
 		and this is to test out multi-line,
 		to see if it works. Which it does but removes the
 		carriage returns and tabs. So you can nicely format it." \
-	--version=$VERSION \
-	--licence=$LICENCE \
-	--model=fearlus-spomm
 
-#
-#SHELL_SCRIPT_2=$(SSREPI_call_bash_script \
-#	$(which SSS-StopC2-Cluster-create2.sh) \
-#	--purpose="Sets up the run for the higher value rewards
-#
-#		Add some documentary stuff here.")
-#
-#
-#[ -n "$SHELL_SCRIPT_2" ] || exit -1
-#
-#pipe=$(SSREPI_add_pipeline_to_pipeline $pipe $SHELL_SCRIPT_2)
-#[ -n "$pipe" ] || exit -1
-#
-#SHELL_SCRIPT_3=$(SSREPI_call_bash_script \
-#	$(which SSS-StopC2-Cluster-run.sh) \
-#	--purpose="Does the runs for the lower value rewards")
-#
-#[ -n "$SHELL_SCRIPT_3" ] || exit -1
-#
-#pipe=$(SSREPI_add_pipeline_to_pipeline $pipe $SHELL_SCRIPT_3)
-#[ -n "$pipe" ] || exit -1
-#
-#SHELL_SCRIPT_4=$(SSREPI_call_bash_script \
-#	$(which SSS-StopC2-Cluster-run2.sh) \
-#	--purpose="Does the runs for the higher value rewards")
-#
-#[ -n "$SHELL_SCRIPT_4" ] || exit -1
-#
-#pipe=$(SSREPI_add_pipeline_to_pipeline $pipe $SHELL_SCRIPT_4)
-#[ -n "$pipe" ] || exit -1
-#
-#SHELL_SCRIPT_5=$(SSREPI_call_bash_script_with_dependency \
-#	$(which postprocessing.sh) \
-#	"$POST_DEPENDENCIES" \
-#	--purpose="Post processing to almagamate results and produce pretty diagrams")
-#
-#[ -n "$SHELL_SCRIPT_5" ] || exit -1
-#
-#pipe=$(SSREPI_add_pipeline_to_pipeline $pipe $SHELL_SCRIPT_5)
-#[ -n "$pipe" ] || exit -1
+SSREPI_call \
+	SSS-StopC2-Cluster-create2.sh \
+	--purpose="Sets up the run for the higher value rewards
+
+		Add some documentary stuff here." \
+
+
+SSREPI_invoke \
+	SSS-StopC2-Cluster-run.sh \
+	--purpose="Does the runs for the lower value rewards" \
+	--add-to-dependencies=postprocessing.sh.dependencies \
+
+
+SSREPI_invoke \
+	SSS-StopC2-Cluster-run2.sh \
+	--purpose="Does the runs for the higher value rewards" \
+	--add-to-dependencies=postprocessing.sh.dependencies \
+
+
+SSREPI_call \
+	postprocessing.sh \
+	--purpose="Post processing to almagamate results and produce pretty diagrams" \
+	--with-dependencies=postprocessing.sh.dependencies \
 
 SSREPI_study \
 	--id_study=$study_id \

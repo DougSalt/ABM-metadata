@@ -10,7 +10,6 @@ __credits__ = "Gary Polhill, Lorenzo Milazzo"
 __modified__ = "2017-03-02"
 
 
-debug=True
 
 import os, sys, getopt, re
 import sqlite3
@@ -21,8 +20,8 @@ from psycopg2.extras import RealDictCursor
 # research site level Python paths. Additionally I only want to import
 # some functionality. In this instance 
 
-sys.path.append("lib")
 import ssrepi
+ssrepi.debug=False
 
 table_parameter = re.compile(r'^--table=([A-Za-z0-9_]+)$')
 column_parameter = re.compile(r'^([A-Za-z0-9_-]+)(=(.*?))$')
@@ -52,7 +51,7 @@ def parameters(conn, argv):
 	
 	if table == None:
 		raise IllegalArgumentError("No --table argument supplied")
-	if debug:
+	if ssrepi.debug:
 		sys.stderr.write("Doing table: " + table + "\n")
 	
 	tableClass = None
@@ -63,7 +62,7 @@ def parameters(conn, argv):
 
 	columns = {}
 	for arg in re.split(r' --',' '.join(argv)):
-		if debug:
+		if ssrepi.debug:
 			sys.stderr.write("Processing argument: " + arg + "\n")
 		if table_parameter.match(arg):
 			pass
@@ -87,7 +86,7 @@ def parameters(conn, argv):
 					actual_columns = [ row['name'] for row in result ]
 				else:
 					actual_columns = [ row['column_name'] for row in result ]
-				if debug:
+				if ssrepi.debug:
 					sys.stderr.write(mysql + "\n")
 				found = False
 				for col_details in actual_columns:
@@ -144,6 +143,6 @@ if __name__ == "__main__":
 	result = re.sub(r' AND ',',', row.getPrimaryKeys())
 	result = re.sub(r'^.* = ','',result)
 	result = re.sub(r'[\'\"]','',result)
-	if debug:
+	if ssrepi.debug:
 		sys.stderr.write("Printing: " + result + "\n")
 	print(result)

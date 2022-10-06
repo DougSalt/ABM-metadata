@@ -38,7 +38,7 @@ if 'SSREP_DBNAME' in os.environ:
     db_file = os.environ['SSREP_DBNAME']
 
 
-debug = True
+debug = False
 if 'SSREP_DEBUG' in os.environ:
     db_file = os.environ['SSREP_DEBUG']
 
@@ -137,6 +137,31 @@ class Table:
         for key in row:
             self.__dict__[key.upper()] = row[key]
 
+    def search(self,cur, equals):
+        """
+        Returns a bunch of primary keys
+        match is a table for column against value
+        """
+        keys = None
+        for keyset in self.myPrimaryKeys():
+            for column in keyset:
+                keys = column + ','
+   
+        match = None 
+        for column, value in equals.items():
+            if match == None:
+                match = column + " = '" + value + "'"
+            else:
+                match = match + " AND " + column + " = '" + value + "'"
+
+        searchSQL = ("SELECT " + keys.strip(',') +
+            " FROM " + self.myTableName() +
+            " WHERE " + match)
+        if debug:
+            sys.stderr.write(searchSQL + '\n')
+        curry = cur.execute(searchSQL)
+        return cur.fetchall()
+
     def update(self,cur):
         matches = self.getPrimaryKeys()
         if matches == "":
@@ -157,15 +182,14 @@ class Table:
         self.MODIFIED = datetime.datetime.now().isoformat()
         self.validate()
         for key in row:
-            #sys.stderr.write("Updating: " + str(key) + " = " + str(row[key]) + " against self[" + str(key) + "] = " + str(self.__dict__[key.upper()]) + "\n")
+            #sys.stderr.write("Updating: " + str(key) + " = " + str(row[key]) + " against self[" + str(key) + "] = " + str(self.__dict__[key.upper()]) + " instance of " + str(isinstance(self.__dict__[key.upper()], int)) +"\n")
             if self.__dict__[key.upper()] == None or self.__dict__[key.upper()] == '':
                 pass
                 #setValues = (setValues + key + "=null,")
             elif (self.__dict__[key.upper()] != None and 
                 isinstance(self.__dict__[key.upper()], int)):
                 setValues = (setValues + key + "=" + 
-                    str(self.__dict__[key]) + ",")
-
+                    str(self.__dict__[key.upper()]) + ",")
             else:
                 setValues = (setValues + key + "='" + 
                     self.__dict__[key.upper()] + "',")
@@ -592,7 +616,8 @@ DEFERRABLE INITIALLY DEFERRED
                 self.__class__.__name__ + 
                 ': Invalid column: SEPARATOR: ' +
                 str(self.SEPARATOR))
-        if (not is_positive_int(self.ARITY) and
+        if (self.ARITY != None and 
+            not is_positive_int(self.ARITY) and
             self.ARITY != '?' and
             self.ARITY != '+' and
             self.ARITY != '*' and
@@ -2272,6 +2297,7 @@ DEFERRABLE INITIALLY DEFERRED
                     self.__class__.__name__ + 
                     ': Invalid column: END_TIME: ' +
                     self.END_TIME)
+        if self.END_TIME != None and self.START_TIME != None:
             if self.START_TIME > self.END_TIME:
                 raise InvalidEntity('ERROR: Class: ' + 
                     self.__class__.__name__ + 
