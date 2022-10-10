@@ -1,4 +1,4 @@
-!/bin/bash
+#!/bin/bash
 
 # Shell script to run the SSS experiments
 
@@ -85,10 +85,10 @@ then
         exit -1
 fi
 
-if SSREPI_require_minimum $PROG cpus $SSREPI_SSREPI_NOF_CPUS $(cpus) 
+if SSREPI_require_minimum $PROG cpus $SSREPI_NOF_CPUS $(cpus) 
 then
         (>&2 echo "$0: Minimum requirement for number of cpus failed")
-	(>&2 echo "$0: Required $SSREPI_SSREPI_NOF_CPUS cpus of memory got $(cpus)")
+	(>&2 echo "$0: Required $SSREPI_NOF_CPUS cpus of memory got $(cpus)")
         exit -1
 fi
 
@@ -625,7 +625,7 @@ do
 	      for rat in 1.0
 	      do
 
-			DIR=SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_
+			DIR=Cluster2-2/SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_
 			report=${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}
 			param=SSS_top-level_${report}.model
 

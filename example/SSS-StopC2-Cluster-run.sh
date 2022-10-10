@@ -34,7 +34,7 @@ PROG=$(SSREPI_application \
 	$FEARLUS \
 	--licence=GPLv3 \
 	--version=1.1.5.2_spom-2.3 \
-	--descriptioon="Framework for Evaluation and Assessment of Regional Land Use Scenarios (FEARLUS) = Stochastic Patch Occupancy Model (SPOM)" \
+	--description="Framework for Evaluation and Assessment of Regional Land Use Scenarios (FEARLUS) = Stochastic Patch Occupancy Model (SPOM)" \
 )
 [ -n $PROG ] || exit -1
 
@@ -84,10 +84,10 @@ then
         exit -1
 fi
 
-if SSREPI_require_minimum $PROG cpus $SSREPI_SSREPI_NOF_CPUS $(cpus) 
+if SSREPI_require_minimum $PROG cpus $SSREPI_NOF_CPUS $(cpus) 
 then
         (>&2 echo "$0: Minimum requirement for number of cpus failed")
-	(>&2 echo "$0: Required $SSREPI_SSREPI_NOF_CPUS cpus of memory got $(cpus)")
+	(>&2 echo "$0: Required $SSREPI_NOF_CPUS cpus of memory got $(cpus)")
         exit -1
 fi
 
@@ -625,7 +625,7 @@ do
 	      #for rat in 1.0 2.0 10.0
 	      for rat in 1.0
 	      do
-			DIR=SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_
+			DIR=Cluster2/SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_
 			report=${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}
 			param=SSS_top-level_${report}.model
 

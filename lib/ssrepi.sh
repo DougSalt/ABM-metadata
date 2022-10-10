@@ -358,6 +358,8 @@ SSREPI_application_get_executable() {
 
 SSREPI_call() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	_run $@ --in-line $STANDARD_ARGS
+
 	if [ -z "$SSREPI_SLURM" ]
 	then
 		wait
@@ -369,9 +371,9 @@ SSREPI_invoke() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	if [ -z "$SSREPI_SLURM" ]
 	then
-		pipe=$(_run $@ $STANDARD_ARGS)
+		_run $@ $STANDARD_ARGS
 	else
-		pipe=$(_run $@ $STANDARD_ARGS) &
+		_run $@ $STANDARD_ARGS &
 	fi
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 }
@@ -399,6 +401,10 @@ _run() {
 	then	
 		CWD=$(echo "$@" | egrep -s "cwd=" | \
 			sed "s/^.*--cwd=\([^ ][^ ]*\).*$/\1/")
+		if [ ! -d "$CWD" ]
+		then
+			mkdir "$CWD"
+		fi
 		PARAMS=$(echo "$PARAMS" | egrep -s "cwd=" | \
 			sed "s/--cwd=[^ ][^ ]* *//")
 	fi
@@ -423,7 +429,7 @@ _run() {
 	# PIPE with this value.
         SSREPI_pipe=$(update.py \
 		--table=Pipeline \
-		--id_pipeline=$SSREPI_PIPE \
+		--id_pipeline=$SSREPI_pipe \
 		--next=$id_pipeline \
 	)
 	[ -n "SSREPI_pipe" ] || exit -1
@@ -602,19 +608,35 @@ _run() {
 			SSREPI_argument_value $THIS_PROCESS $id $value
 		done
 
+		stdout=
+		stderr=
 		for arg in $@
 		do
 			if [[ "$arg" == *--SSREPI-input-* ]]
 			then
 				value=$(echo $arg | cut -f2 -d=)
 				input_type_id=$(echo $arg | cut -f1 -d= | sed 's/--SSREPI-input-//')
-				SSREPI_input $id_application $THIS_PROCESS $input_type_id $value
+				SSREPI_input_value $id_application $THIS_PROCESS $input_type_id $value
+			elif [[ "$arg" == *--SSREPI-extend-stdout-* ]]
+			then
+				value=$(echo $arg | cut -f2 -d=)
+				stdout=' >>'$value
+			elif [[ "$arg" == *--SSREPI-stdout-* ]]
+			then
+				value=$(echo $arg | cut -f2 -d=)
+				stdout=' >'$value
+			elif [[ "$arg" == *--SSREPI-stderr-* ]]
+			then
+				value=$(echo $arg | cut -f2 -d=)
+				stderr=' >'$value
 			fi
 		done
 
+		[ -n $DEBUG ] && (>&2 echo CWD: $PWD)
 		if [ -n "$inline" ]
 		then
-			eval $APP $proper_args ${position_arg[*]}
+			[ -n $DEBUG ] && (>&2 echo RUNNING: $APP $proper_args ${position_arg[*]} $stdout $stderr)
+			eval $APP $proper_args ${position_arg[*]} $stdout $stderr
 			SYS=$?
 			if [ $SYS -ne 0 ]
 			then
@@ -624,10 +646,9 @@ _run() {
 		then
 			(>&2 echo "SLURMING IT: TBC")
 			
-			srun $APP $proper_args ${position_arg[*]}
+			[ -n $DEBUG ] && (>&2 echo RUNNING: srun $APP $proper_args ${position_arg[*]} $stdout $stderr)
+			srun $APP $proper_args ${position_arg[*]} $stdout $stderr
 		else
-			(>&2 echo "HOMEBREWING IT: TBC")
-
 			# Check the number of processes running. And if it exceeded then sit here and wait.
 			instances=$(ps -A -o command | grep $APP | grep -v grep | wc -l)
 			while [ $instances -ge $SSREPI_NOF_CPUS ]
@@ -635,17 +656,24 @@ _run() {
 				(>&2 echo "$FUNCNAME: Waiting...")
 				sleep 60
 			done
-			echo $PWD
-			eval $APP $proper_args ${position_arg[*]}
+			[ -n $DEBUG ] && (>&2 echo RUNNING: $APP $proper_args ${position_arg[*]} $stdout $stderr)
+			eval $APP $proper_args ${position_arg[*]} $stdout $stderr
 		fi
 
 		for arg in $@
 		do
-			if [[ "$arg" == *--SSREPI-output-* ]]
+			if 	[[ "$arg" == *--SSREPI-output-* ]] || \
+				[[ "$arg" == *--SSREPI-extend-stdout-* ]] || \
+				[[ "$arg" == *--SSREPI-stdout-* ]] || \
+				[[ "$arg" == *--SSREPI-stderr-* ]]
 			then
 				value=$(echo $arg | cut -f2 -d=)
-				output_type_id=$(echo $arg | cut -f1 -d= | sed 's/--SSREPI-output-//')
-				SSREPI_output $THIS_PROCESS $output_type_id $value
+				output_type_id=$(echo $arg | cut -f1 -d= | \
+					sed 's/--SSREPI-output-//' | \
+					sed 's/--SSREPI-stderr-//' | \
+					sed 's/--SSREPI-extend-stdout-//' | \
+					sed 's/--SSREPI-stdout-//')
+				SSREPI_output_value $THIS_PROCESS $output_type_id $value
 			fi
 		done
 
@@ -743,7 +771,7 @@ SSREPI_output_type() {
 	echo $id_output_type
 }
 
-SSREPI_output() {
+SSREPI_output_value() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
  
 	# $1 - process_id - specifically output of
@@ -752,7 +780,7 @@ SSREPI_output() {
 
 	if [ ! -e $3 ]
 	then
-		(>&2 echo "$FUNCNAME: Something seriously wrong in $0 at $BASH_LINENO: $3 does not exist")
+		(>&2 echo "$FUNCNAME: Something seriously wrong in the call \"--SSREPI-output-$id_container_type=$3\": $3 does not exist")
 		exit -1 
 	fi
 
@@ -839,7 +867,7 @@ SSREPI_input_type() {
 	echo $id_input_type
 }
 
-SSREPI_input() {
+SSREPI_input_value() {
 
 	# $1 - id_application
 	# $2 - id_process
@@ -849,7 +877,7 @@ SSREPI_input() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	if [ ! -e $4 ]
 	then
-		(>&2 echo "$FUNCNAME: Something seriously wrong in $0 at $BASH_LINENO: $4 does not exist")
+		(>&2 echo "$FUNCNAME: Something seriously wrong in the call \"--SSREPI-input-$id_container_type=$4\": $4 does not exist")
 		exit -1 
 	fi
 
@@ -1162,7 +1190,7 @@ SSREPI_statistical_method() {
 		--table=StatisticalMethod \
 		--id_statistical_method=$1 \
 		--description=$2 \
-		)
+	)
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 	echo "$id_statistical_method"
 }
@@ -1172,7 +1200,7 @@ SSREPI_visualisation_method() {
 		--table=VisualisationMethod \
 		--id_visualisation_method=$1 \
 		--description=$2 \
-		)
+	)
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 	echo "$id_visualisation_method"
 }
@@ -1190,14 +1218,28 @@ SSREPI_statistics() {
 	echo $id_statistics
 }
 SSREPI_visualisation() {
+	# $1 - id_visualisation
+	# $2 - method - points at VisualisationMethod
+	# $3 - the means by  which the visualisation is produced
+	# $4 - the container for the visualisation
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	id_container=container.$(cksum $4 | awk '{print $1}')
+
+	# The last line is a real hack. This needs to be done better. These
+	# objects should be returned as part of the _run() method. Using the
+	# cksum is contrived IPC, i.e. the spawned process in _run() talking to
+	# the calling process. This will "always" work, but it is invisible to
+	# the coder and can easily be missed and thus broken in future
+	# releases.  Hmmmmm, need to think about this, but for now we will
+	# hack.
+
 	id_visualisation=$(update.py \
 		--table="Visualisation" \
 		--id_visualisation=$1 \
 		--date=$(date "+%Y%m%dT%H%M%S") \
 		--visualisation_method=$2 \
 		--query=$3 \
-		--contained_in=$4 \
+		--contained_in=$id_container \
 	)
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 	echo $id_visualisation
@@ -1290,13 +1332,36 @@ SSREPI_variable() {
 	echo $id_variable
 }
 SSREPI_value() {
+
+	# $1 - value
+	# $2 - id_variable
+	# $3 - file/image/visualisation/db in which it resides (the container)
+	# Any other arguments to specify this more accurately.
+
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	val=$1
-	shift 1
+	shift 
+	id_variable=$1
+	shift
+	id_container=container.$(cksum $1 | awk '{print $1}')
+	shift
+
+	# The last line is a real hack. This needs to be done better. These
+	# objects should be returned as part of the _run() method. Using the
+	# cksum is contrived IPC, i.e. the spawned process in _run() talking to
+	# the calling process. This will "always" work, but it is invisible to
+	# the coder and can easily be missed and thus broken in future
+	# releases.  Hmmmmm, need to think about this, but for now we will
+	# hack.
+
 	id_value=$(update.py \
 		--table=Value \
 		--id_value=$val \
-		$@)
+		--variable=$id_variable \
+		--contained_in=$id_container \
+		$@
+	)
+	
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 }
 SSREPI_content() {

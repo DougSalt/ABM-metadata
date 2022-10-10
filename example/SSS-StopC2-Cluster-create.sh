@@ -369,6 +369,7 @@ do
 	      do 
 
 		DIR="SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_"
+		
 		ARGS="""--SSREPI-arg-govt=$govt
 		--SSREPI-arg-${sink_id}=NO
 		--SSREPI-arg-${market_id}=$market
@@ -404,7 +405,7 @@ do
 		--SSREPI-output-${SSS_dummy_id}="$DIR/SSS_dummy___________-7.csv"
 		"""
 
-		SSREPI_call $PROG $ARGS
+		SSREPI_call $PROG $ARGS --cwd="Cluster2"
 			
 	      done
 	    done

@@ -7,14 +7,15 @@
 
 # Date: Jan 2017
 
+# So if any script or part of the script returns non-zero then the script will
+# fail
+set -e
 . lib/ssrepi.sh
 
 ME=$(SSREPI_me)
 
 SSREPI_contributor $ME doug_salt Author
 SSREPI_contributor $ME doug_salt Developer
-
-pipe=$(SSREPI_pipeline $ME)
 
 # Requirements for this script
 # ============================
@@ -99,12 +100,12 @@ aic_id=$(SSREPI_statistical_method aic "The Akaike information criterion (AIC)
 	estimates the quality of each model, relative to each of the other 
 	models. Hence, AIC provides a means for model selection.")
 
-bic_id=$(SSREPI_statistical_method bi "Bayesian information criterion (BIC) 
+bic_id=$(SSREPI_statistical_method bi "Bayesian Information Criterion (BIC) 
 	or Schwarz criterion (also SBC, SBIC) is a criterion for model 
 	selection among a finite set of models; the model with the lowest 
 	BIC is preferred.")
 
-edf_id=$(SSREPI_statistical_method edf " empirical distribution function is the
+edf_id=$(SSREPI_statistical_method edf "Empirical Distribution Function is the
 	distribution function associated with the empirical measure of a
 	sample. This cumulative distribution function is a step function that
 	jumps up by 1/n at each of the n data points. Its value at any 
@@ -112,24 +113,23 @@ edf_id=$(SSREPI_statistical_method edf " empirical distribution function is the
 	observations of the measured variable that are less than or equal to 
 	the specified value.")
 
-anova_gam_id=$(SSREPI_statistical_method "anova.gam" "Performs
+anova_gam_id=$(SSREPI_statistical_method anova.gam "Performs
 	hypothesis tests relating to one or more fitted gam objects.")
 
-recursive_partitioning_id=$(SSREPI_statistical_method "recursive partioning" \
+recursive_partitioning_id=$(SSREPI_statistical_method recursive_partioning \
 	"Recursive partitioning for classification,
 	regression and survival trees.  An implementation of most of the
 	functionality of the 1984 book by Breiman, Friedman, 
-	Olshen and Stone.")
+	Olshen and Stone."
+)
 
-sunflower_plot_id=$(SSREPI_visualisation_method \
-	"Sunflower plot" \
+sunflower_plot_id=$(SSREPI_visualisation_method sunflower_plot \
 	"Looks like a sunflower drawn in a 2D space. The sunflower plots 
 	are used as variants of scatter plots to display bivariate 
 	distribution. When the density of data increases in a particular 
 	region of a plot, it becomes hard to read.")
 
-general_additive_model_id=$(SSREPI_visualisation_method \
-	"General additive method" \
+general_additive_model_id=$(SSREPI_visualisation_method general_additive_method \
 	"A generalized additive model (GAM) is a generalized linear model 
 	in which the linear predictor depends linearly on unknown smooth 
 	functions of some predictor variables, and interest focuses on 
@@ -238,7 +238,7 @@ SSS_spomresult_lspp_id=$(SSREPI_output_type $ME \
 # Output types
 # ------------
 
-result_id=$(SSREPI_output_type  $PROG result "^(batch1|batch2).csv$")
+result_id=$(SSREPI_output_type $PROG result "^(batch1|batch2).csv$")
 [ -n "$result_id" ] || exit -1
 
 
@@ -478,197 +478,135 @@ svar_richness_id=$(SSREPI_statistical_variable \
 	"$analysege_gpLU2_id" \
 )
 
-#for run in 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020
-for run in 001
-do
-#  for govt in ClusterActivity ClusterSpecies RewardActivity RewardSpecies
-  for govt in ClusterActivity 
-  do
-    for sink in nosink
-    do
-#      for market in flat var2
-      for market in flat
-      do
-#        for bet in 25.0 30.0
-        for bet in 25.0 
-        do
-#          for asp in 1.0 5.0
-          for asp in 1.0
-          do
-#            for rwd in 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0
-            for rwd in 1.0
-            do
-#              for rat in 1.0 2.0 10.0
-              for rat in 1.0
-              do
-
-		DIR="SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_"
-		IN_1="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.txt"
-		IN_2="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.grd"
-		IN_3="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-extinct.csv"
-		IN_4="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-lspp.csv"
-
-		ARGS="""
-		--SSREPI-arg-$experiment=8
-		"""
-
-		ARGS="""$ARGS
-		--SSREPI-input-${SSS_report_id}=$IN_1
-		--SSREPI-input-${SSS_report_grd_id}=$IN_2
-		--SSREPI-input-${SSS_sompresult_extinct_id}=$IN_3
-		--SSREPI-input-${SSS_spomresult_lspp_id}=$IN_4
-		"""
-
-		ARGS="""$ARGS
-		--SSREPI-output-${result_id}=batch.csv
-		"""
-		SSREPI_call $PROG --cwd=$DIR $ARGS
-              done
-            done
-          done
-        done
-      done
-    done
-  done
-done
-
-statiscs_set_1=$(SSREPI_statistics statistics.$(uniq)\
-	"$analysege_gpLU2_id" \
-	"perl ./bin/analysege_gpLU2.pl 8") 
-
-
-exit -2
-(
-some_process=$(SSREPI_process --executable=$PROG)
-[ -n "$some_process" ] || exit -1
-
-SSREPI_argument_value $some_process $experiment 9
-
-#for run in 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020
+##for run in 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020
+#for run in 001
 #do
-#  for govt in RewardActivity RewardSpecies
+##  for govt in ClusterActivity ClusterSpecies RewardActivity RewardSpecies
+#  for govt in ClusterActivity 
 #  do
 #    for sink in nosink
 #    do
-#      for market in flat var2
+##      for market in flat var2
+#      for market in flat
 #      do
-#        for bet in 25.0 30.0
-#	do
-#	  for asp in 1.0 5.0
-#	  do
-#	    for rwd in 15.0 20.0 25.0 30.0 40.0 50.0 100.0
-#	    do
-#	      for rat in 1.0 
-#	      do
-for run in 001
-do
-  for govt in RewardActivity
-  do
-    for sink in nosink
-    do
-      for market in flat var2
-      do
-        for bet in 25.0
-	do
-	  for asp in 1.0
-	  do
-	    for rwd in 15.0
-	    do
-	      for rat in 1.0 
-	      do
-		DIR="SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0.0_${asp}_"
-		IN_1="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0.0_${asp}_${run}.txt"
-		IN_2="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0.0_${asp}_${run}.grd";
-		IN_3="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0.0_${asp}_${run}-extinct.csv";
-		IN_4="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0.0_${asp}_${run}-lspp.csv";
+##        for bet in 25.0 30.0
+#        for bet in 25.0 
+#        do
+##          for asp in 1.0 5.0
+#          for asp in 1.0
+#          do
+##            for rwd in 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0
+#            for rwd in 1.0
+#            do
+##              for rat in 1.0 2.0 10.0
+#              for rat in 1.0
+#              do
+#
+#		DIR="Cluster2/SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_"
+#		IN_1="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.txt"
+#		IN_2="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.grd"
+#		IN_3="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-extinct.csv"
+#		IN_4="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-lspp.csv"
+#
+#		ARGS="""
+#		--SSREPI-arg-$experiment=8
+#		"""
+#
+#		ARGS="""$ARGS
+#		--SSREPI-input-${SSS_report_id}=$DIR/$IN_1
+#		--SSREPI-input-${SSS_report_grd_id}=$DIR/$IN_2
+#		--SSREPI-input-${SSS_spomresult_extinct_id}=$DIR/$IN_3
+#		--SSREPI-input-${SSS_spomresult_lspp_id}=$DIR/$IN_4
+#		"""
+#
+#		ARGS="""$ARGS
+#		--SSREPI-extend-stdout-${result_id}=batch1.csv
+#		"""
+#		SSREPI_call $PROG $ARGS
+#              done
+#            done
+#          done
+#        done
+#      done
+#    done
+#  done
+#done
+#
+#statiscs_set_1=$(SSREPI_statistics statistics.$(uniq)\
+#	"$analysege_gpLU2_id" \
+#	"analysege_gpLU2.pl 8") 
+#
+#
+##for run in 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020
+#for run in 001
+#do
+##  for govt in ClusterActivity ClusterSpecies RewardActivity RewardSpecies
+#  for govt in ClusterActivity 
+#  do
+#    for sink in nosink
+#    do
+#
+##      for market in flat var2
+#      for market in flat
+#      do
+##        for bet in 25.0 30.0
+#        for bet in 25.0 
+#        do
+##          for asp in 1.0 5.0
+#          for asp in 1.0
+#          do
+##            for rwd in 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0
+#            for rwd in 1.0
+#            do
+##              for rat in 1.0 2.0 10.0
+#              for rat in 1.0
+#              do
+#
+#		DIR="SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_"
+#		IN_1="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.txt"
+#		IN_2="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.grd"
+#		IN_3="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-extinct.csv"
+#		IN_4="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-lspp.csv"
+#
+#		ARGS="""
+#		--SSREPI-arg-$experiment=9
+#		"""
+#
+#		ARGS="""$ARGS
+#		--SSREPI-input-${SSS_report_id}=$IN_1
+#		--SSREPI-input-${SSS_report_grd_id}=$IN_2
+#		--SSREPI-input-${SSS_spomresult_extinct_id}=$IN_3
+#		--SSREPI-input-${SSS_spomresult_lspp_id}=$IN_4
+#		"""
+#
+#		ARGS="""$ARGS
+#		--SSREPI-extend-stdout-${result_id}=batch2.csv
+#		"""
+#		SSREPI_call $PROG --cwd=$DIR $ARGS
+#              done
+#            done
+#          done
+#        done
+#      done
+#    done
+#  done
+#done
+#
+#statiscs_set_1=$(SSREPI_statistics statistics.$(uniq)\
+#	"$analysege_gpLU2_id" \
+#	"analysege_gpLU2.pl 9") 
 
-		SSREPI_input $PROG $some_process $SSS_report_id $DIR/$IN_1
-		SSREPI_input $PROG $some_process $SSS_report_grd_id $DIR/$IN_1
-		SSREPI_input $PROG $some_process $SSS_sompresult_extinct_id eport $DIR/$IN_1
-		SSREPI_input $PROG $some_process $SSS_spomresult_lspp_id $DIR/$IN_1
-	      done
-	    done
-	  done
-	done
-      done
-    done
-  done
-done
-
-analysege_gpLU2.pl 9 > batch2.csv
-statiscs_set_2=$(SSREPI_statistics statistics.$(uniq)\
-	"$analysege_gpLU2_id" \
-	"perl ./bin/analysege_gpLU2.pl 9") 
-
-SSREPI_output $PROG $some_process $result_id batch2.csv
-
-SSREPI_process \
-        --process_id=$some_process \
-        --end_time=$(date "+%Y%m%dT%H%M%S") > /dev/null
-)
-[ $? -eq 0 ] || exit -1
-
-# I am not bothering to put the os command into the pipeline.
-# It is arguable whether it needs to be documented or not.
 
 # Merge
 # =====
 
-some_command=$(SSREPI_call_elf $(which tail))
-[ -n "$some_command" ] || exit -1
-
-
-# Input types
-# -----------
-
-result_id=$(SSREPI_input_type  $some_command result '^(batch1|batch2).csv$')
-[ -n "$result_id" ] || exit -1
-
-
-# Output types
-# ------------
-
-all_results_id=$(SSREPI_output_type  $some_command all_results ^all_results.csv$)
-[ -n "$all_results_id" ] || exit -1
-
-# Argument types
-# --------------
-
-arg_input_file_id=$(SSREPI_argument \
-        --id_argument=arg_result \
-        --description="Some file" \
-        --application=$some_command \
-	--container_type=$result_id \
-        --type=required \
-        --order_value=1 \
-        --arity="+" \
-        --range=relative_ref)
-[ -n "$arg_input_file_id" ] || exit -1
-
-(
-some_process=$(SSREPI_process --executable=$PROG)
-[ -n "$some_process" ] || exit -1
-
-SSREPI_input $some_command $some_process $result_id batch1.csv
-SSREPI_input $some_command $some_process $result_id batch2.csv
-
 tail -n +2 batch1.csv > all_results.csv
 tail -n +3 batch2.csv >> all_results.csv
-
-SSREPI_output $some_command $some_process $all_results_id all_results.csv
-
-SSREPI_process \
-        --process_id=$some_process \
-        --end_time=$(date "+%Y%m%dT%H%M%S") > /dev/null
-)
-[ $? -eq 0 ] || exit -1
 
 # postprocessing.R
 # ================
 
-PROG=$(SSREPI_call_R_script $(which postprocessing.R) \
-		--licence=$LICENCE \
-		--version=1.0 \
+PROG=$(SSREPI_application postprocessing.R \
 		--description="
 	A small R script that emaulates what Gary did with the outputs from the
 	model in an R script. That is it reconstructs what he did
@@ -685,7 +623,8 @@ PROG=$(SSREPI_call_R_script $(which postprocessing.R) \
 
 	3. Removes the high bankruptcy rates.
 
-	4. Removes high expenditure.")
+	4. Removes high expenditure." \
+)
 [ -n "$PROG" ] || exit - 1
 
 
@@ -715,7 +654,6 @@ arg_all_results=$(SSREPI_argument \
         --id_argument=arg_result \
         --description="All the results from all the runs" \
         --application=$PROG \
-	--container_type=$all_results_id \
         --type=required \
         --order_value=1 \
         --arity=1 \
@@ -727,7 +665,6 @@ arg_scenarios=$(SSREPI_argument \
         --id_argument=scenarios \
         --description="The scenarios that are required for processing" \
         --application=$PROG \
-	--container_type=$scenarios_id \
         --type=required \
         --order_value=2 \
         --arity=1 \
@@ -738,29 +675,28 @@ arg_final_results=$(SSREPI_argument \
         --id_argument=experiment \
         --description="The actual results from which diagrams will be created." \
         --application=$PROG \
-	--container_type=$final_results_id \
         --type=required \
         --order_value=3 \
         --arity=1 \
         --range=relative_ref)
 [ -n "$arg_final_results" ] || exit -1
 
-(
-some_process=$(SSREPI_process --executable=$PROG)
-[ -n "$some_process" ] || exit -1
+ARGS="""
+--SSREPI-input-${all_results_id}=all_results.csv
+--SSREPI-input-${scenarios_id}=cfg/scenarios.cfg
+"""
 
-SSREPI_argument_input_file $PROG $some_process $all_results_id $arg_all_results all_results.csv
-SSREPI_argument_input_file $PROG $some_process $scenarios_id $arg_scenarios cfg/scenarios.cfg
+ARGS="""$ARGS
+--SSREPI-arg-${arg_all_results}=all_results.csv
+--SSREPI-arg-${arg_scenarios}=cfg/scenarios.cfg
+--SSREPI-arg-${arg_final_results}=final_results.csv
+"""
 
-postprocessing.R all_results.csv cfg/scenarios.cfg final_results.csv
+ARGS="""$ARGS
+--SSREPI-output-${final_results_id}=final_results.csv
+"""
 
-SSREPI_argument_output_file $PROG $some_process $final_results_id $arg_final_results final_results.csv
-
-SSREPI_process \
-        --process_id=$some_process \
-        --end_time=$(date "+%Y%m%dT%H%M%S") > /dev/null
-)
-[ $? -eq 0 ] || exit -1
+SSREPI_call $PROG $ARGS
 
 # ============
 # # Diagrams #
@@ -769,8 +705,11 @@ SSREPI_process \
 # Figure 3
 # ========
 
-PROG=$(SSREPI_call_R_script $(which figure2-3part.R) \
-		--description="This needs filling in.")
+PROG=$(SSREPI_application figure2-3part.R \
+		--description="""
+		This needs filling in.
+		Figure 2 - part 3 for the paper.
+""")
 [ -n "$PROG" ] || exit -1
 
 # Input types
@@ -794,10 +733,9 @@ figure3_id=$(SSREPI_input_type $PROG figure3 '^figure3.pdf$')
 # --------------
 
 arg_final_results=$(SSREPI_argument \
-        --id_argument=arg_final_results \
+        --id_argument=final_results \
         --description="Results files with selected scenarios" \
         --application=$PROG \
-	--container=$final_results_file \
         --type=required \
         --order_value=1 \
         --arity=1 \
@@ -819,8 +757,8 @@ arg_figure3=$(SSREPI_argument \
         --description="Figure 3 pdf" \
         --application=$PROG \
         --type=required \
-        --order_value=1 \
-        --arity=3 \
+        --order_value=3 \
+        --arity=1 \
         --range=relative_ref)
 [ -n "$arg_figure3" ] || exit -1
 
@@ -873,19 +811,23 @@ con_max_incentive_id=$(SSREPI_content \
 	--container_type=$figure3_id \
 	--locator='grep -v ^scenario | cut -f3 -d,')
 
-(
-some_process=$(SSREPI_process --executable=$PROG)
-[ -n "$some_process" ] || exit -1
+ARGS="""
+--SSREPI-arg-${arg_final_results}=final_results.csv
+--SSREPI-arg-${arg_figure3_cfg}=cfg/figure3.cfg
+--SSREPI-arg-${arg_figure3}=figure3.pdf
+"""
 
-SSREPI_argument_input_file $PROG $some_process \
-	$final_results_id $arg_final_results final_results.csv
-SSREPI_argument_input_file $PROG $some_process \
-	$figure3_cfg_id $arg_figure3_cfg cfg/figure3.cfg
+ARGS="""$ARGS
+--SSREPI-input-${final_results_id}=final_results.csv
+--SSREPI-input-${figure3_cfg_id}=cfg/figure3.cfg
+"""
 
-figure2-3part.R final_results.csv cfg/figure3.cfg figure3.pdf
+ARGS="""$ARGS
+--SSREPI-output-${figure3_id}=figure3.pdf
+"""
 
-SSREPI_argument_output_file $PROG $some_process \
-	$figure3_id $arg_figure3 figure3.pdf
+(>&2 echo SSREPI_call $PROG $ARGS)
+SSREPI_call $PROG $ARGS
 
 some_visualisation=$(SSREPI_visualisation \
 	visualisation.$(uniq) \
@@ -893,71 +835,85 @@ some_visualisation=$(SSREPI_visualisation \
 	"figure2-3part.R final_results.csv cfg/figure3.cfg figure3.pdf" \
 	figure3.pdf)
 
-SSREPI_value "A/F/30/1" \
-	--contained_in=figure3.pdf \
-	--variable=$var_scenario_id
-SSREPI_value 2 \
-	--contained_in=figure3.pdf \
-	--variable=$var_min_incentive_id
-SSREPI_value 10 \
-	--contained_in=figure3.pdf \
-	--variable=$var_max_incentive_id
-SSREPI_value "A/V/30/1" \
-	--contained_in=figure3.pdf \
-	--variable=$var_scenario_id
-SSREPI_value 2 \
-	--contained_in=figure3.pdf \
-	--variable=$var_min_incentive_id
-SSREPI_value 15 \
-	--contained_in=figure3.pdf \
-	--variable=$var_max_incentive_id
+# Need to add more specifics to these. That is there are more fields for the
+# value record
+
+SSREPI_value \
+	"A/F/30/1" \
+	$var_scenario_id \
+	figure3.pdf
+SSREPI_value \
+	2 \
+	$var_min_incentive_id \
+	figure3.pdf 
+SSREPI_value \
+	10 \
+	$var_max_incentive_id \
+	figure3.pdf 
+SSREPI_value \
+	"A/V/30/1" \
+	$var_scenario_id \
+	figure3.pdf 
+SSREPI_value \
+	2 \
+	$var_min_incentive_id \
+	figure3.pdf 
+SSREPI_value \
+	15 \
+	$var_max_incentive_id \
+	figure3.pdf 
 SSREPI_value "CA/F/25/5" \
-	--contained_in=figure3.pdf \
-	--variable=$var_scenario_id
-SSREPI_value 1 \
-	--contained_in=figure3.pdf \
-	--variable=$var_min_incentive_id
-SSREPI_value 10 \
-	--contained_in=figure3.pdf \
-	--variable=$var_max_incentive_id
-SSREPI_value "O/F/30/5" \
-	--contained_in=figure3.pdf \
-	--variable=$var_scenario_id
-SSREPI_value 1 \
-	--contained_in=figure3.pdf \
-	--variable=$var_min_incentive_id
-SSREPI_value 8 \
-	--contained_in=figure3.pdf \
-	--variable=$var_max_incentive_id
-SSREPI_value "O/V/25/1" \
-	--contained_in=figure3.pdf \
-	--variable=$var_scenario_id
-SSREPI_value 1 \
-	--contained_in=figure3.pdf \
-	--variable=$var_min_incentive_id
-SSREPI_value 5 \
-	--contained_in=figure3.pdf \
-	--variable=$var_max_incentive_id
-SSREPI_value "CO/V/25/5" \
-	--contained_in=figure3.pdf \
-	--variable=$var_scenario_id
-SSREPI_value 0.1 \
-	--contained_in=figure3.pdf \
-	--variable=$var_min_incentive_id
-SSREPI_value 0.8 \
-	--contained_in=figure3.pdf \
-	--variable=$var_max_incentive_id
+	$var_scenario_id \
+	figure3.pdf 
+SSREPI_value \
+	1 \
+	$var_min_incentive_id \
+	figure3.pdf 
+SSREPI_value \
+	10 $var_max_incentive_id figure3.pdf 
+SSREPI_value \
+	"O/F/30/5" \
+	$var_scenario_id \
+	figure3.pdf 
+SSREPI_value \
+	1 \
+	$var_min_incentive_id \
+	figure3.pdf 
+SSREPI_value \
+	8 \
+	$var_max_incentive_id \
+	figure3.pdf 
+SSREPI_value \
+	"O/V/25/1" \
+	$var_scenario_id \
+	figure3.pdf 
+SSREPI_value \
+	1 \
+	$var_min_incentive_id \
+	figure3.pdf 
+SSREPI_value \
+	5 \
+	$var_max_incentive_id \
+	figure3.pdf 
+SSREPI_value \
+	"CO/V/25/5" \
+	$var_scenario_id \
+	figure3.pdf 
+SSREPI_value \
+	0.1 \
+	$var_min_incentive_id \
+	figure3.pdf 
+SSREPI_value \
+	0.8 \
+	$var_max_incentive_id \
+	figure3.pdf 
 	
-SSREPI_process \
-        --process_id=$some_process \
-        --end_time=$(date "+%Y%m%dT%H%M%S") > /dev/null
-)
-[ $? -eq 0 ] || exit -1
+exit -2
 
 # table 4 for presentation
 # ========================
 
-PROG=$(SSREPI_call_R_script $(which nonlinearK4bsI.R) \
+PROG=$(SSREPI_application nonlinearK4bsI.R \
 		--description="This needs supplying")
 [ -n "$PROG" ] || exit - 1
 
@@ -980,7 +936,6 @@ arg_final_results=$(SSREPI_argument \
         --id_argument=final_results \
         --description="Results files with selected scenarios" \
         --application=$PROG \
-	--container=$final_results_file \
         --type=required \
         --order_value=1 \
         --arity=1 \
@@ -991,7 +946,6 @@ arg_table4=$(SSREPI_argument \
         --id_argument=table4 \
         --description="Results for table 4 in the paper" \
         --application=$PROG \
-	--container=$table4_id \
         --type=required \
         --order_value=2 \
         --arity=1 \
@@ -1014,27 +968,39 @@ SSREPI_implements $PROG \
 some_process=$(SSREPI_process=$PROG)
 [ -n "$some_process" ] || exit -1
 
-SSREPI_argument_input_file $PROG $some_process $final_results_id $arg_final_results final_results.csv
+ARGS="""
+--SSREPI-input-${final_results_id}=final_results.csv
+"""
 
-nonlinearK4bsI.R final_results.csv table4.csv
+ARGS="""
+--SSREPI-arg-${arg_final_results}=final_results.csv
+--SSREPI-arg-${arg_table4}=table4.csv
+"""
 
-SSREPI_argument_output_file $PROG $some_process $table4_id $arg_table4 table4.csv
+ARGS="""
+--SSREPI-output-${table4_id}=table4.csv
+"""
+
+SSREPI_call $PROG $ARGS
 
 SSREPI_statistics "nonlinearK4bsI.R final_results.csv table4.csv" $aic_id 
 SSREPI_statistics "nonlinearK4bsI.R final_results.csv table4.csv" $bic_id 
 SSREPI_statistics "nonlinearK4bsI.R final_results.csv table4.csv" $edf_id 
 SSREPI_statistics "nonlinearK4bsI.R final_results.csv table4.csv" $anova_gam_id 
 
-SSREPI_process \
-        --process_id=$some_process \
-        --end_time=$(date "+%Y%m%dT%H%M%S") > /dev/null
-)
+exit -2 
 
 # table 4 paper CSV
 # =================
 
-PROG=$(SSREPI_call_R_script $(which table4.R) \
-		--description="Need to put some explanation here.")
+PROG=$(SSREPI_application table4.R \
+		--description="""
+		A small script to prodce a text version of the table found in
+		Polhil et al (2013) - Nonlinearities in biodiversity incentive
+		schemes: A study using an integrated agent-based and
+		metacommunity model The original diagram was done with a
+		mixture of R and Excel. I have automated this part.
+"""
 [ -n "$PROG" ] || exit - 1
 
 # Input types
@@ -1054,7 +1020,6 @@ arg_table4=$(SSREPI_argument \
         --id_argument=table4 \
         --description="Unprocessed table 4" \
         --application=$PROG \
-	--container=$table4_id \
         --type=required \
         --order_value=1 \
         --arity=1 \
@@ -1072,27 +1037,34 @@ arg_table4_paper=$(SSREPI_argument \
         --range=relative_ref)
 [ -n "$arg_table4" ] || exit -1
 
-(
 some_process=$(SSREPI_process --executable=$PROG)
 [ -n "$some_process" ] || exit -1
 
-SSREPI_argument_output_file $PROG $some_process $table4_id $arg_table4 table4.csv
+ARGS="""
+SSREPI-arg-${arg_table4}=table4.csv
+SSREPI-arg-${arg_table4_paper}=table4.paper.csv
+"""
 
-table4.R table4.csv table4.paper.csv
+ARGS="""$ARGS
+SSREPI-input-${table4_id}=table4.csv
+"""
 
-SSREPI_argument_output_file $PROG $some_process $table4_paper_id $arg_table4_paper table4.paper.csv
+ARGS="""$ARGS
+SSREPI-output-${table4_paper_id}=table4.paper.csv
+"""
 
-SSREPI_process \
-        --process_id=$some_process \
-        --end_time=$(date "+%Y%m%dT%H%M%S") > /dev/null
-)
-[ $? -eq 0 ] || exit -1
+SSREPI_call $PROG $ARGS
 
+exit -2
 # figure 4
 # ========
 
-PROG=$(SSREPI_call_R_script $(which figure2-3s.R) \
-		--description="Need some stuff here.")
+PROG=$(SSREPI_application figure2-3s.R \
+		--description="""
+		Need some stuff here.
+		Produces a sunflow plot for the paper
+""")
+
 [ -n "$PROG" ] || exit - 1
 
 # Input types
@@ -1116,14 +1088,13 @@ arg_splits=$(SSREPI_argument \
         --application=$PROG \
 	--name="--splits" \
         --type=flag \
-        --arity=0 )
+)
 [ -n "$arg_splits" ] || exit -1
 
-arg_final_results=$(SSREPI_argument \
+arg_final_results_id=$(SSREPI_argument \
         --id_argument=final_results \
         --description="Results files with selected scenarios" \
         --application=$PROG \
-	--container=$final_results_file \
         --type=required \
         --order_value=1 \
         --arity=1 \
@@ -1157,7 +1128,6 @@ arg_figure4=$(SSREPI_argument \
         --application=$PROG \
         --type=required \
         --order_value=4 \
-	--container=$figure4_id \
         --arity=1 \
         --range=relative_ref)
 [ -n "$arg_figure4" ] || exit -1
@@ -1176,64 +1146,42 @@ con_varscenario_id=$(SSREPI_content \
 	--container_type=$figure4_id \
 	--locator='grep -v ^scenario | cut -f1 -3,')
 
-(
-
-some_process=$(SSREPI_process --executable=$PROG)
-[ -n "$some_process" ] || exit -1
-
-SSREPI_argument_value $some_process $arg_splits 
-SSREPI_argument_value $some_process $arg_main_scenario Richness
-SSREPI_argument_value $some_process $arg_small_scenarios \
-	"A/F/25/5 A/F/25/1 A/F/30/5 O/F/25/5 CA/F/25/5"
-SSREPI_argument_input_file $PROG $some_process $final_results_id \
-	$arg_final_results final_results.csv
-
-figure2-3s.R -splits final_results.csv Richness \
-	A/F/25/5 A/F/25/1 A/F/30/5 O/F/25/5 CA/F/25/5 figure4.a_and_b.pdf
-
-SSREPI_argument_output_file $PROG $some_process \
-	$figure4_id $arg_figure4 figure4.a_and_b.pdf
-
-some_visualistaiton=$(SSREPI_visualisation \
+some_visualisation=$(SSREPI_visualisation \
 	visualisation.$(uniq) \
 	$sunflower_plot_id \
 	"figure2-3s.R -splits final_results.csv Richness \
 	A/F/25/5 A/F/25/1 A/F/30/5 O/F/25/5 CA/F/25/5 figure4.a_and_b.pdf" \
 	figure4.a_and_b.pdf)
 
-SSREPI_process \
-        --process_id=$some_process \
-        --end_time=$(date "+%Y%m%dT%H%M%S") > /dev/null
-)
-[ $? -eq 0 ] || exit -1
+ARGS="""
+SSREPI-argument=arg_splits 
+SSREPI-argument=${final_results_id arg_final_results}=final_results.csv
+SSREPI-argument=${arg_main_scenario}=Richness
+SSREPI-argument=${arg_small_scenarios}=O/V/25/5 O/V/25/1 O/V/30/5 A/V/25/5 CO/V/25/
+SSREPI-argument=${arg_figure4}=figure4.a_and_b.pdf
+"""
 
-(
-some_process=$(SSREPI_process --executable=$PROG)
-[ -n "$some_process" ] || exit -1
+ARGS="""$ARGS
+SSREPI-input=${final_results_id}=final_results.csv
+"""
 
-SSREPI_argument_value $some_process $arg_splits 
-SSREPI_argument_value $some_process $arg_main_scenario Richness
-SSREPI_argument_value $some_process $arg_small_scenarios \
-	"O/V/25/5 O/V/25/1 O/V/30/5 A/V/25/5 CO/V/25/5"
-SSREPI_argument_input_file $PROG $some_process $final_results_id \
-	$arg_final_results final_results.csv
+ARGS="""$ARGS
+SSREPI-output=${figure4_id}=figure4.a_and_b.pdf
+"""
 
-figure2-3s.R -splits final_results.csv Richness \
-	O/V/25/5 O/V/25/1 O/V/30/5 A/V/25/5 CO/V/25/5 figure4.c_and_d.pdf
+SSREPI_call $PROG $ARGS
 
-SSREPI_argument_output_file $PROG $some_process $figure4_id \
-	$arg_figure4 figure4.c_and_d.pdf
-
-SSREPI_process \
-        --process_id=$some_process \
-        --end_time=$(date "+%Y%m%dT%H%M%S") > /dev/null
-)
-[ $? -eq 0 ] || exit -1
+#figure2-3s.R 
+# 	--splits \
+#       final_results.csv \
+#       Richness \
+# 	O/V/25/5 O/V/25/1 O/V/30/5 A/V/25/5 CO/V/25/ \
+#	figure4.a_and_b.pdf
 
 # figure 5
 # ========
 
-PROG=$(SSREPI_call_perl_script $(which treehist3.pl) \
+PROG=$(SSREPI_application treehist3.pl \
 		--description="Some documentation here, please.")
 [ -n "$PROG" ] || exit - 1
 
@@ -1314,39 +1262,39 @@ SSREPI_implements $PROG \
 SSREPI_value --value="0.0075" \
 	--statistical_parameter="$par_partitioning_complexity_id"
 
-exit
-(
+ARGS="""
+--SSREPI-input=${final_results_id}=final_results.csv
+"""
 
-some_process=$(SSREPI_process --executable=$PROG)
-[ -n "$some_process" ] || exit -1
+ARGS="""$ARG
+--SSREPI-arg=${arg_complexity_variable}=0.0075
+--SSREPI-arg=${arg_response_variable}=Richness
+--SSREPI-arg=${arg_final_results}=final_results.csv
+--SSREPI-arg=${arg_figure5}=LOBEC.rpart3Xfr.pdf 
+--SSREPI-arg=${arg_explanatory_variables}=Government,Market,BET,ASP,Expenditure 
+"""
 
-SSREPI_argument_input_file $PROG $some_process $final_results_id \
-	$arg_final_results final_results.csv
-SSREPI_argument_value $some_process $arg_complexity_variable 0.0075
-SSREPI_argument_value $some_process $arg_response_variable Richness
-SSREPI_argument_value $some_process $arg_explanatory_variables \
-	Government,Market,BET,ASP,Expenditure 
+ARGS="""$ARGS
+SSREPI-output=${figure5_id}=LOBEC.rpart3Xfr.pdf 
+"""
 
-treehist3.pl \
-	-cp 0.0075 \
-	final_results.csv  \
-	LOBEC.rpart3Xfr.pdf  \
-	Richness Government,Market,BET,ASP,Expenditure 
+SSREPI_call $PROG $ARGS
 
-SSREPI_argument_output_file $PROG $some_process $figure5_id \
-	$arg_figure5 LOBEC.rpart3Xfr.pdf 
+#treehist3.pl \
+#	-cp 0.0075 \
+#	final_results.csv  \
+#	LOBEC.rpart3Xfr.pdf  \
+#	Richness Government,Market,BET,ASP,Expenditure 
 
-SSREPI_process \
-        --process_id=$some_process \
-        --end_time=$(date "+%Y%m%dT%H%M%S") > /dev/null
-)
-[ $? -eq 0 ] || exit -1
-
+exit -2
 # Appendix 
 # ========
 
-PROG=$(SSREPI_call_R_script $(which figure2-3small.R) \
-		--description="Some words of wisdom about this script.")
+PROG=$(SSREPI_application figure2-3small.R \
+	--description="""
+		This produces the diagram for the appendix of the paper.
+		Some words of wisdom about this script."
+)
 [ -n "$PROG" ] || exit - 1
 
 # Input types
@@ -1361,7 +1309,6 @@ final_results_id=$(SSREPI_input_type $PROG final_results '^final_results.csv$')
 appendix_id=$(SSREPI_input_type $PROG appendix '^appendix.pdf$')
 [ -n "$appendix_id" ] || exit -1
 
-
 # Argument types
 # --------------
 
@@ -1369,14 +1316,14 @@ arg_splits=$(SSREPI_argument \
         --id_argument=splits \
         --description="I think this might be split the data" \
         --application=$PROG \
-	--name="--splits" \
+	--name="splits" \
         --type=flag \
         --arity=0)
 [ -n "$arg_splits" ] || exit -1
 
 arg_final_results=$(SSREPI_argument \
         --id_argument=final_results \
-        --description="Results files with selected scenarios" \
+        --description="Results file with selected scenarios" \
         --application=$PROG \
 	--container=$final_results_file
         --type=required \
@@ -1384,6 +1331,16 @@ arg_final_results=$(SSREPI_argument \
         --arity=1 \
         --range=relative_ref)
 [ -n "$arg_final_results" ] || exit -1
+
+arg_response_variable=$(SSREPI_argument \
+        --id_argument=response_variable \
+        --description="Response variable" \
+        --application=$PROG \
+        --type=required \
+        --order_value=2 \
+        --arity=1 \
+        --range=".*")
+[ -n "$arg_response_variable" ] || exit -1
 
 arg_y_axis=$(SSREPI_argument \
         --id_argument=y_axis \
@@ -1414,41 +1371,38 @@ arg_scenarios=$(SSREPI_argument \
         --order_value=4 \
         --arity=+ \
 	--argsep=' ' \
-        --range='^A-ZA-Z?\/(V|F)\/[0-9][0-9]\/[0-9]$')
+        --range='^A-ZA-Z?\/(V|F)\/[0-9][0-9]\/[0-9]$'
+)
 [ -n "$arg_scenario" ] || exit -1
 
-(
+ARGS="""
+--SSREPI-input-${final_results_id}=final_results.csv
+"""
 
-some_process=$(SSREPI_process --executable=$PROG)
-[ -n "$some_process" ] || exit -1
-
-SSREPI_argument_input_file $PROG $some_process  $final_results_id $arg_final_results final_results.csv
-SSREPI_argument_value $some_process $arg_y_axis Richness
-SSREPI_argument_value $some_process $arg_splits 
-SSREPI_argument_value $some_process $arg_scenarios " 
-	A/F/30/1 A/V/25/1 CO/F/25/5 CO/F/30/1 CO/F/30/5 CO/V/25/1 CO/V/30/1 
-	CO/V/30/5 CA/F/25/1 CA/F/30/1 CA/F/30/5 CA/V/25/1 CA/V/25/5 CA/V/30/1 
-	CA/V/30/5 CO/F/25/1 CO/F/25/5 CO/F/30/1 CO/F/30/5 CO/V/25/1 CO/V/30/1
-	CO/V/30/5"
-
-figure2-3small.R -splits final_results.csv \
-	Richness \
-	appendix.pdf \
+ARGS="""$ARGS
+--SSREPI-arg=${arg_splits}
+--SSREPI-arg=${arg_final_results}=final_results.csv
+--SSREPI-arg=${arg_response_variable}=Richness
+--SSREPI_arg=${arg_appendix}=appendix.pdf
+--SSREPI-arg=${arg_scenarios}=\
 	A/F/30/1 A/V/25/1 CO/F/25/5 CO/F/30/1 CO/F/30/5 CO/V/25/1 CO/V/30/1 \
-	CO/V/30/5 CA/F/25/1 CA/F/30/1 CA/F/30/5 CA/V/25/1 CA/V/25/5 CA/V/30/1 \
+	CO/V/30/5 CA/F/25/1 CA/F/30/1 CA/F/30/5 CA/V/25/1 CA/V/25/5 CA/V/30/1 \ 
 	CA/V/30/5 CO/F/25/1 CO/F/25/5 CO/F/30/1 CO/F/30/5 CO/V/25/1 CO/V/30/1 \
 	CO/V/30/5
+"""
 
-SSREPI_argument_output_file $PROG $some_process $appendix_id \
-	$arg_appendix appendix.pdf
+ARGS="""$ARGS
+--SSREPI-output=${appendix_id}=appendix.pdf
+"""
 
-SREPI_process \
-        --process_id=$some_process \
-        --end_time=$(date "+%Y%m%dT%H%M%S") > /dev/null
+SSREPI_call $PROG $ARGS
 
-)
-[ $? -eq 0 ] || exit -1
+#figure2-3small.R -splits final_results.csv \
+#	Richness \
+#	appendix.pdf \
+#	A/F/30/1 A/V/25/1 CO/F/25/5 CO/F/30/1 CO/F/30/5 CO/V/25/1 CO/V/30/1 \
+#	CO/V/30/5 CA/F/25/1 CA/F/30/1 CA/F/30/5 CA/V/25/1 CA/V/25/5 CA/V/30/1 \
+#	CA/V/30/5 CO/F/25/1 CO/F/25/5 CO/F/30/1 CO/F/30/5 CO/V/25/1 CO/V/30/1 \
+#	CO/V/30/5
 
-SSREPI_process \
-        --process_id=$THIS_PROCESS \
-        --end_time=$(date "+%Y%m%dT%H%M%S") > /dev/null
+

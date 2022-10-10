@@ -1,4 +1,4 @@
-#!/usr/bin/Rscript
+#!/usr/bin/env Rscript
 
 # A small R script that emaulates what Gary did with the outputs from
 # the model in an R script. That is it reconsturcts what he did

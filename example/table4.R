@@ -8,11 +8,10 @@
 
 # Licence GPLv3
 
-# A small script to prodce a text version of the table found in 
-
-# Polhil et al (2013) - Nonlinearities in biodiversity incentive schemes: A study using an integrated agent-based and metacommunity model
-# The original diagram was done with a mixture of R and Excel. I have automated
-# this part.
+# A small script to prodce a text version of the table found in Polhil et al
+# (2013) - Nonlinearities in biodiversity incentive schemes: A study using an
+# integrated agent-based and metacommunity model The original diagram was done
+# with a mixture of R and Excel. I have automated this part.
 
 args <- commandArgs(TRUE)
 

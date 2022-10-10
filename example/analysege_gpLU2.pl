@@ -177,21 +177,21 @@ foreach my $govt (@govern) {
 	  foreach my $rwd (@reward) {
             if($ARGV[0] == 1) {
 	      my $dir = "SSS_dir_${sink}_${govt}_all_${rwd}_${market}_"
-                  ."${bet}_noapproval_0.0_${asp}_";
+                  ."${bet}_noapproval_0_${asp}_";
 
 	      for(my $run = 1; $run <= 20; $run++) {
 	        my $strun = sprintf("%03d", $run);
 
 #      	        my $grid = "SSS_grid__________${strun}.grd";
 	        my $report = "SSS_report_${sink}_${govt}_all_${rwd}_"
-                  ."${market}_${bet}_noapproval_0.0_${asp}_${strun}.txt";
+                  ."${market}_${bet}_noapproval_0_${asp}_${strun}.txt";
 	        my $grid = "SSS_report_${sink}_${govt}_all_${rwd}_"
-                  ."${market}_${bet}_noapproval_0.0_${asp}_${strun}.grd";
+                  ."${market}_${bet}_noapproval_0_${asp}_${strun}.grd";
 	        my $extinct = "SSS_spomresult_${sink}_${govt}_all_"
-		  ."${rwd}_${market}_${bet}_noapproval_0.0_${asp}_"
+		  ."${rwd}_${market}_${bet}_noapproval_0_${asp}_"
                   ."${strun}-extinct.csv";
 	        my $occup = "SSS_spomresult_${sink}_${govt}_all_${rwd}_"
-		  ."${market}_${bet}_noapproval_0.0_${asp}_${strun}-lspp.csv";
+		  ."${market}_${bet}_noapproval_0_${asp}_${strun}-lspp.csv";
 
 	        my ($income, $reward, $preward,
 	    	    $expenditure, $bankrupt, $luc, $extinct, $occupancy,
@@ -212,23 +212,23 @@ foreach my $govt (@govern) {
             else {
 	      foreach my $rat (@ratio) {
 	        my $dir = "SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_"
-                  ."${market}_${bet}_noapproval_0.0_${asp}_";
+                  ."${market}_${bet}_noapproval_0_${asp}_";
 
 	        for(my $run = 1; $run <= 20; $run++) {
 	          my $strun = sprintf("%03d", $run);
 
 #      	          my $grid = "SSS_grid__________${strun}.grd";
 	          my $report = "SSS_report_${sink}_${govt}_all_${rwd}_"
-                    ."${rat}_${market}_${bet}_noapproval_0.0_${asp}_"
+                    ."${rat}_${market}_${bet}_noapproval_0_${asp}_"
                     ."${strun}.txt";
 	          my $grid = "SSS_report_${sink}_${govt}_all_${rwd}_"
-                    ."${rat}_${market}_${bet}_noapproval_0.0_${asp}_"
+                    ."${rat}_${market}_${bet}_noapproval_0_${asp}_"
                     ."${strun}.grd";
 	          my $extinct = "SSS_spomresult_${sink}_${govt}_all_"
-		    ."${rwd}_${rat}_${market}_${bet}_noapproval_0.0_${asp}_"
+		    ."${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_"
                     ."${strun}-extinct.csv";
 	          my $occup = "SSS_spomresult_${sink}_${govt}_all_"
-		    ."${rwd}_${rat}_${market}_${bet}_noapproval_0.0_${asp}_"
+		    ."${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_"
 		    ."${strun}-lspp.csv";
 
 	          my ($income, $reward, $preward,
