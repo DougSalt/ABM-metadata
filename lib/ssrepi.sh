@@ -145,7 +145,7 @@ SSREPI_process() {
    		id_process=$(update.py \
 			--table=Process \
 			$@ \
-			)
+		)
 	else
 		NAME=$(_getent passwd $USER | cut -f 5 -d:) 
 		id_person=$(update.py \
@@ -153,7 +153,7 @@ SSREPI_process() {
 			--email=$USER@$(hostname) \
 			--id_person=$USER \
 			--name="$NAME" \
-			)
+		)
 		[ -n "$id_person" ] || exit -1
 
 		id_user=$(update.py \
@@ -161,7 +161,7 @@ SSREPI_process() {
 			--home_dir=$HOME \
 			--account_of=$id_person \
 			--id_user=$USER \
-			)
+		)
 		[ -n "$id_user" ] || exit -1
 
 		id_process=$(update.py \
@@ -171,7 +171,7 @@ SSREPI_process() {
 			--start_time=$(date "+%Y%m%dT%H%M%S") \
 			--working_dir=$PWD \
 			--host=$(hostname) \
-			$EXEC $@)
+		$EXEC $@)
 		[ -n "$id_process" ] || exit -1
 		
 
@@ -325,6 +325,7 @@ SSREPI_application_get_executable() {
 	else
 		id_application=$(SSREPI_me)
 	fi
+
 	executable=
 	if [[ $(exists.py --table=Application --id_application=$id_application)  = True ]]
 	then
@@ -419,6 +420,7 @@ _run() {
 	fi
 
 	# So PIPE is the pipe line we want to attach to
+
         id_pipeline=$(update.py \
 		--table=Pipeline \
 		--id_pipeline=calls.$id_application \
@@ -477,12 +479,12 @@ _run() {
 	id_position_arg=()
 	for arg in $@
 	do
-		if [[ "$arg" == *--SSREPI-arg-* ]]
+		if [[ "$arg" == *--SSREPI-argument-* ]]
 		then
 			if [[ "$arg" == *=* ]]
 			then
 				value=$(echo $arg | cut -f2 -d=)
-				id_arg=$(echo $arg | cut -f1 -d= | sed 's/--SSREPI-arg-//')
+				id_arg=$(echo $arg | cut -f1 -d= | sed 's/--SSREPI-argument-//')
 				pos=$(get_value.py \
 					--table=Argument \
 					--application=$id_application \
@@ -500,11 +502,26 @@ _run() {
 					[ -n "$name" ] || exit -1
 					proper_args="$proper_args --$name=$value"
 				else
+					arity=$(get_value.py \
+						--table=Argument \
+						--application=$id_application \
+						--id_argument=$id_arg \
+						--arity)
+					argsep=$(get_value.py \
+						--table=Argument \
+						--application=$id_application \
+						--id_argument=$id_arg \
+						--argsep)
+					[ -n "$argsep" ] || exit -1
+					if (  [[ $arity == "+" ]] || (( $arity > 1 ))  ) && [[ $argsep == "space" ]]
+					then
+						value=$(echo $@ | sed 's/.*\-\-SSREPI\-argument\-'$id_arg'=//' | sed 's/\-\-.*//')
+					fi
 					position_arg[$pos]=$value
 					id_position_arg[$pos]=$id_arg
 				fi
 			else
-				id_arg=$(echo $arg | sed 's/--SSREPI-arg-//')
+				id_arg=$(echo $arg | sed 's/--SSREPI-argument-//')
 				name=$(get_value.py \
 					--table=Argument \
 					--application=$id_application \
@@ -686,20 +703,29 @@ _run() {
 		then
 			wait
 		fi
-
 	)
 	if [ $? -ne 0 ]
 	then
 		(>&2 echo "$FUNCNAME: Problem with run for $APP")
 		exit -1
 	fi
-	echo $PIPE
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 }
 
 SSREPI_argument() {
+	
+	# $1 - application_id
+	# $2 - container_type
+	# $@ - the rest
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	id_application=$1
+	shift
+	id_argument=$id_application.$1
+	shift
 	id_argument=$(update.py \
 		--table=Argument \
+		--id_argument=$id_argument \
+		--application=$id_application \
 		$@ \
 	)	
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
@@ -742,16 +768,17 @@ SSREPI_product() {
 	echo $id_product
 }
 
-SSREPI_output_type() {
+SSREPI_output() {
 
 	# $1 - id_application
 	# $2 - id_container_type
 	# $3 - pattern
 
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	id_container_type=$id_application.$2
 	id_output_type=$(update.py \
 		--table=ContainerType \
-		--id_container_type=$2 \
+		--id_container_type=$id_container_type \
 		--format='text/plain' \
 		--identifier="name:$3" \
 	)	
@@ -761,7 +788,7 @@ SSREPI_output_type() {
 		--table=Product \
 		--optionality=always \
 		--application=$1 \
-		--container_type=$2 \
+		--container_type=$id_container_type \
 		--in_file=$id_output_type \
 		--locator="CWD PATH REGEX:$3" \
 	)	
@@ -780,7 +807,7 @@ SSREPI_output_value() {
 
 	if [ ! -e $3 ]
 	then
-		(>&2 echo "$FUNCNAME: Something seriously wrong in the call \"--SSREPI-output-$id_container_type=$3\": $3 does not exist")
+		(>&2 echo "$FUNCNAME: Something wrong in the call \"--SSREPI-output-$id_container_type=$3\": $3 does not exist")
 		exit -1 
 	fi
 
@@ -838,16 +865,17 @@ SSREPI_output_value() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 }
 	
-SSREPI_input_type() {
+SSREPI_input() {
 
 	# $1 - id_application
-	# $2 - id_container_type
+	# $2 - id_container_type PREFIX
 	# $3 - pattern
 
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	id_container_type=$id_application.$2
 	id_input_type=$(update.py \
 		--table=ContainerType \
-		--id_container_type=$2 \
+		--id_container_type=$id_container_type \
 		--format='text/plain' \
 		--identifier="name:$3" \
 	)	
@@ -857,7 +885,7 @@ SSREPI_input_type() {
 		--table=Uses \
 		--optionality=required \
 		--application=$1 \
-		--container_type=$2 \
+		--container_type=$id_container_type \
 		--in_file=$id_input_type \
 		--locator="CWD PATH REGEX:$3" \
 	)	
@@ -1218,20 +1246,27 @@ SSREPI_statistics() {
 	echo $id_statistics
 }
 SSREPI_visualisation() {
+
 	# $1 - id_visualisation
 	# $2 - method - points at VisualisationMethod
 	# $3 - the means by  which the visualisation is produced
 	# $4 - the container for the visualisation
+	
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	if [ -z $4 ] || [ ! -f $4 ]
+	then
+		(>&2 echo "$FUNCNAME: Unable to find $4")
+		exit -1
+	fi
 	id_container=container.$(cksum $4 | awk '{print $1}')
 
-	# The last line is a real hack. This needs to be done better. These
-	# objects should be returned as part of the _run() method. Using the
-	# cksum is contrived IPC, i.e. the spawned process in _run() talking to
-	# the calling process. This will "always" work, but it is invisible to
-	# the coder and can easily be missed and thus broken in future
-	# releases.  Hmmmmm, need to think about this, but for now we will
-	# hack.
+	# The previous few lines are a real hack. This needs to be done better.
+	# These objects should be returned as part of the _run() method. Using
+	# the cksum is contrived IPC, i.e. the spawned process in _run()
+	# talking to the calling process. This will "always" work, but it is
+	# invisible to the coder and can easily be missed and thus broken in
+	# future releases.  Hmmmmm, need to think about this, but for now we
+	# will hack.
 
 	id_visualisation=$(update.py \
 		--table="Visualisation" \
@@ -1343,6 +1378,11 @@ SSREPI_value() {
 	shift 
 	id_variable=$1
 	shift
+	if [ ! -x $1 ]
+	then
+		(>&2 echo "$FUNCNAME Unable to find $1")
+		exit -1
+	fi
 	id_container=container.$(cksum $1 | awk '{print $1}')
 	shift
 

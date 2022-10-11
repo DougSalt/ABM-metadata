@@ -106,19 +106,21 @@ fi
 # --------------
 
 govt_id=$(SSREPI_argument \
-	--id_argument=govt \
+	$PROG \
+	govt \
 	--description="Type of governance" \
-	--application=$PROG \
 	--type=required \
+	--name=govt \
 	--order_value=1 \
 	--arity=1 \
 	--range="^(ClusterActivity|ClusterSpecies|RewardActivity|RewardSpecies)$")
 [ -n $govt_id ] || exit -1
 
 sink_id=$(SSREPI_argument \
-	--id_argument=sink\
+	$PROG \
+	sink\
 	--description="Type of governance" \
-	--application=$PROG \
+	--name=sink \
 	--type=required \
 	--order_value=2 \
 	--arity=1 \
@@ -126,9 +128,10 @@ sink_id=$(SSREPI_argument \
 [ -n $sink_id ] || exit -1
 
 market_id=$(SSREPI_argument \
-	--id_argument=market \
+	$PROG \
+	market \
 	--description="Market" \
-	--application=$PROG \
+	--name=market \
 	--type=required \
 	--order_value=3 \
 	--arity=1 \
@@ -136,9 +139,9 @@ market_id=$(SSREPI_argument \
 [ -n $market_id ] || exit -1
 
 zone_id=$(SSREPI_argument \
-	--id_argument=zone \
+	$PROG \
+	zone \
 	--description="Policy zone" \
-	--application=$PROG \
 	--name=zone \
 	--type=required \
 	--order_value=4 \
@@ -147,9 +150,9 @@ zone_id=$(SSREPI_argument \
 [ -n $zone_id ] || exit -1
 
 reward_id=$(SSREPI_argument \
-	--id_argument=reward \
+	$PROG \
+	reward \
 	--description="Reward budget" \
-	--application=$PROG \
 	--name=reward \
 	--type=required \
 	--order_value=5 \
@@ -158,9 +161,9 @@ reward_id=$(SSREPI_argument \
 [ -n $reward_id ] || exit -1
 
 ratio_id=$(SSREPI_argument \
-	--id_argument=ratio \
+	$PROG \
+	ratio \
 	--description="Cluster reward ratio" \
-	--application=$PROG \
 	--name=ratio \
 	--type=required \
 	--order_value=6 \
@@ -169,9 +172,9 @@ ratio_id=$(SSREPI_argument \
 [ -n $ratio_id ] || exit -1
 
 bet_id=$(SSREPI_argument \
-	--id_argument=bet \
+	$PROG \
+	bet \
 	--description="Break-even threshold" \
-	--application=$PROG \
 	--name=bet \
 	--type=required \
 	--order_value=7 \
@@ -180,9 +183,9 @@ bet_id=$(SSREPI_argument \
 [ -n $bet_id ] || exit -1
 
 approval_id=$(SSREPI_argument \
-	--id_argument=approval \
+	$PROG \
+	approval \
 	--description="Approval" \
-	--application=$PROG \
 	--name=approval \
 	--type=required \
 	--order_value=8 \
@@ -191,9 +194,9 @@ approval_id=$(SSREPI_argument \
 [ -n $approval_id ] || exit -1
 
 iwealth_id=$(SSREPI_argument \
-	--id_argument=iwealth \
+	$PROG \
+	iwealth \
 	--description="Initial wealth" \
-	--application=$PROG \
 	--name=iwealth \
 	--type=required \
 	--order_value=9 \
@@ -202,9 +205,9 @@ iwealth_id=$(SSREPI_argument \
 [ -n $iwealth_id ] || exit -1
 
 aspiration_id=$(SSREPI_argument \
-	--id_argument=aspiration \
+	$PROG \
+	aspiration \
 	--description="Aspriation threshold" \
-	--application=$PROG \
 	--name=aspiration \
 	--type=required \
 	--order_value=10 \
@@ -213,9 +216,9 @@ aspiration_id=$(SSREPI_argument \
 [ -n $aspiration_id ] || exit -1
 
 run_id=$(SSREPI_argument \
-	--id_argument=run \
+	$PROG \
+	run \
 	--description="Run number" \
-	--application=$PROG \
 	--name=run \
 	--type=required \
 	--order_value=11 \
@@ -226,112 +229,112 @@ run_id=$(SSREPI_argument \
 # Output types
 # ------------
 
-SSS_economystate_id=$(SSREPI_output_type $PROG \
+SSS_economystate_id=$(SSREPI_output $PROG \
 	SSS_economystate \
 	"______[^_]+_____.state")
 [ -n "$SSS_economystate_id" ] || exit -1 
 
-SSS_top_level_subpop_id=$(SSREPI_output_type $PROG \
+SSS_top_level_subpop_id=$(SSREPI_output $PROG \
 	SSS_top-level-subpop \
 	"________[^_]+_[^_]+_[^_]+_.ssp")
 [ -n "$SSS_top_level_subpop_id" ] || exit -1 
 
-SSS_grid_id=$(SSREPI_output_type $PROG \
+SSS_grid_id=$(SSREPI_output $PROG \
 	SSS_grid \
 	"___________[^_]+.grd")
 [ -n "$SSS_grid_id" ] || exit -1 
 
-SSS_top_level_id=$(SSREPI_output_type $PROG \
+SSS_top_level_id=$(SSREPI_output $PROG \
 	SSS_top-level \
 	"_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+.model")
 [ -n "$SSS_top_level_id" ] || exit -1 
 
-SSS_species_id=$(SSREPI_output_type $PROG \
+SSS_species_id=$(SSREPI_output $PROG \
 	SSS_species \
 	"_[^_]+__________.csv")
 [ -n "$SSS_species_id" ] || exit -1 
 
-SSS_subpop_id=$(SSREPI_output_type $PROG \
+SSS_subpop_id=$(SSREPI_output $PROG \
 	SSS_subpop \
 	"________[^_]+_[^_]+_[^_]+_.sp")
 [ -n "$SSS_subpop_id" ] || exit -1 
 
-SSS_yieldtree_id=$(SSREPI_output_type $PROG \
+SSS_yieldtree_id=$(SSREPI_output $PROG \
 	SSS_yieldtree \
 	"___________.tree")
 [ -n "$SSS_yieldtree_id" ] || exit -1 
 
-SSS_fearlus_id=$(SSREPI_output_type $PROG \
+SSS_fearlus_id=$(SSREPI_output $PROG \
 	SSS_fearlus \
 	"__[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+.fearlus")
 [ -n "$SSS_fearlus_id" ] || exit -1 
 
-SSS_government_id=$(SSREPI_output_type $PROG \
+SSS_government_id=$(SSREPI_output $PROG \
 	SSS_government \
 	"__[^_]+_[^_]+_[^_]+_[^_]+______.gov")
 [ -n "$SSS_government_id" ] || exit -1 
 
-SSS_sink_id=$(SSREPI_output_type $PROG \
+SSS_sink_id=$(SSREPI_output $PROG \
 	SSS_sink \
 	"_[^_]+__________.csv")
 [ -n "$SSS_sink_id" ] || exit -1 
 
-SSS_incometree_id=$(SSREPI_output_type $PROG \
+SSS_incometree_id=$(SSREPI_output $PROG \
 	SSS_incometree \
 	"______[^_]+_____.tree")
 [ -n "$SSS_incometree_id" ] || exit -1 
 
-SSS_luhab_id=$(SSREPI_output_type $PROG \
+SSS_luhab_id=$(SSREPI_output $PROG \
 	SSS_luhab \
 	"___________.csv")
 [ -n "$SSS_luhab_id" ] || exit -1 
 
-SSS_climateprob_id=$(SSREPI_output_type $PROG \
+SSS_climateprob_id=$(SSREPI_output $PROG \
 	SSS_climateprob \
 	"___________.prob")
 [ -n "$SSS_climateprob_id" ] || exit -1 
 
-SSS_patch_id=$(SSREPI_output_type $PROG \
+SSS_patch_id=$(SSREPI_output $PROG \
 	SSS_patch \
 	"_[^_]+__________[^_]+.csv")
 [ -n "$SSS_patch_id" ] || exit -1 
 
-SSS_report_config_id=$(SSREPI_output_type $PROG \
+SSS_report_config_id=$(SSREPI_output $PROG \
 	SSS_report-config \
 	"_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+.repcfg")
 [ -n "$SSS_report_config_id" ] || exit -1 
 
-SSS_yielddata_id=$(SSREPI_output_type $PROG \
+SSS_yielddata_id=$(SSREPI_output $PROG \
 	SSS_yielddata \
 	"___________.data")
 [ -n "$SSS_yielddata_id" ] || exit -1 
 
-SSS_spom_id=$(SSREPI_output_type $PROG \
+SSS_spom_id=$(SSREPI_output $PROG \
 	SSS_spom \
 	"_[^_]+__________[^_]+.spom")
 [ -n "$SSS_spom_id" ] || exit -1 
 
-SSS_economyprob_id=$(SSREPI_output_type $PROG \
+SSS_economyprob_id=$(SSREPI_output $PROG \
 	SSS_economyprob \
 	"___________.prob")
 [ -n "$SSS_economyprob_id" ] || exit -1 
 
-SSS_dummy_id=$(SSREPI_output_type $PROG \
+SSS_dummy_id=$(SSREPI_output $PROG \
 	SSS_dummy \
 	"___________[^_]+.csv")
 [ -n "$SSS_dummy_id" ] || exit -1 
 
-SSS_incomedata_id=$(SSREPI_output_type $PROG \
+SSS_incomedata_id=$(SSREPI_output $PROG \
 	SSS_incomedata \
 	"______[^_]+_____.data")
 [ -n "$SSS_incomedata_id" ] || exit -1 
 
-SSS_event_id=$(SSREPI_output_type $PROG \
+SSS_event_id=$(SSREPI_output $PROG \
 	SSS_event \
 	"________[^_]+___.event")
 [ -n "$SSS_event_id" ] || exit -1 
 
-SSS_trigger_id=$(SSREPI_output_type $PROG \
+SSS_trigger_id=$(SSREPI_output $PROG \
 	SSS_trigger \
 	"________[^_]+___.trig")
 [ -n "$SSS_trigger_id" ] || exit -1 
@@ -359,18 +362,19 @@ do
 	      for rat in 1.0 
 	      do
 
-		DIR="Cluster2-2/SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_"
-		ARGS="""--SSREPI-arg-govt=$govt
-		--SSREPI-arg-${sink_id}=NO
-		--SSREPI-arg-${market_id}=$market
-		--SSREPI-arg-${zone_id}=all
-		--SSREPI-arg-${reward_id}=$rwd
-		--SSREPI-arg-${ratio_id}=$rat
-		--SSREPI-arg-${bet_id}=$bet
-		--SSREPI-arg-${approval_id}=NO
-		--SSREPI-arg-${iwealth_id}=0
-		--SSREPI-arg-${aspiration_id}=$asp
-		--SSREPI-arg-${run_id}=$run
+		DIR="SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_"
+		ARGS="""
+		--SSREPI-argument-${govt_id}=$govt
+		--SSREPI-argument-${sink_id}=NO
+		--SSREPI-argument-${market_id}=$market
+		--SSREPI-argument-${zone_id}=all
+		--SSREPI-argument-${reward_id}=$rwd
+		--SSREPI-argument-${ratio_id}=$rat
+		--SSREPI-argument-${bet_id}=$bet
+		--SSREPI-argument-${approval_id}=NO
+		--SSREPI-argument-${iwealth_id}=0
+		--SSREPI-argument-${aspiration_id}=$asp
+		--SSREPI-argument-${run_id}=$run
 		"""
 
 		ARGS="""$ARGS
@@ -406,4 +410,3 @@ do
   done
 done
 
-echo $pipe

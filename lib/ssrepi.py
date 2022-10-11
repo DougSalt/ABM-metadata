@@ -2642,17 +2642,17 @@ REFERENCES Contexts(ID_CONTEXT)
 
     @classmethod
     def primaryKeys(cls):
-        return [ [ "VALUE", "VARIABLE"  ],
-                 [ "VALUE", "STATISTICAL_VARIABLE"  ],
-                 [ "VALUE", "PARAMETER"  ],
-                 [ "VALUE", "STATISTICAL_PARAMETER"  ],
-                 [ "VALUE", "VISUALISATION_PARAMETER"  ],
-                 [ "VALUE", "RESULT_OF"  ] ]
+        return [ [ "ID_VALUE", "VARIABLE"  ],
+                 [ "ID_VALUE", "STATISTICAL_VARIABLE"  ],
+                 [ "ID_VALUE", "PARAMETER"  ],
+                 [ "ID_VALUE", "STATISTICAL_PARAMETER"  ],
+                 [ "ID_VALUE", "VISUALISATION_PARAMETER"  ],
+                 [ "ID_VALUE", "RESULT_OF"  ] ]
 
     def __init__(self, values = None):
         Table.__init__(self)
         # One of time, space, agent or link must not be null.
-        self.VALUE = None
+        self.ID_VALUE = None
         self.FORMAT = None
         self.UNITS = None
         self.VARIABLE = None # Foreign key in the table Variables

@@ -90,6 +90,8 @@ def parameters(conn, argv):
 					sys.stderr.write(mysql + "\n")
 				found = False
 				for col_details in actual_columns:
+					if ssrepi.debug:
+						sys.stderr.write("Fields: " + str(col_details) + " on " + col.lower() + "\n")
 					if col_details.lower() == col.lower():
 						found = True
 						break
