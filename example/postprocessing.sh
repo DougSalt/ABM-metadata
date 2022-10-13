@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This is the workflow script used tie all the results together in the post
 # processing for this experiment.
@@ -1146,11 +1146,11 @@ ARGS="""
 """
 
 ARGS="""$ARGS
---SSREPI-input=${final_results_id}=final_results.csv
+--SSREPI-input-${final_results_id}=final_results.csv
 """
 
 ARGS="""$ARGS
---SSREPI-output=${figure4_id}=figure4.a_and_b.pdf
+--SSREPI-output-${figure4_id}=figure4.a_and_b.pdf
 """
 SSREPI_call $FIGURE2_3S $ARGS
 
@@ -1162,133 +1162,226 @@ SSREPI_call $FIGURE2_3S $ARGS
 #	figure4.a_and_b.pdf
 
 some_visualisation=$(SSREPI_visualisation \
-	visualisation.$(uniq) \
+	visualisation_$(uniq) \
 	$sunflower_plot_id \
-	"figure2-3s.R -splits final_results.csv Richness \
-	A/F/25/5 A/F/25/1 A/F/30/5 O/F/25/5 CA/F/25/5 figure4.a_and_b.pdf" \
+	"\"figure2-3s.R -splits final_results.csv Richness A/F/25/5 A/F/25/1 A/F/30/5 O/F/25/5 CA/F/25/5 figure4.a_and_b.pdf\"" \
 	figure4.a_and_b.pdf \
 )
 
 # figure 5
 # ========
 
-xit -2
-# Appendix 
-# ========
-
-FIGURE2_3SMALL=$(SSREPI_application figure2-3small.R \
-	--description="""
-		This produces the diagram for the appendix of the paper.
-		Some words of wisdom about this script."
-)
-[ -n "$FIGURE2_3SMALL" ] || exit - 1
+TREEHIST3=$(SSREPI_application treehist3.pl \
+		--description="Some documentation here, please.")
+[ -n "$TREEHIST3" ] || exit - 1
 
 # Input types
 # -----------
 
-final_results_id=$(SSREPI_input $FIGURE2_3SMALL final_results '^final_results.csv$')
+final_results_id=$(SSREPI_input $TREEHIST3 final_results '^final_results.csv$')
 [ -n "$final_results_id" ] || exit -1
 
 # Output types
 # ------------
 
-appendix_id=$(SSREPI_input $FIGURE2_3SMALL appendix '^appendix.pdf$')
-[ -n "$appendix_id" ] || exit -1
+figure5_id=$(SSREPI_output $TREEHIST3 figure5 '^.*.PDF$')
+[ -n "$figure5_id" ] || exit -1
 
 # Argument types
 # --------------
 
-arg_splits=$(SSREPI_argument \
-        $FIGURE2_3SMALL \
-        splits \
-        --description="I think this might be split the data" \
-	--name="splits" \
-        --type=flag \
-        --arity=0)
-[ -n "$arg_splits" ] || exit -1
+arg_complexity_variable=$(SSREPI_argument \
+        $TREEHIST3 \
+        complexity_variable \
+        --description="Complexity Parameter" \
+	--name="cp" \
+	--separator='-' \
+	--assignment_operator="space" \
+        --type=option \
+        --arity=1 \
+	--range="^(1|[0\.[0-9]+)$")
+[ -n "$arg_complexity_variable" ] || exit -1
 
 arg_final_results=$(SSREPI_argument \
-        $FIGURE2_3SMALL \
+        $TREEHIST3 \
         final_results \
-        --description="Results file with selected scenarios" \
-	--container=$final_results_file
+        --description="Results files with selected scenarios" \
         --type=required \
         --order_value=1 \
         --arity=1 \
         --range=relative_ref)
 [ -n "$arg_final_results" ] || exit -1
 
+arg_figure5=$(SSREPI_argument \
+        $TREEHIST3 \
+        figure5 \
+        --description="PDF for figure 5" \
+        --type=required \
+        --order_value=2 \
+        --arity=1 \
+        --range=relative_ref)
+[ -n "$arg_figure5" ] || exit -1
+
 arg_response_variable=$(SSREPI_argument \
-        $FIGURE2_3SMALL \
+        $TREEHIST3 \
         response_variable \
         --description="Response variable" \
         --type=required \
-        --order_value=2 \
+        --order_value=3 \
         --arity=1 \
         --range=".*")
 [ -n "$arg_response_variable" ] || exit -1
 
-arg_y_axis=$(SSREPI_argument \
-        $FIGURE2_3SMALL \
-        y_axis \
-        --description="y-axis label" \
-        --type=required \
-        --order_value=2 \
-        --arity=1 \
-        --range='.*')
-[ -n "$arg_y_axis" ] || exit -1
-
-arg_appendix=$(SSREPI_argument \
-        $FIGURE2_3SMALL \
-        appendix \
-        --description="The diagram for inclusion in the appendix" \
-        --type=required \
-	--container=$appendix_id \
-        --order_value=3 \
-        --arity=1 \
-        --range='^.*pdf$')
-[ -n "$appendix" ] || exit -1
-
-arg_scenarios=$(SSREPI_argument \
-        $FIGURE2_3SMALL \
-        scenarios \
-        --description="The Scenarios to include in the diagram" \
+arg_explanatory_variables=$(SSREPI_argument \
+        $TREEHIST3 \
+        explanatory_variables \
+        --description="Explanatory variables
+	Comma (no space) separated values" \
+        --name=expiriment \
         --type=required \
         --order_value=4 \
-        --arity=+ \
-	--argsep=' ' \
-        --range='^A-ZA-Z?\/(V|F)\/[0-9][0-9]\/[0-9]$'
-)
-[ -n "$arg_scenario" ] || exit -1
+	--range="^(..*)(\,..*)*$")
+[ -n "$arg_explanatory_variables" ] || exit -1
+
+# Metadata
+# --------
+
+SSREPI_implements $TREEHIST3 \
+	--statistical_method="$recursive_partitioning_id"
+
+#SSREPI_value "0.0075" \
+#	--statistical_parameter="$par_partitioning_complexity_id"
 
 ARGS="""
 --SSREPI-input-${final_results_id}=final_results.csv
 """
 
 ARGS="""$ARGS
---SSREPI-argument=${arg_splits}
---SSREPI-argument=${arg_final_results}=final_results.csv
---SSREPI-argument=${arg_response_variable}=Richness
---SSREPI-argument=${arg_appendix}=appendix.pdf
---SSREPI-argument=${arg_scenarios}=\
-	A/F/30/1 A/V/25/1 CO/F/25/5 CO/F/30/1 CO/F/30/5 CO/V/25/1 CO/V/30/1 \
-	CO/V/30/5 CA/F/25/1 CA/F/30/1 CA/F/30/5 CA/V/25/1 CA/V/25/5 CA/V/30/1 \ 
-	CA/V/30/5 CO/F/25/1 CO/F/25/5 CO/F/30/1 CO/F/30/5 CO/V/25/1 CO/V/30/1 \
-	CO/V/30/5
+--SSREPI-argument-${arg_complexity_variable}=0.0075
+--SSREPI-argument-${arg_response_variable}=Richness
+--SSREPI-argument-${arg_final_results}=final_results.csv
+--SSREPI-argument-${arg_figure5}=LOBEC.rpart3Xfr.pdf 
+--SSREPI-argument-${arg_explanatory_variables}=Government,Market,BET,ASP,Expenditure 
 """
 
 ARGS="""$ARGS
---SSREPI-output=${appendix_id}=appendix.pdf
+SSREPI-output-${figure5_id}=LOBEC.rpart3Xfr.pdf 
 """
 
-SSREPI_call $FIGURE2_3SMALL $ARGS
+SSREPI_call $TREEHIST3 $ARGS
 
-#figure2-3small.R -splits final_results.csv \
-#	Richness \
-#	appendix.pdf \
-#	A/F/30/1 A/V/25/1 CO/F/25/5 CO/F/30/1 CO/F/30/5 CO/V/25/1 CO/V/30/1 \
-#	CO/V/30/5 CA/F/25/1 CA/F/30/1 CA/F/30/5 CA/V/25/1 CA/V/25/5 CA/V/30/1 \
-#	CA/V/30/5 CO/F/25/1 CO/F/25/5 CO/F/30/1 CO/F/30/5 CO/V/25/1 CO/V/30/1 \
-#	CO/V/30/5
+#treehist3.pl \
+#	-cp 0.0075 \
+#	final_results.csv  \
+#	LOBEC.rpart3Xfr.pdf  \
+#	Richness Government,Market,BET,ASP,Expenditure 
+
+# Appendix 
+# ========
+
+TREEHIST3=$(SSREPI_application treehist3.pl \
+		--description="Some documentation here, please.")
+[ -n "$TREEHIST3" ] || exit - 1
+
+# Input types
+# -----------
+
+final_results_id=$(SSREPI_input $TREEHIST3 final_results '^final_results.csv$')
+[ -n "$final_results_id" ] || exit -1
+
+# Output types
+# ------------
+
+figure5_id=$(SSREPI_output $TREEHIST3 figure5 '^.*.PDF$')
+[ -n "$figure5_id" ] || exit -1
+
+# Argument types
+# --------------
+
+arg_complexity_variable=$(SSREPI_argument \
+        $TREEHIST3 \
+        complexity_variable \
+        --description="Complexity Parameter" \
+	--name="cp" \
+	--separator='-' \
+	--assignment_operator="space" \
+        --type=option \
+        --arity=1 \
+	--range="^(1|[0\.[0-9]+)$")
+[ -n "$arg_complexity_variable" ] || exit -1
+
+arg_final_results=$(SSREPI_argument \
+        $TREEHIST3 \
+        final_results \
+        --description="Results files with selected scenarios" \
+        --type=required \
+        --order_value=1 \
+        --arity=1 \
+        --range=relative_ref)
+[ -n "$arg_final_results" ] || exit -1
+
+arg_figure5=$(SSREPI_argument \
+        $TREEHIST3 \
+        figure5 \
+        --description="PDF for figure 5" \
+        --type=required \
+        --order_value=2 \
+        --arity=1 \
+        --range=relative_ref)
+[ -n "$arg_figure5" ] || exit -1
+
+arg_response_variable=$(SSREPI_argument \
+        $TREEHIST3 \
+        response_variable \
+        --description="Response variable" \
+        --type=required \
+        --order_value=3 \
+        --arity=1 \
+        --range=".*")
+[ -n "$arg_response_variable" ] || exit -1
+
+arg_explanatory_variables=$(SSREPI_argument \
+        $TREEHIST3 \
+        explanatory_variables \
+        --description="Explanatory variables
+	Comma (no space) separated values" \
+        --name=expiriment \
+        --type=required \
+        --order_value=4 \
+	--range="^(..*)(\,..*)*$")
+[ -n "$arg_explanatory_variables" ] || exit -1
+
+# Metadata
+# --------
+
+SSREPI_implements $TREEHIST3 \
+	--statistical_method="$recursive_partitioning_id"
+
+#SSREPI_value "0.0075" \
+#	--statistical_parameter="$par_partitioning_complexity_id"
+
+ARGS="""
+--SSREPI-input-${final_results_id}=final_results.csv
+"""
+
+ARGS="""$ARGS
+--SSREPI-argument-${arg_complexity_variable}=0.0075
+--SSREPI-argument-${arg_response_variable}=Richness
+--SSREPI-argument-${arg_final_results}=final_results.csv
+--SSREPI-argument-${arg_figure5}=LOBEC.rpart3Xfr.pdf 
+--SSREPI-argument-${arg_explanatory_variables}=Government,Market,BET,ASP,Expenditure 
+"""
+
+ARGS="""$ARGS
+SSREPI-output-${figure5_id}=LOBEC.rpart3Xfr.pdf 
+"""
+
+SSREPI_call $TREEHIST3 $ARGS
+
+#treehist3.pl \
+#	-cp 0.0075 \
+#	final_results.csv  \
+#	LOBEC.rpart3Xfr.pdf  \
+#	Richness Government,Market,BET,ASP,Expenditure 
 
 

@@ -135,8 +135,8 @@ too_slow_tag=$(SSREPI_make_tag too_slow "This refers to the execution speed of a
 # Throughout these scripts, I have tended to use variables.
 
 SSREPI_tag $source_tag --documentation="$paper_id"
-SSREPI_tag $mad_tag --person=ds42723
-SSREPI_tag ancient --person=ds42723
+SSREPI_tag $mad_tag --person=$doug_salt_id
+SSREPI_tag ancient --person=$doug_salt_id
 SSREPI_tag urgent --study=$study_id
 SSREPI_tag bad_syntax --application=$ME
 
@@ -149,7 +149,6 @@ SSREPI_tag too_slow --container_type=bash
 
 SSREPI_tag frivilous --tag=mad
 SSREPI_tag frivilous --tag=$too_old
-
 
 # Assumptions
 # ===========

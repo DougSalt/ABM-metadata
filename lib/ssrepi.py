@@ -549,6 +549,7 @@ ID_ARGUMENT TEXT PRIMARY KEY,
 TYPE TEXT, 
 ORDER_VALUE TEXT, 
 NAME TEXT, 
+ASSIGNMENT_OPERATOR TEXT,
 SEPARATOR TEXT, 
 SHORT_NAME TEXT, 
 SHORT_SEPARATOR TEXT, 
@@ -579,6 +580,7 @@ DEFERRABLE INITIALLY DEFERRED
         self.TYPE = None
         self.ORDER_VALUE = None
         self.NAME = None
+        self.ASSIGNMENT_OPERATOR = None
         self.SEPARATOR = None
         self.SHORT_NAME = None
         self.SHORT_SEPARATOR = None
@@ -609,9 +611,17 @@ DEFERRABLE INITIALLY DEFERRED
                 self.__class__.__name__ + 
                 ': Invalid column: ORDER_VALUE: ' +
                 str(self.ORDER_VALUE))
+        if (self.SHORT_SEPARATOR != None and
+            self.SHORT_SEPARATOR != '/' and
+            self.SHORT_SEPARATOR != '-'):
+            raise InvalidEntity('ERROR: Class: ' + 
+                self.__class__.__name__ + 
+                ': Invalid column: SHORT_SEPARATOR: ' +
+                str(self.SHORT_SEPARATOR))
         if (self.SEPARATOR != None and
-            self.SEPARATOR != '=' and
-            self.SEPARATOR != ' '):
+            self.SEPARATOR != '--' and
+            self.SEPARATOR != '/' and
+            self.SEPARATOR != '-'):
             raise InvalidEntity('ERROR: Class: ' + 
                 self.__class__.__name__ + 
                 ': Invalid column: SEPARATOR: ' +
@@ -626,13 +636,13 @@ DEFERRABLE INITIALLY DEFERRED
                 self.__class__.__name__ + 
                 ': Invalid column: ARITY: ' + 
                 str(self.ARITY))
-#        sys.stderr.write("ARITY = " + self.ARITY + "\n")
-#        if (is_positive_int(self.ARITY) and
-#            self.ARITY > 1 and
-#            self.ARGSEP == None):
-#            raise InvalidEntity('ERROR: Class: ' + 
-#                self.__class__.__name__ + 
-#                ': Missing column: ARGSEP')
+        if (self.ARITY != None and
+            is_positive_int(self.ARITY) and
+            int(self.ARITY) > 1 and
+            self.ARGSEP == None):
+            raise InvalidEntity('ERROR: Class: ' + 
+                self.__class__.__name__ + 
+                ': Missing column: ARGSEP')
         
         # I have now decided that we are going to validate the
         # ArgumentValues.HAS_VALUE using a Perl regex, which will
@@ -1217,13 +1227,13 @@ CONSTRAINT ContributorDocumentation
 UNIQUE( CONTRIBUTOR, APPLICATION ),
 FOREIGN KEY (CONTRIBUTOR)
 REFERENCES Persons(ID_PERSON)
+DEFERRABLE INITIALLY DEFERRED,
+FOREIGN KEY (DOCUMENTATION)
+REFERENCES Documentation(ID_DOCUMENTATION)
+DEFERRABLE INITIALLY DEFERRED,
+FOREIGN KEY (APPLICATION)
+REFERENCES Applications(ID_APPLICATION)
 DEFERRABLE INITIALLY DEFERRED
---FOREIGN KEY (DOCUMENTATION)
---REFERENCES Documentation(ID_DOCUMENTATION)
---DEFERRABLE INITIALLY DEFERRED,
---FOREIGN KEY (APPLICATION)
---REFERENCES Applications(ID_APPLICATION)
---DEFERRABLE INITIALLY DEFERRED
 )"""
 
     # The problem is that this is an either/or situation. Either there is
@@ -1977,11 +1987,14 @@ class Project(Table):
 ID_PROJECT TEXT PRIMARY KEY, 
 TITLE TEXT NOT NULL, 
 FUNDER TEXT,
-GRANT_ID TEXT,
-STUDY INT,
-FOREIGN KEY(STUDY)
-REFERENCES Studies(ID_STUDY)
-DEFERRABLE INITIALLY DEFERRED 
+GRANT_ID TEXT
+-- This creates a circular relation between two relations. We do not like
+-- this in the database world, so a project can have many studies, but not
+-- the other way around. I will change the standard to reflect this.
+--STUDY INT,
+--FOREIGN KEY(STUDY)
+--REFERENCES Studies(ID_STUDY)
+--DEFERRABLE INITIALLY DEFERRED 
 )"""
 
     @classmethod
@@ -1994,7 +2007,7 @@ DEFERRABLE INITIALLY DEFERRED
         self.TITLE = None
         self.FUNDER = None
         self.GRANT_ID = None
-        self.STUDY = None
+        #self.STUDY = None
         Table.setValues(self,values)
 
     @classmethod
@@ -2251,11 +2264,11 @@ ID_STUDY INTEGER PRIMARY KEY,
 LABEL TEXT NOT NULL, 
 START_TIME TEXT NOT NULL, 
 END_TIME TEXT, 
-PROJECT TEXT, 
 PART INT,
---FOREIGN KEY (PROJECT)
---REFERENCES Projects(ID_PROJECT) 
---DEFERRABLE INITIALLY DEFERRED,
+PROJECT TEXT, 
+FOREIGN KEY (PROJECT)
+REFERENCES Projects(ID_PROJECT) 
+DEFERRABLE INITIALLY DEFERRED,
 FOREIGN KEY (PART)
 REFERENCES Studies(ID_STUDY) 
 DEFERRABLE INITIALLY DEFERRED
@@ -2372,39 +2385,39 @@ UNIQUE( TARGET_TAG, STATISTICAL_METHOD ),
 CONSTRAINT TargetTagPerson
 UNIQUE( TARGET_TAG, PERSON ),
 CONSTRAINT TargetTagVisualisationMethod
-UNIQUE( TARGET_TAG, VISUALISATION_METHOD )
---FOREIGN KEY (TARGET_TAG)
---REFERENCES Tags(ID_TAG)
---DEFERRABLE INITIALLY DEFERRED,
---FOREIGN KEY (TAG)
---REFERENCES Tags(ID_TAG)
---DEFERRABLE INITIALLY DEFERRED,
---FOREIGN KEY (CONTAINER_TYPE)
---REFERENCES ContainerTypes(ID_CONTAINER_TYPE)
---DEFERRABLE INITIALLY DEFERRED,
---FOREIGN KEY (APPLICATION)
---REFERENCES Applications(ID_APPLICATION)
---DEFERRABLE INITIALLY DEFERRED,
---FOREIGN KEY (CONTAINER)
---REFERENCES Containers(ID_CONTAINER)
---DEFERRABLE INITIALLY DEFERRED,
---FOREIGN KEY (DOCUMENTATION)
---REFERENCES Documentation(ID_DOCUMENTATION)
---DEFERRABLE INITIALLY DEFERRED,
---FOREIGN KEY (STATISTICAL_METHOD)
---REFERENCES StatisticalMethods(ID_STATISTICAL_METHOD)
---DEFERRABLE INITIALLY DEFERRED,
---FOREIGN KEY (VISUALISATION_METHOD)
---REFERENCES VisualisationMethods(ID_VISUALISATION_METHOD),
---FOREIGN KEY (STUDY)
---REFERENCES Studies(ID_STUDY)
---DEFERRABLE INITIALLY DEFERRED,
---FOREIGN KEY (PERSON)
---REFERENCES Persons(ID_PERSON)
---DEFERRABLE INITIALLY DEFERRED,
---FOREIGN KEY (ASSUMPTION)
---REFERENCES Assumptions(ID_ASSUMPTION)
---DEFERRABLE INITIALLY DEFERRED
+UNIQUE( TARGET_TAG, VISUALISATION_METHOD ),
+FOREIGN KEY (TARGET_TAG)
+REFERENCES Tags(ID_TAG)
+DEFERRABLE INITIALLY DEFERRED,
+FOREIGN KEY (TAG)
+REFERENCES Tags(ID_TAG)
+DEFERRABLE INITIALLY DEFERRED,
+FOREIGN KEY (CONTAINER_TYPE)
+REFERENCES ContainerTypes(ID_CONTAINER_TYPE)
+DEFERRABLE INITIALLY DEFERRED,
+FOREIGN KEY (APPLICATION)
+REFERENCES Applications(ID_APPLICATION)
+DEFERRABLE INITIALLY DEFERRED,
+FOREIGN KEY (CONTAINER)
+REFERENCES Containers(ID_CONTAINER)
+DEFERRABLE INITIALLY DEFERRED,
+FOREIGN KEY (DOCUMENTATION)
+REFERENCES Documentation(ID_DOCUMENTATION)
+DEFERRABLE INITIALLY DEFERRED,
+FOREIGN KEY (STATISTICAL_METHOD)
+REFERENCES StatisticalMethods(ID_STATISTICAL_METHOD)
+DEFERRABLE INITIALLY DEFERRED,
+FOREIGN KEY (VISUALISATION_METHOD)
+REFERENCES VisualisationMethods(ID_VISUALISATION_METHOD),
+FOREIGN KEY (STUDY)
+REFERENCES Studies(ID_STUDY)
+DEFERRABLE INITIALLY DEFERRED,
+FOREIGN KEY (PERSON)
+REFERENCES Persons(ID_PERSON)
+DEFERRABLE INITIALLY DEFERRED,
+FOREIGN KEY (ASSUMPTION)
+REFERENCES Assumptions(ID_ASSUMPTION)
+DEFERRABLE INITIALLY DEFERRED
 )"""
 
     @classmethod
@@ -2950,8 +2963,8 @@ def create_tables(conn):
     StatisticalMethod.createTable(conn)
     Statistics.createTable(conn)
     ContainerType.createTable(conn)
-    Study.createTable(conn)
     Project.createTable(conn)
+    Study.createTable(conn)
     Documentation.createTable(conn)
     Container.createTable(conn)
     VisualisationMethod.createTable(conn)
@@ -3055,12 +3068,8 @@ def write_all_to_db(ss_rep, conn, order = None):
             
 #--
 
-# ...XX...
 # ++ WORK IN PROGRESS ++
 # (missing features, possible extensions, ...)
-
-# - functions to create tables; functions to add records to the tables;
-#   so far, only 12 of 34 tables have these functions already implemented;
 
 # - procedures for database normalization in order to minimize data redundancy
 #   (e.g. by checking the IDs in each tables);

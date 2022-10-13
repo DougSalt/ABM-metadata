@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 
+# When this is called from OSX MAKE SURE YOU USE THE ABOVE HASH BANG IN THE
+# CALLING PROGRAM. OSX does not support new versions of Bash (because of
+# licence stupidity), so their version of bash is antiquated. You need to
+# install from other sources. If you do not do the above then the script will
+# pick up the older, default version of bash and this script will fail.  You
+# have been warned.
+
 # A series of functions to update ssrep.db with an actual run. 
 
 # I have decided to do this in the bash script
@@ -26,6 +33,39 @@ else
 	exit -1
 fi
 
+# Create some standard containers
+
+id_container_type=$(update.py \
+	--table=ContainerType \
+	--id_container_type=bash \
+	--description="A Bourne-again bash script" \
+	--format='text/x-shellscript' \
+	--identifier=magic:'^.*shell script text executable.*$' \
+)
+
+id_container_type=$(update.py \
+	--table=ContainerType \
+	--id_container_type=perl \
+	--description="A Perl script" \
+	--format='text/x-perl' \
+	--identifier=magic:'^.*perl script text executable$' \
+)
+
+id_container_type=$(update.py \
+	--table=ContainerType \
+	--id_container_type=R \
+	--description="An R  script" \
+	--format='text/plain' \
+	--identifier=magic:'^.*Rscript script text executable.*'
+)
+
+id_container_type=$(update.py \
+	--table=ContainerType \
+	--id_container_type=elf \
+	--description="64bit Linux Executable" \
+	--format='application/x-executable' \
+	--identifier=magic:'^.*ELF 64-bit LSB executable\, x86-64.*$'
+)
 # Some sanity checking
 
 if [ -z "$SSREPI_SLURM" ]
@@ -166,7 +206,7 @@ SSREPI_process() {
 
 		id_process=$(update.py \
 			--table=Process \
-			--id_process=process.$(uniq) \
+			--id_process=process_$(uniq) \
 			--some_user=$USER \
 			--start_time=$(date "+%Y%m%dT%H%M%S") \
 			--working_dir=$PWD \
@@ -229,7 +269,7 @@ SSREPI_application() {
 
 	id_container=$(update.py \
 		--table=Container \
-		--id_container=container.$(cksum $(which $APP) | awk '{print $1}') \
+		--id_container=container_$(cksum $(which $APP) | awk '{print $1}') \
 		--location_value=$(which $APP) \
 		--location_type="relative_ref" \
 		--encoding=$(file -b --mime-encoding $(which $APP)) \
@@ -252,7 +292,7 @@ SSREPI_application() {
 	
 	id_app=$(update.py \
 		--table=Application \
-		--id_application=application.$(cksum $(which $APP) | awk '{print $1}') \
+		--id_application=application_$(cksum $(which $APP) | awk '{print $1}') \
 		--location=$id_container \
 		$PARAMS
 	)
@@ -423,7 +463,7 @@ _run() {
 
         id_pipeline=$(update.py \
 		--table=Pipeline \
-		--id_pipeline=calls.$id_application \
+		--id_pipeline=calls_${id_application} \
 		--calls_application=$id_application \
 	)
 	[ -n "id_pipeline" ] || exit -1
@@ -475,8 +515,8 @@ _run() {
 	# if at all possible.						
 
 	proper_args=
+	declare -A argument_value
 	position_arg=()
-	id_position_arg=()
 	for arg in $@
 	do
 		if [[ "$arg" == *--SSREPI-argument-* ]]
@@ -500,26 +540,66 @@ _run() {
 						--id_argument=$id_arg \
 						--name)
 					[ -n "$name" ] || exit -1
-					proper_args="$proper_args --$name=$value"
+					separator=$(get_value.py \
+						--table=Argument \
+						--application=$id_application \
+						--id_argument=$id_arg \
+						--separator)
+					[ -n "$separator" ] || exit -1
+					if [[ "$separator" == "None" ]]
+					then
+						separator="--"
+					fi
+					assignment_operator=$(get_value.py \
+						--table=Argument \
+						--application=$id_application \
+						--id_argument=$id_arg \
+						--assignment_operator)
+					[ -n "$assignment_operator" ] || exit -1
+					if [[ $assignment_operator == "equal" ]]
+					then
+						assignment_operator="="
+					elif [[ $assignment_operator == "space" ]]
+					then
+						assignment_operator=" "
+					elif [[ $assignment_operator == "None" ]]
+					then
+						assignment_operator=" "
+					fi
+					proper_args="$proper_args ${separator}${name}${assignment_operator}$value"
 				else
 					arity=$(get_value.py \
 						--table=Argument \
 						--application=$id_application \
 						--id_argument=$id_arg \
 						--arity)
+					[ -n "$arity" ] || exit -1
 					argsep=$(get_value.py \
 						--table=Argument \
 						--application=$id_application \
 						--id_argument=$id_arg \
 						--argsep)
 					[ -n "$argsep" ] || exit -1
-					if (  [[ $arity == "+" ]] || (( $arity > 1 ))  ) && [[ $argsep == "space" ]]
+					if ( [[ $arity == "+" ]] || (( $arity > 1 )) ) && [[ "$argsep" == "space" ]] 
 					then
 						value=$(echo $@ | sed 's/.*\-\-SSREPI\-argument\-'$id_arg'=//' | sed 's/\-\-.*//')
 					fi
+					if [[ $arity != "+" ]] && (( $arity > 1 )) 
+					then
+						if [[ $argsep == "space" ]]
+						then
+							argsep=' '
+						fi
+						actual_nof_args=$(( $(echo $value | grep -o "$argsep" | wc -l) + 1 ))
+						if (( $actual_nof_args != $arity ))
+						then
+							(>&2 echo "$FUNCNAME: Trying to call a script $APP with wrong number of arguments in $id_arg. Asked for $arity, got $actual_nof_args")
+							exit -1
+						fi
+					fi
 					position_arg[$pos]=$value
-					id_position_arg[$pos]=$id_arg
 				fi
+				argument_value[$id_arg]=$value
 			else
 				id_arg=$(echo $arg | sed 's/--SSREPI-argument-//')
 				name=$(get_value.py \
@@ -529,7 +609,18 @@ _run() {
 					--name
 				)
 				[ -n "$name" ] || exit -1
-				proper_args="$proper_args --$name"
+				separator=$(get_value.py \
+					--table=Argument \
+					--application=$id_application \
+					--id_argument=$id_arg \
+					--separator)
+				[ -n "$separator" ] || exit -1
+				if [[ "$separator" == "None" ]]
+				then
+					separator="--"
+				fi
+				proper_args="$proper_arg ${separator}${name}"
+				argument_value[$id_arg]='True'
 			fi
 		fi
 	done
@@ -581,7 +672,7 @@ _run() {
 	fi
 	[ -n "$id_container_type" ] || exit -1
 
-	id_application=$(SSREPI_application $id_application \
+	id__pplication=$(SSREPI_application $id_application \
 		--instance=$id_container_type \
 		--language=$LANGUAGE \
 	)
@@ -605,26 +696,10 @@ _run() {
 		then
 			cd "$CWD"
 		fi
-		if (( ${#position_arg[*]} != 0 ))
-		then
-			for pos in $(seq ${#position_arg[*]})
-			do
-				SSREPI_argument_value $THIS_PROCESS ${id_position_arg[$pos]} ${position_arg[$pos]}
-			done
-		fi
-		for arg in $proper_args 
+		for id in "${!argument_value[@]}"
 		do
-			if [[ "$arg" == *=* ]]
-			then
-				id=$(echo $arg | cut -f 1 -d= | sed 's/^\-\-//')
-				value=$(echo $arg | cut -f 2 -d=)
-			else
-				id=$(echo $arg | sed 's/^\-\-//')
-				value="True"
-			fi
-			SSREPI_argument_value $THIS_PROCESS $id $value
+			SSREPI_argument_value $THIS_PROCESS $id ${argument_value[$id]}
 		done
-
 		stdout=
 		stderr=
 		for arg in $@
@@ -720,7 +795,7 @@ SSREPI_argument() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	id_application=$1
 	shift
-	id_argument=$id_application.$1
+	id_argument=${id_application}_$1
 	shift
 	id_argument=$(update.py \
 		--table=Argument \
@@ -775,7 +850,7 @@ SSREPI_output() {
 	# $3 - pattern
 
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
-	id_container_type=$id_application.$2
+	id_container_type=${id_application}_$2
 	id_output_type=$(update.py \
 		--table=ContainerType \
 		--id_container_type=$id_container_type \
@@ -816,7 +891,7 @@ SSREPI_output_value() {
 	then
 		id_container=$(update.py \
 			--table=Container \
-			--id_container=container.$(cksum "$3" | awk '{print $1}') \
+			--id_container=container_$(cksum "$3" | awk '{print $1}') \
 			--location_value=$(readlink -f "$3") \
 			--location_type="relative_ref" \
 			--encoding=$(file -b --mime-encoding "$3") \
@@ -838,7 +913,7 @@ SSREPI_output_value() {
 	else	
 		id_container=$(update.py \
 			--table=Container \
-			--id_container=container.$(cksum "$3" | awk '{print $1}') \
+			--id_container=container_$(cksum "$3" | awk '{print $1}') \
 			--location_value=$(readlink -f "$3") \
 			--location_type="relative_ref" \
 			--encoding=$(file -b --mime-encoding "$3") \
@@ -872,7 +947,7 @@ SSREPI_input() {
 	# $3 - pattern
 
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
-	id_container_type=$id_application.$2
+	id_container_type=${id_application}_$2
 	id_input_type=$(update.py \
 		--table=ContainerType \
 		--id_container_type=$id_container_type \
@@ -914,7 +989,7 @@ SSREPI_input_value() {
 	then
 		id_container=$(update.py \
 			--table=Container \
-			--id_container=container.$(cksum $4 | awk '{print $1}') \
+			--id_container=container_$(cksum $4 | awk '{print $1}') \
 			--location_value=$(readlink -f $4) \
 			--location_type="relative_ref" \
 			--location_application=$1 \
@@ -936,7 +1011,7 @@ SSREPI_input_value() {
 	else	
 		id_container=$(update.py \
 			--table=Container \
-			--id_container=container.$(cksum $4 | awk '{print $1}') \
+			--id_container=container_$(cksum $4 | awk '{print $1}') \
 			--location_value=$(readlink -f $4) \
 			--location_type="relative_ref" \
 			--location_application=$1 \
@@ -1101,7 +1176,7 @@ SSREPI_paper() {
 
 	id_container=$(update.py \
 		--table=Container \
-		--id_container=container.$(cksum "$DOC" | awk '{print $1}') \
+		--id_container=container_$(cksum "$DOC" | awk '{print $1}') \
 		--location_value=$(readlink -f "$DOC") \
 		--held_by=$held_bv \
 	        --sourced_from=$sourced_from \
@@ -1145,7 +1220,7 @@ SSREPI_paper() {
 	[ -n "$id_container" ] || exit -1
 
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
-	echo $id_container
+	echo $id_paper
 
 }
 SSREPI_make_tag() {
@@ -1173,12 +1248,16 @@ SSREPI_contributor() {
 	# $2 contributor
 	# $3 type of contribution
 
-	id_contributor=$(update.py \
-		--table=Person \
-		--email=$2@$(hostname) \
-		--id_person=$2 \
-		--name=$2 \
-	)
+	id_contributor=$2
+	if [[ $(exists.py --table=Person --id_person=$2) != True ]]
+	then
+		id_contributor=$(update.py \
+			--table=Person \
+			--email=$2@$(hostname) \
+			--id_person=$2 \
+			--name=$2 \
+		)
+	fi
 	if [[ $(exists.py --table=Application --id_application=$1) == True ]]
 	then
 		id_contributor=$(update.py \
@@ -1188,6 +1267,14 @@ SSREPI_contributor() {
 			--contribution="$3" \
 		)
 	elif [[ $(exists.py --table=Container --id_container=$1) == True ]]
+	then
+		id_contributor=$(update.py \
+			--table=Contributor \
+			--container="$1" \
+			--contributor=$id_contributor \
+			--contribution="$3" \
+		)
+	elif [[ $(exists.py --table=Documentation --id_documentation=$1) == True ]]
 	then
 		id_contributor=$(update.py \
 			--table=Contributor \
@@ -1205,7 +1292,7 @@ SSREPI_pipeline() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	id_pipeline=$(update.py \
 		--table=Pipeline \
-		--id_pipeline=pipeline.$1 \
+		--id_pipeline=pipeline_$1 \
 		--calls_application=$1 \
 	)
 	[ -n "$id_pipeline" ] || exit -1
@@ -1251,14 +1338,14 @@ SSREPI_visualisation() {
 	# $2 - method - points at VisualisationMethod
 	# $3 - the means by  which the visualisation is produced
 	# $4 - the container for the visualisation
-	
+	(>&2 echo "$1" - "$2" - "$3" - "$4" "!")
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
-	if [ -z $4 ] || [ ! -f $4 ]
+	if [ -z "$4" ] || [ ! -f "$4" ]
 	then
 		(>&2 echo "$FUNCNAME: Unable to find $4")
 		exit -1
 	fi
-	id_container=container.$(cksum $4 | awk '{print $1}')
+	id_container=container_$(cksum $4 | awk '{print $1}')
 
 	# The previous few lines are a real hack. This needs to be done better.
 	# These objects should be returned as part of the _run() method. Using
@@ -1378,12 +1465,12 @@ SSREPI_value() {
 	shift 
 	id_variable=$1
 	shift
-	if [ ! -x $1 ]
+	if [ ! -f $1 ]
 	then
 		(>&2 echo "$FUNCNAME Unable to find $1")
 		exit -1
 	fi
-	id_container=container.$(cksum $1 | awk '{print $1}')
+	id_container=container_$(cksum $1 | awk '{print $1}')
 	shift
 
 	# The last line is a real hack. This needs to be done better. These
