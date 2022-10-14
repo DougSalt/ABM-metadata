@@ -170,7 +170,7 @@ SSREPI_require_exact() {
 	return 1
 }
 
-SSREPI_process() {
+_process() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	id_process=
 	EXEC=
@@ -347,7 +347,7 @@ SSREPI_me() {
 	echo $id_application
 }
 
-SSREPI_application_get_executable() {
+_get_executable() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	PARAMS=
 	for arg in $@
@@ -431,7 +431,7 @@ _run() {
 	# The reasoning behind the next two lines is that the argument may be
 	# an id_application or a path may be passed as the first argument
 
-	APP=$(SSREPI_application_get_executable $@)
+	APP=$(_get_executable $@)
 	id_application=$(SSREPI_me $@)
 
 	shift
@@ -690,7 +690,7 @@ _run() {
 	# retaining the process's separate identity for terms of provenance.
 	# That is each run of the perl script is associated with a separate
 	(
-		THIS_PROCESS=$(SSREPI_process --executable=$id_application)
+		THIS_PROCESS=$(_process --executable=$id_application)
 
 		if [ -n "$CWD" ]
 		then
@@ -698,7 +698,7 @@ _run() {
 		fi
 		for id in "${!argument_value[@]}"
 		do
-			SSREPI_argument_value $THIS_PROCESS $id ${argument_value[$id]}
+			_argument_value $THIS_PROCESS $id ${argument_value[$id]}
 		done
 		stdout=
 		stderr=
@@ -708,7 +708,7 @@ _run() {
 			then
 				value=$(echo $arg | cut -f2 -d=)
 				input_type_id=$(echo $arg | cut -f1 -d= | sed 's/--SSREPI-input-//')
-				SSREPI_input_value $id_application $THIS_PROCESS $input_type_id $value
+				_input_value $id_application $THIS_PROCESS $input_type_id $value
 			elif [[ "$arg" == *--SSREPI-extend-stdout-* ]]
 			then
 				value=$(echo $arg | cut -f2 -d=)
@@ -736,8 +736,7 @@ _run() {
 			fi
 		elif [ -n "$SSREPI_SLURM" ]
 		then
-			(>&2 echo "SLURMING IT: TBC")
-			
+			[ -n $DEBUG ] && (>&2 echo "SLURMING...")
 			[ -n $DEBUG ] && (>&2 echo RUNNING: srun $APP $proper_args ${position_arg[*]} $stdout $stderr)
 			srun $APP $proper_args ${position_arg[*]} $stdout $stderr
 		else
@@ -745,13 +744,14 @@ _run() {
 			instances=$(ps -A -o command | grep $APP | grep -v grep | wc -l)
 			while [ $instances -ge $SSREPI_NOF_CPUS ]
 			do
-				(>&2 echo "$FUNCNAME: Waiting...")
+				[ -n $DEBUG ] && (>&2 echo "$FUNCNAME: Waiting...")
 				sleep 60
 			done
 			[ -n $DEBUG ] && (>&2 echo RUNNING: $APP $proper_args ${position_arg[*]} $stdout $stderr)
 			eval $APP $proper_args ${position_arg[*]} $stdout $stderr
 		fi
 
+		output_found=
 		for arg in $@
 		do
 			if 	[[ "$arg" == *--SSREPI-output-* ]] || \
@@ -765,11 +765,18 @@ _run() {
 					sed 's/--SSREPI-stderr-//' | \
 					sed 's/--SSREPI-extend-stdout-//' | \
 					sed 's/--SSREPI-stdout-//')
-				SSREPI_output_value $THIS_PROCESS $output_type_id $value
+				_output_value $THIS_PROCESS $output_type_id $value
+				output_found=1
 			fi
 		done
 
-		THIS_PROCESS=$(SSREPI_process \
+		if [ -z "$output_found" ]
+		then
+			(>&2 echo "$0: Not outputs for $APP - pretty pointless running it.")
+			exit -1
+		fi
+
+		THIS_PROCESS=$(_process \
 			--id_process=$THIS_PROCESS \
 			--executable=$id_application \
 			--end_time=$(date "+%Y%m%dT%H%M%S"))
@@ -807,7 +814,7 @@ SSREPI_argument() {
 	echo $id_argument
 }
 
-SSREPI_argument_value() {
+_argument_value() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	id_argument_value=$(update.py \
 		--table=ArgumentValue \
@@ -815,32 +822,6 @@ SSREPI_argument_value() {
 		--for_argument=$2 \
 		--has_value=$3 \
 	)	
-}
-
-SSREPI_container_type() {
-	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
-	id_container_type=$(update.py \
-		--table=ContainerType \
-		--id_container_type=$1 \
-		--format='text/plain' \
-		--identifier=$2 \
-	)	
-	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
-	echo $id_container_type
-}
-
-SSREPI_product() {
-	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
-	id_product=$(update.py \
-		--table=Product \
-		--optionality=always \
-		--container_type=$1 \
-		--application=$2 \
-		--in_file=$3 \
-		--locator=$4 \
-	)	
-	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
-	echo $id_product
 }
 
 SSREPI_output() {
@@ -873,7 +854,7 @@ SSREPI_output() {
 	echo $id_output_type
 }
 
-SSREPI_output_value() {
+_output_value() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
  
 	# $1 - process_id - specifically output of
@@ -970,7 +951,7 @@ SSREPI_input() {
 	echo $id_input_type
 }
 
-SSREPI_input_value() {
+_input_value() {
 
 	# $1 - id_application
 	# $2 - id_process
@@ -1321,6 +1302,13 @@ SSREPI_visualisation_method() {
 }
 
 SSREPI_statistics() {
+
+	# A set of statistics
+
+	# $1 - id for this statistic
+	# $2 - id for the statistical method
+	# $3 - query used to produce the statistics
+
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	id_statistics=$(update.py \
 		--table="Statistics" \
@@ -1366,15 +1354,6 @@ SSREPI_visualisation() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 	echo $id_visualisation
 }
-SSREPI_employs() {
-	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
-	id_employs=$(update.py \
-		--table=Employs \
-		--statistical_variable=$1 \
-		$2 \
-		)
-	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
-}
 
 SSREPI_implements() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
@@ -1411,7 +1390,35 @@ SSREPI_statistical_variable() {
 		--id_statistical_variable=$1 \
 		--description=$2 \
 		--data_type=$3 \
-		--generated_by=$4 \
+		--statistic_generated_by=$4 \
+	)
+	id_employs=$(update.py \
+		--table=Employs \
+		--statistical_variable=$id_statistical_variable \
+		--statistical_method=$4 \
+	)
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
+	echo $id_statistical_variable
+}
+SSREPI_visualisation_variable() {
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+
+	# $1 - id_visualisation_variable
+        # $2 - Description
+        # $3 - data type	
+	# $4 - generated_by
+
+	id_statistical_variable=$(update.py \
+		--table=StatisticalVariable \
+		--id_statistical_variable=$1 \
+		--description=$2 \
+		--data_type=$3 \
+		--visualisation_generated_by=$4 \
+	)
+	id_employs=$(update.py \
+		--table=Employs \
+		--statistical_variable=$id_statistical_variable \
+		--visualisation_method=$4 \
 	)
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 	echo $id_statistical_variable
