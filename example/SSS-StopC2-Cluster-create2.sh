@@ -4,7 +4,7 @@
 # to cover sinks/nosinks and RewardActivity/RewardSpecies, at various BETs and
 # ASPs, and for flat and var2 market. There will be 20 runs each
 
-. lib/ssrepi.sh
+. lib/ssrepi_cli.sh
 
 # Identity
 # ========

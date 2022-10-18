@@ -25,138 +25,14 @@ nodes = {
     'VisualisationMethods': 'ID_VISUALISATION_METHOD',
     }
 
-
-edges = { 
-    'has container tag': { 
-        'join': {
-                'source': 'TagMaps(TAG)',
-		'target': 'TagMaps(CONTAINER)'
-                },
-        'source': 'Tags(ID_TAG)',
-        'target': 'Containers(ID_CONTAINER)',
-	'label':  'tag'
-        },
-    'has container type tag': { 
-        'join': {
-                'source': 'TagMaps(TAG)',
-		'target': 'TagMaps(CONTAINER_TYPE)'
-                },
-        'source': 'Tags(ID_TAG)',
-        'target': 'ContainerTypes(ID_CONTAINER_TYPE)',
-	'label':  'tag'
-        },
-    'has applicaton tag': { 
-        'join': {
-                'source': 'TagMaps(TAG)',
-		'target': 'TagMaps(APPLICATION)'
-                },
-        'source': 'Tags(ID_TAG)',
-        'target': 'Applications(ID_APPLICATION)',
-	'label':  'tag'
-        },
-    'has documentation tag': { 
-        'join': {
-                'source': 'TagMaps(TAG)',
-		'target': 'TagMaps(DOCUMENTATION)'
-                },
-        'source': 'Tags(ID_TAG)',
-        'target': 'Documentation(ID_DOCUMENTATION)',
-	'label':  'tag'
-        },
-    'has study tag': { 
-        'join': {
-                'source': 'TagMaps(TAG)',
-		'target': 'TagMaps(STUDY)'
-                },
-        'source': 'Tags(ID_TAG)',
-        'target': 'Studies(ID_STUDY)',
-	'label':  'tag'
-        },
-    'has statistical method tag': { 
-        'join': {
-                'source': 'TagMaps(TAG)',
-		'target': 'TagMaps(STATISTICAL_METHOD)'
-                 },
-        'source': 'Tags(ID_TAG)',
-        'target': 'StatisticalMethods(ID_STATISTICAL_METHOD)',
-	'label':  'tag'
-        },
-    'has visualisation method tag': { 
-        'join': {
-                'source': 'TagMaps(TAG)',
-		'target': 'TagMaps(VISUALISATION_METHOD)'
-                },
-        'source': 'Tags(ID_TAG)',
-        'target': 'VisualisationMethods(ID_VISUALISATION_METHOD)',
-	'label':  'tag'
-        }
-    }
-       
-
-# This next dictionary affects how the diagram is labelled.  If the
-# entry appears here then it will be used as a label.  Consequently to
-# adjust, or add then change this dictionary.  Obviously bearing in
-# mind that any entry in this array has to be for a valid table and an
-# attribute for that table.
-
-# Also note that some of these tables constitute edges rather than
-# nodes, so it might be edges that are labelled with the information
-# below.
-
-labels = { 
-    'Applications': [
-        'ID_APPLICATION',
-        'PURPOSE',
-        'VERSION',
-        'LICENCE',
-        'LANGUAGE',
-        ],
-    'Containers': [
-        'ID_CONTAINER',
-        'LOCATION_TYPE',
-        'LOCATION_VALUE',
-        'SIZE',
-        'CREATION_TIME',
-        'MODIFICATION_TIME',
-        'UPDATE_TIME',
-        'HASH'
-        ],
-    'ContainerTypes': [
-        'ID_CONTAINER_TYPE',
-        'DESCRIPTION',
-        'FORMAT',
-        'IDENTIFIER'
-        ],
-    'Documentation': [
-        'ID_DOCUMENTATION',
-        'TITLE',
-        'DATE'
-        ],
-    'Studies': [
-        'ID_STUDY',
-        'LABEL',
-        'DESCRIPTION',
-        'START_TIME',
-        'END_TIME'
-        ],
-     'StatisticalMethods' : [
-	'ID_STATISTICAL_METHOD'
-	],
-     'VisualisationMethods' : [
-	'ID_VISUALISATION_METHOD'
-	],
-     'Tags' : [
-	'ID_TAG'
-	]
-    }
-
 working_dir = os.getcwd()
 
-db_specs = ssrepi.connect_db(working_dir)
+conn = ssrepi.connect_db(working_dir)
 
-originalNodes = ssrepi.get_nodes(db_specs[0], nodes, labels)
-activeEdges = ssrepi.get_edges(db_specs[0], edges, originalNodes)
-activeNodes = ssrepi.remove_orphans(originalNodes, activeEdges)
-ssrepi.draw_graph(activeNodes,activeEdges,output="folksonomy.dot")
+original_nodes = ssrepi.get_nodes(conn, nodes, ssrepi.labels())
+possible_edges = ssrepi.get_edges(conn, ssrepi.derive_edges(), original_nodes)
+active_nodes = ssrepi.remove_orphans(original_nodes, possible_edges)
+active_edges = ssrepi.remove_edges(active_nodes, possible_edges)
+ssrepi.draw_graph(active_nodes,active_edges,output="folksonomy.dot")
 
-ssrepi.disconnect_db(db_specs[0])
+ssrepi.disconnect_db(conn)

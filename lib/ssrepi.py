@@ -31,17 +31,19 @@ import graphviz, getpass
 
 db_type = 'postgres'
 #db_type = 'sqlite3'
-if 'SSREP_DBTYPE' in os.environ:
-    db_type = os.environ['SSREP_DBTYPE']
+if 'SSREPI_DBTYPE' in os.environ:
+    db_type = os.environ['SSREPI_DBTYPE']
 
 db_file = 'ssrep.db'
-if 'SSREP_DBNAME' in os.environ:
-    db_file = os.environ['SSREP_DBNAME']
+if 'SSREPI_DBNAME' in os.environ:
+    db_file = os.environ['SSREPI_DBNAME']
 
 
-debug = False
-if 'SSREP_DEBUG' in os.environ:
-    db_file = os.environ['SSREP_DEBUG']
+debug = True
+if 'SSREPI_DEBUG' in os.environ:
+    debug = True
+else:
+    debug = False
 
 mime = magic.Magic(mime=True)
 encoding = magic.Magic(mime_encoding=True)
@@ -2935,9 +2937,6 @@ def connect_db(working_dir):
             conn.isolation_level = None
 
             cur = conn.cursor()    
-            cur.execute('SELECT SQLITE_VERSION()')
-            sqlite_vers = cur.fetchone()
-
         except sqlite3.Error as e:
             print( "error %s:" % e.args[0])
             sys.exit(1)
@@ -3500,35 +3499,35 @@ def get_nodes(conn, nodes, labels):
     with conn:
         activeNodes = {}    
 
+        #if debug:
+        #    sys.stderr.write("nodes = " + str(nodes) + "\n")
+        #    sys.stderr.write("labels = " + str(labels) + "\n")
         cur = conn.cursor()
         for node in nodes:
             if labels[node] == None:
                 sys.exit('Problem with ' + node + ': no labels provided')
-                 
-            cur.execute('SELECT ' + ','.join(labels[node]) + ' FROM ' + node)
+            nodeSQL =   'SELECT ' + ','.join(labels[node]) + ' FROM ' + node
+
+            #if debug:
+            #    sys.stderr.write(nodeSQL + "\n")
+            cur.execute(nodeSQL)
             rows = cur.fetchall()
-
             for row in rows:
-                i = 0
+                #if debug:
+                #    sys.stderr.write("Row = " + str(row) + "\n")
                 nodeText = "" 
-                while i < len(row):
-                    if row[i] == None:
+                className = ""
+                # A dictionary should make life easier.
+                # The first line appears to be treated differently
+                for key in row:
+                    if key.lower() == nodes[node].lower():
+                        className = str(row[key.lower()])
+                        nodeText = '< <U>' + node + '</U><BR/><B>' + str(row[key.lower()]) + '</B><BR/>' + nodeText
+                    elif row[key.lower()] == None:
                         pass
-                    elif nodes[node] == labels[node][i]:
-                        className = row[i]
-                        nodeText = node + '\\n' + str(row[i]) + nodeText
                     else:
-                        nodeText = (nodeText + '\\n' + 
-                            labels[node][i] + ' = ' + format_text(row[i]))
-                    i = i + 1
-
-            # Should really do something here if className
-            # is null - although this will just exception if empty.
-            # Actually this indicates something is amiss, so 
-            # it is correct behaviour to exception. 
-            # It means that something is not lining up in
-            # labels and nodes.
-            activeNodes[(str(node),str(className))] = nodeText 
+                        nodeText = nodeText + '<BR/>' +  str(key) + ' = ' + format_text(row[key])
+                activeNodes[(str(node),str(className.lower()))] = nodeText + " >"
 
     return activeNodes;
 
@@ -3539,15 +3538,17 @@ def draw_nodes(conn, graph, nodes, labels):
             str(activeNode[1]), activeNodes[activeNode])
     return activeNodes
     
-def format_text(str, length=30):
+def format_text(text, length=30):
     # Remove any daft formatting and blank spacing.
-    str = ' '.join(str.splitlines())
-    tokens = re.split(tidySpace,str)
+    text = str(text)
+    text = text.replace('\\n', ' ')
+    text = ' '.join(text.splitlines())
+    tokens = re.split(tidySpace,text)
     output = ''
     lineLength = 0
     for token in tokens:
         if lineLength + len(token) > length:
-            output = output + "\\n" + token
+            output = output + "<BR/>" + token
             lineLength = len(token)
         else:
             output = output + " " + token
@@ -3588,7 +3589,8 @@ def get_edges(conn, edges, activeNodes):
                     raise InvalidEdge
                 sourceTable = found.group(1)
                 sourceRow = found.group(2)
-                sys.stderr.write("edge = " + str(edges[edge]) + "\n")
+                #if debug:
+                #    sys.stderr.write("edge = " + str(edges[edge]) + "\n")
                 if 'join' in edges[edge]:
                     found = re.search('^(.*)\((.*)\)$',edges[edge]['join']['target'])
                     if not found:
@@ -3600,7 +3602,9 @@ def get_edges(conn, edges, activeNodes):
                         raise InvalidEdge
                     mediatorSourceTable = found.group(1)
                     mediatorSourceRow = found.group(2)
-                    # This is where you need to do it. You need to pick out all the information here and do the necessary sql select and then encode it.
+                    # This is where you need to do it. You need to pick out all
+                    # the information here and do the necessary sql select and
+                    # then encode it.
                     sql_string = ("SELECT " +  
                                 sourceRow + 
                                 " FROM " +
@@ -3615,7 +3619,7 @@ def get_edges(conn, edges, activeNodes):
                                  str(className) +
                                 "'")
                     if debug:
-                        sys.stderr.write(sql_string)
+                        sys.stderr.write(sql_string + '\n')
                     cur.execute(sql_string)
                 else:
                     found = re.search('^(.*)\((.*)\)$',edges[edge]['id'])
@@ -3639,14 +3643,17 @@ def get_edges(conn, edges, activeNodes):
                 rows = cur.fetchall()
                 for row in rows:
                     label = edge
+                    #if debug:
+                    #    sys.stderr.write("Edge " + edge + " = " + str(edges[edge]) +'\n')
+                    #    sys.stderr.write("for " + str(row) + '\n')
                     if 'label' in edges[edge]:
                         label = edges[edge]['label']
                     if ('direction' in edges[edge] and
                         edges[edge]['direction'] == 'reverse'):
                         activeEdges[((classType ,str(className)),
-                            (sourceTable, str(row[0])))] = label
+                            (sourceTable, str(list(row.values()[0]))))] = label
                     else:
-                        activeEdges[((sourceTable, str(row[0])),
+                        activeEdges[((sourceTable, str(list(row.values())[0])),
                             (classType, str(className)))] = label
                           
         
@@ -3675,6 +3682,22 @@ def remove_orphans(nodes, edges):
         del result[orphan] 
     return result
 
+def remove_edges(nodes,edges):
+    # So my edge is of the form edge ((SourceTableName, primary_key_value) , (TargetTableName, primary_key_value)) = label
+    
+    edgesLeft = edges.copy()
+    tables = list()
+    for node in nodes:
+        tables.append(node[0])
+        if debug:
+            sys.stderr.write("Nodes = " + str(tables) +'\n')
+
+    for edge in edges:
+        if debug:
+            sys.stderr.write("Pickling Edge = " + str(edge) + " = " + str(edges[edge]) +'\n')
+        if edge in edges and (edge[0][0] not in tables or edge[1][0] not in tables):
+            del edgesLeft[edge]
+    return edgesLeft
 
 def draw_graph(nodes, edges, output=None):
 
@@ -3682,12 +3705,13 @@ def draw_graph(nodes, edges, output=None):
     #graph.attr(ratio="fill", size = "8.3,11.7", margin = 0)
     graph.attr(size = "8.3,11.7", margin = "0", ratio="fill")
     
-    for node in nodes:
-                graph.node(str(node[0]) + '.' +  str(node[1]), nodes[node])
-    for edge in edges:
-        graph.edge(edge[0][0] + '.' + edge[0][1],
-               edge[1][0] + '.' + edge[1][1],
-                   label=edges[edge])
+    if nodes != None:
+        for node in nodes:
+            graph.node(str(node[0]) + '.' +  str(node[1]), nodes[node])
+
+    if edges != None:
+        for edge in edges:
+            graph.edge(edge[0][0] + '.' + edge[0][1], edge[1][0] + '.' + edge[1][1], label=edges[edge])
 
     if output == None:
         print(graph)

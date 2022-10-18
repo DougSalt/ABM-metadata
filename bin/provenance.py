@@ -35,11 +35,12 @@ nodes = {
 
 working_dir = os.getcwd()
 
-db_specs = ssrepi.connect_db(working_dir)
+conn = ssrepi.connect_db(working_dir)
 
-originalNodes = ssrepi.get_nodes(db_specs[0], nodes, ssrepi.labels())
-activeEdges = ssrepi.get_edges(db_specs[0], ssrepi.derive_edges(), originalNodes)
-activeNodes = ssrepi.remove_orphans(originalNodes, activeEdges)
-ssrepi.draw_graph(activeNodes,activeEdges,output="provenance.dot")
+original_nodes = ssrepi.get_nodes(conn, nodes, ssrepi.labels())
+possible_edges = ssrepi.get_edges(conn, ssrepi.derive_edges(), original_nodes)
+active_nodes = ssrepi.remove_orphans(original_nodes, possible_edges)
+active_edges = ssrepi.remove_edges(original_nodes, possible_edges)
+ssrepi.draw_graph(active_nodes,active_edges,output="provenance.dot")
 
-ssrepi.disconnect_db(db_specs[0])
+ssrepi.disconnect_db(conn)

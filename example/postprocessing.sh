@@ -11,7 +11,7 @@
 # fail
 set -e
 
-. lib/ssrepi.sh
+. lib/ssrepi_cli.sh
 
 # c_ for container
 # a_ for argument

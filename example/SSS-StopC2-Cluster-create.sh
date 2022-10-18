@@ -4,7 +4,7 @@
 # to cover sinks/nosinks and RewardActivity/RewardSpecies, at various BETs and
 # ASPs, and for flat and var2 market. There will be 20 runs each
 
-. lib/ssrepi.sh
+. lib/ssrepi_cli.sh
 
 # Identity (stuff about this script)
 # ========
@@ -345,7 +345,7 @@ SSS_trigger_id=$(SSREPI_output $PROG \
 [ -n "$SSS_trigger_id" ] || exit -1 
 
 #for run in 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020
-for run in 001
+for run in 001 002 003 004 005
 do
   #for govt in ClusterActivity ClusterSpecies RewardActivity RewardSpecies
   for govt in ClusterActivity 
@@ -359,7 +359,7 @@ do
         for bet in 25.0
 	do
 	  #for asp in 1.0 5.0
-	  for asp in 1.0
+	  for asp in 1.0 5.0
 	  do
 	    #for rwd in 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0
 	    for rwd in 1.0

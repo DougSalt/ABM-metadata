@@ -6,7 +6,7 @@
 
 # Date: January 2017
 
-. lib/ssrepi.sh
+. lib/ssrepi_cli.sh
 
 # The Model
 # =========

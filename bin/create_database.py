@@ -16,7 +16,6 @@ import os, sys
 
 sys.path.append("lib")
 import ssrepi
-ssrepi.debug = False
 
 
 # A program to initialise the database

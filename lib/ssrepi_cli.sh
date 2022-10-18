@@ -17,8 +17,7 @@
 # The convention here is that any function that starts with an underscore, "_"
 # is an internal function.
 
-export SSREPI_NOF_CPUS=2
-export SSREP_DBNAME="$PWD"/ssrep.db
+export SSREPI_DBNAME="$PWD"/ssrep.db
 export DEBUG=1
 export PRCESSSES_STARTED=()
 export PROCESSES_DONE=()
@@ -320,6 +319,10 @@ SSREPI_me() {
 		shift
 	else
 		id_application=$(_parent_script)
+		if [[ $id_application == _parent_script ]]
+		then
+			return $id_application
+		fi
 	fi
 	PARAMS=
 	for arg in $@
@@ -338,10 +341,10 @@ SSREPI_me() {
 			$id_application \
 			$PARAMS \
 		)
-		[ -n $id_application ] || exit -1
+		[ -n $id_application ] || _exit -1
 	else
 		(>&2 echo "$FUNCNAME: Application $id_application does not exist")
-		exit -1
+		_exit -1
 	fi
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 	echo $id_application
@@ -400,22 +403,12 @@ _get_executable() {
 SSREPI_call() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	_run $@ --in-line $STANDARD_ARGS
-
-	if [ -z "$SSREPI_SLURM" ]
-	then
-		wait
-	fi
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 }
 
 SSREPI_invoke() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
-	if [ -z "$SSREPI_SLURM" ]
-	then
-		_run $@ $STANDARD_ARGS
-	else
-		_run $@ $STANDARD_ARGS &
-	fi
+	_run $@ $STANDARD_ARGS
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 }
 
@@ -689,44 +682,48 @@ _run() {
 	# The bracket means that this in-between code is sub-processed, thus
 	# retaining the process's separate identity for terms of provenance.
 	# That is each run of the perl script is associated with a separate
-	(
-		THIS_PROCESS=$(_process --executable=$id_application)
 
-		if [ -n "$CWD" ]
-		then
-			cd "$CWD"
-		fi
-		for id in "${!argument_value[@]}"
-		do
-			_argument_value $THIS_PROCESS $id ${argument_value[$id]}
-		done
-		stdout=
-		stderr=
-		for arg in $@
-		do
-			if [[ "$arg" == *--SSREPI-input-* ]]
+	# It also has the very useful property that I can fork the code into a
+	# background process
+
+	if [ -n "$include" ]
+	then
+		(
+			THIS_PROCESS=$(_process --executable=$id_application)
+
+			if [ -n "$CWD" ]
 			then
-				value=$(echo $arg | cut -f2 -d=)
-				input_type_id=$(echo $arg | cut -f1 -d= | sed 's/--SSREPI-input-//')
-				_input_value $id_application $THIS_PROCESS $input_type_id $value
-			elif [[ "$arg" == *--SSREPI-extend-stdout-* ]]
-			then
-				value=$(echo $arg | cut -f2 -d=)
-				stdout=' >>'$value
-			elif [[ "$arg" == *--SSREPI-stdout-* ]]
-			then
-				value=$(echo $arg | cut -f2 -d=)
-				stdout=' >'$value
-			elif [[ "$arg" == *--SSREPI-stderr-* ]]
-			then
-				value=$(echo $arg | cut -f2 -d=)
-				stderr=' >'$value
+				cd "$CWD"
 			fi
-		done
+			for id in "${!argument_value[@]}"
+			do
+				_argument_value $THIS_PROCESS $id ${argument_value[$id]}
+			done
+			stdout=
+			stderr=
+			for arg in $@
+			do
+				if [[ "$arg" == *--SSREPI-input-* ]]
+				then
+					value=$(echo $arg | cut -f2 -d=)
+					input_type_id=$(echo $arg | cut -f1 -d= | sed 's/--SSREPI-input-//')
+					_input_value $id_application $THIS_PROCESS $input_type_id $value
+				elif [[ "$arg" == *--SSREPI-extend-stdout-* ]]
+				then
+					value=$(echo $arg | cut -f2 -d=)
+					stdout=' >>'$value
+				elif [[ "$arg" == *--SSREPI-stdout-* ]]
+				then
+					value=$(echo $arg | cut -f2 -d=)
+					stdout=' >'$value
+				elif [[ "$arg" == *--SSREPI-stderr-* ]]
+				then
+					value=$(echo $arg | cut -f2 -d=)
+					stderr=' >'$value
+				fi
+			done
 
-		[ -n $DEBUG ] && (>&2 echo CWD: $PWD)
-		if [ -n "$inline" ]
-		then
+			[ -n $DEBUG ] && (>&2 echo CWD: $PWD)
 			[ -n $DEBUG ] && (>&2 echo RUNNING: $APP $proper_args ${position_arg[*]} $stdout $stderr)
 			eval $APP $proper_args ${position_arg[*]} $stdout $stderr
 			SYS=$?
@@ -734,63 +731,128 @@ _run() {
 			then
 				exit -1
 			fi
-		elif [ -n "$SSREPI_SLURM" ]
+
+			for arg in $@
+			do
+				if 	[[ "$arg" == *--SSREPI-output-* ]] || \
+					[[ "$arg" == *--SSREPI-extend-stdout-* ]] || \
+					[[ "$arg" == *--SSREPI-stdout-* ]] || \
+					[[ "$arg" == *--SSREPI-stderr-* ]]
+				then
+					value=$(echo $arg | cut -f2 -d=)
+					output_type_id=$(echo $arg | cut -f1 -d= | \
+						sed 's/--SSREPI-output-//' | \
+						sed 's/--SSREPI-stderr-//' | \
+						sed 's/--SSREPI-extend-stdout-//' | \
+						sed 's/--SSREPI-stdout-//')
+					_output_value $THIS_PROCESS $output_type_id $value
+				fi
+			done
+
+			THIS_PROCESS=$(_process \
+				--id_process=$THIS_PROCESS \
+				--executable=$id_application \
+				--end_time=$(date "+%Y%m%dT%H%M%S"))
+
+		)
+		if [ $? -ne 0 ]
 		then
-			[ -n $DEBUG ] && (>&2 echo "SLURMING...")
-			[ -n $DEBUG ] && (>&2 echo RUNNING: srun $APP $proper_args ${position_arg[*]} $stdout $stderr)
-			srun $APP $proper_args ${position_arg[*]} $stdout $stderr
-		else
-			# Check the number of processes running. And if it exceeded then sit here and wait.
+			(>&2 echo "$FUNCNAME: Problem with run for $APP")
+			exit -1
+		fi
+	else
+		(
+			THIS_PROCESS=$(_process --executable=$id_application)
+
+			if [ -n "$CWD" ]
+			then
+				cd "$CWD"
+			fi
+			for id in "${!argument_value[@]}"
+			do
+				_argument_value $THIS_PROCESS $id ${argument_value[$id]}
+			done
+			stdout=
+			stderr=
+			for arg in $@
+			do
+				if [[ "$arg" == *--SSREPI-input-* ]]
+				then
+					value=$(echo $arg | cut -f2 -d=)
+					input_type_id=$(echo $arg | cut -f1 -d= | sed 's/--SSREPI-input-//')
+					_input_value $id_application $THIS_PROCESS $input_type_id $value
+				elif [[ "$arg" == *--SSREPI-extend-stdout-* ]]
+				then
+					value=$(echo $arg | cut -f2 -d=)
+					stdout=' >>'$value
+				elif [[ "$arg" == *--SSREPI-stdout-* ]]
+				then
+					value=$(echo $arg | cut -f2 -d=)
+					stdout=' >'$value
+				elif [[ "$arg" == *--SSREPI-stderr-* ]]
+				then
+					value=$(echo $arg | cut -f2 -d=)
+					stderr=' >'$value
+				fi
+			done
+
 			instances=$(ps -A -o command | grep $APP | grep -v grep | wc -l)
 			while [ $instances -ge $SSREPI_NOF_CPUS ]
 			do
-				[ -n $DEBUG ] && (>&2 echo "$FUNCNAME: Waiting...")
-				sleep 60
+				[ -n $DEBUG ] && (>&2 echo "$FUNCNAME: Waiting to run...")
+				sleep 10  
+				instances=$(ps -A -o command | grep $APP | grep -v grep | wc -l)
 			done
-			[ -n $DEBUG ] && (>&2 echo RUNNING: $APP $proper_args ${position_arg[*]} $stdout $stderr)
-			eval $APP $proper_args ${position_arg[*]} $stdout $stderr
-		fi
 
-		output_found=
-		for arg in $@
-		do
-			if 	[[ "$arg" == *--SSREPI-output-* ]] || \
-				[[ "$arg" == *--SSREPI-extend-stdout-* ]] || \
-				[[ "$arg" == *--SSREPI-stdout-* ]] || \
-				[[ "$arg" == *--SSREPI-stderr-* ]]
+			[ -n $DEBUG ] && (>&2 echo CWD: $PWD)
+			if [ -z "$SSRREPI_SLURM" ]
 			then
-				value=$(echo $arg | cut -f2 -d=)
-				output_type_id=$(echo $arg | cut -f1 -d= | \
-					sed 's/--SSREPI-output-//' | \
-					sed 's/--SSREPI-stderr-//' | \
-					sed 's/--SSREPI-extend-stdout-//' | \
-					sed 's/--SSREPI-stdout-//')
-				_output_value $THIS_PROCESS $output_type_id $value
-				output_found=1
+				[ -n $DEBUG ] && (>&2 echo RUNNING: $APP $proper_args ${position_arg[*]} $stdout $stderr)
+				eval $APP $proper_args ${position_arg[*]} $stdout $stderr
+			else
+
+				[ -n $DEBUG ] && (>&2 echo "SLURMING...")
+				[ -n $DEBUG ] && (>&2 echo RUNNING: srun $APP $proper_args ${position_arg[*]} $stdout $stderr)
+
+				srun $APP $proper_args ${position_arg[*]} $stdout $stderr
 			fi
+
+			for arg in $@
+			do
+				if 	[[ "$arg" == *--SSREPI-output-* ]] || \
+					[[ "$arg" == *--SSREPI-extend-stdout-* ]] || \
+					[[ "$arg" == *--SSREPI-stdout-* ]] || \
+					[[ "$arg" == *--SSREPI-stderr-* ]]
+				then
+					value=$(echo $arg | cut -f2 -d=)
+					output_type_id=$(echo $arg | cut -f1 -d= | \
+						sed 's/--SSREPI-output-//' | \
+						sed 's/--SSREPI-stderr-//' | \
+						sed 's/--SSREPI-extend-stdout-//' | \
+						sed 's/--SSREPI-stdout-//')
+					_output_value $THIS_PROCESS $output_type_id $value
+				fi
+			done
+
+			THIS_PROCESS=$(_process \
+				--id_process=$THIS_PROCESS \
+				--executable=$id_application \
+				--end_time=$(date "+%Y%m%dT%H%M%S"))
+		) &
+
+		# Check the number of processes running. And if it exceeded then sit here and wait.
+
+		# Dammit these could be initialising but not yet running, so I might get overflow.
+
+		instances=$(ps -A -o command | grep $APP | grep -v grep | wc -l)
+		while [ $instances -ge $SSREPI_NOF_CPUS ]
+		do
+			[ -n $DEBUG ] && (>&2 echo "$FUNCNAME: for stuff to finish...")
+			sleep 60
+			instances=$(ps -A -o command | grep $APP | grep -v grep | wc -l)
 		done
-
-		if [ -z "$output_found" ]
-		then
-			(>&2 echo "$0: Not outputs for $APP - pretty pointless running it.")
-			exit -1
-		fi
-
-		THIS_PROCESS=$(_process \
-			--id_process=$THIS_PROCESS \
-			--executable=$id_application \
-			--end_time=$(date "+%Y%m%dT%H%M%S"))
-
-		if [ -z "$SSREPI_SLURM" ]
-		then
-			wait
-		fi
-	)
-	if [ $? -ne 0 ]
-	then
-		(>&2 echo "$FUNCNAME: Problem with run for $APP")
-		exit -1
 	fi
+
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 }
 
@@ -1589,6 +1651,9 @@ _parent_script() {
 	elif [[ "$BASH_PROB" = *-zsh* ]]
 	then
 		RESULT=$0
+	elif [[ "$BASH_PROB" = *_parent_script* ]]
+	then
+		RESULT=CLI
 	else
 		RESULT=$(echo $BASH_PROB | awk '{print $2}') 
 	fi
@@ -1669,4 +1734,14 @@ cpus() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 	echo $CPUS
 
+}
+
+_exit() {
+	running=$(_parent_script)
+	if [[  "$running" == "_parent_script" ]]
+	then
+		return $1
+	else
+		exit $1
+	fi
 }

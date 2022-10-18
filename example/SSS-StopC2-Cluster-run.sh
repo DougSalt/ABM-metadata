@@ -6,7 +6,8 @@
 
 # Date: January 2017
 
-. lib/ssrepi.sh
+export SSREPI_NOF_CPUS=4
+. lib/ssrepi_cli.sh
 
 # The Model
 # =========
@@ -606,7 +607,7 @@ SSS_spomresult_area_id=$(SSREPI_output $PROG \
 for govt in ClusterActivity 
 do
   #for run in 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020
-  for run in 001 
+  for run in 001 002 003 004 005
   do
     #for market in flat var2
     for market in flat
@@ -617,7 +618,7 @@ do
 	for rwd in 1.0
 	do
 	  #for asp in 1.0 5.0
-	  for asp in 1.0
+	  for asp in 1.0 5.0
 	  do
             #for bet in 25.0 30.0
             for bet in 25.0

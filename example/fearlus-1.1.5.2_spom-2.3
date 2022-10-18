@@ -3,11 +3,11 @@
 echo $0: Entering...
 echo ARGUMENTS $@
 count=0
-top=2
+top=300
 run=$(echo $@ | sed 's/^.*\([0-9][0-9][0-9]\).repcfg.*/\1/')
 while [ $count -lt $top ]
 do
-	sleep 1
+	sleep 2
 	echo $0: Sleeping...
 	count=$(($count + 1))
 done

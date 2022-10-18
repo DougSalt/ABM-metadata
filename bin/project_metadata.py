@@ -153,11 +153,11 @@ labels = {
 
 working_dir = os.getcwd()
 
-db_specs = ssrepi.connect_db(working_dir)
+conn = ssrepi.connect_db(working_dir)
 
-originalNodes = ssrepi.get_nodes(db_specs[0], nodes, labels)
-activeEdges = ssrepi.get_edges(db_specs[0], edges, originalNodes)
+originalNodes = ssrepi.get_nodes(conn, nodes, labels)
+activeEdges = ssrepi.get_edges(conn, edges, originalNodes)
 activeNodes = ssrepi.remove_orphans(originalNodes, activeEdges)
 ssrepi.draw_graph(activeNodes,activeEdges,output="project_metadata.dot")
 
-ssrepi.disconnect_db(db_specs[0])
+ssrepi.disconnect_db(conn)

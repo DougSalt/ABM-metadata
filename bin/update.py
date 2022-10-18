@@ -21,7 +21,6 @@ from psycopg2.extras import RealDictCursor
 # some functionality. In this instance 
 
 import ssrepi
-ssrepi.debug=False
 
 table_parameter = re.compile(r'^--table=([A-Za-z0-9_]+)$')
 column_parameter = re.compile(r'^([A-Za-z0-9_-]+)(=(.*?))$')

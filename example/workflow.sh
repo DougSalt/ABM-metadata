@@ -11,7 +11,7 @@
 
 date
 
-. lib/ssrepi.sh
+. lib/ssrepi_cli.sh
 
 export SSREPI_NOF_CPUS=2
 
