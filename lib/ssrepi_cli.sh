@@ -408,6 +408,13 @@ SSREPI_call() {
 
 SSREPI_invoke() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	if [ -n "$SSREPI_SLURM" ]
+	then
+		if [ -z "$SSREPI_PREFIX" ]
+		then
+			export SSREPI_PREFIX=SSREPI_$(_uniq)
+		fi
+	fi
 	_run $@ $STANDARD_ARGS
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 }
@@ -796,23 +803,34 @@ _run() {
 				fi
 			done
 
-			instances=$(ps -A -o command | grep $APP | grep -v grep | wc -l)
+			if [ -z "$SSREPI_SLURM" ]
+			then
+				instances=$(ps -A -o command | grep $APP | grep -v grep | wc -l)
+			else
+				instances=$(squeue --name=$SLURM_JOBNAME | wc -l)
+			fi
+			[ -n $DEBUG ] && (>&2 echo CWD: $PWD)
+			
 			while [ $instances -ge $SSREPI_NOF_CPUS ]
 			do
 				[ -n $DEBUG ] && (>&2 echo "$FUNCNAME: Waiting to run...")
 				sleep 10  
-				instances=$(ps -A -o command | grep $APP | grep -v grep | wc -l)
+				if [ -z "$SSREPI_SLURM" ]
+				then
+					instances=$(ps -A -o command | grep $APP | grep -v grep | wc -l)
+				else
+					instances=$(squeue --name=$SLURM_JOBNAME | wc -l)
+				fi
 			done
 
-			[ -n $DEBUG ] && (>&2 echo CWD: $PWD)
-			if [ -z "$SSRREPI_SLURM" ]
+			if [ -z "$SSREPI_SLURM" ]
 			then
 				[ -n $DEBUG ] && (>&2 echo RUNNING: $APP $proper_args ${position_arg[*]} $stdout $stderr)
 				eval $APP $proper_args ${position_arg[*]} $stdout $stderr
 			else
 
 				[ -n $DEBUG ] && (>&2 echo "SLURMING...")
-				[ -n $DEBUG ] && (>&2 echo RUNNING: srun $APP $proper_args ${position_arg[*]} $stdout $stderr)
+				[ -n $DEBUG ] && (>&2 echo RUNNING: srun --jobname=$SSREPI_PREFIX  $APP $proper_args ${position_arg[*]} $stdout $stderr)
 
 				srun $APP $proper_args ${position_arg[*]} $stdout $stderr
 			fi
@@ -844,12 +862,22 @@ _run() {
 
 		# Dammit these could be initialising but not yet running, so I might get overflow.
 
-		instances=$(ps -A -o command | grep $APP | grep -v grep | wc -l)
+		if [ -z "$SSREPI_SLURM" ]
+		then
+			instances=$(ps -A -o command | grep $APP | grep -v grep | wc -l)
+		else
+			instances=$(squeue --name=$SSREPI_JOBNAME | wc -l)
+		fi
 		while [ $instances -ge $SSREPI_NOF_CPUS ]
 		do
 			[ -n $DEBUG ] && (>&2 echo "$FUNCNAME: for stuff to finish...")
 			sleep 60
-			instances=$(ps -A -o command | grep $APP | grep -v grep | wc -l)
+			if [ -z "$SSREPI_SLURM" ]
+			then
+				instances=$(ps -A -o command | grep $APP | grep -v grep | wc -l)
+			else
+				instances=$(squeue --name=$SSREPI_JOBNAME | wc -l)
+			fi
 		done
 	fi
 
