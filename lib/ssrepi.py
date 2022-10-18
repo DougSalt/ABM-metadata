@@ -38,6 +38,9 @@ db_file = 'ssrep.db'
 if 'SSREPI_DBNAME' in os.environ:
     db_file = os.environ['SSREPI_DBNAME']
 
+db_user = "ds42723"
+if 'SSREPI_DBUSER' in os.environ:
+    db_user = os.environ['SSREPI_DBUSER']
 
 debug = True
 if 'SSREPI_DEBUG' in os.environ:
@@ -2944,7 +2947,7 @@ def connect_db(working_dir):
             return conn
     elif db_type == "postgres":
         try:
-            conn = psycopg2.connect("dbname=ssrepi user=doug", cursor_factory = RealDictCursor)
+            conn = psycopg2.connect("dbname=ssrepi user=" + db_user, cursor_factory = RealDictCursor)
             conn.set_session(autocommit = True)
         except psycopg2.Error as e:
             print( "error %s:" % e.args[0])
