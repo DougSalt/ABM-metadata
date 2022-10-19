@@ -2,14 +2,37 @@
 
 ## SYNOPSIS
 
-The library for doing (Social Simulation REPository Interface) SSREPI provenance and metadata collection
+The library for doing (Social Simulation REPository Interface) SSREPI
+provenance and metadata collection
 
 ## DESCRIPTION
 
 The following calls are available in Bash > 4.0.
 
-## SSREPI\_application
+## SSREPI\_application 
+
+Creates an application entry in the database. This links to the actual
+executable and should be used to invoke the actual process as the first
+argument to [SSREPI\_call](#SSREPI_call) or [SSREPI\_invoke](#SSREPI_invoke).
+
+This identifies a piece of callable code. This could be perl, R, an ELF
+executable, Python or a Julia script, or even another Bash or zsh script.
+
+### Mandatory parameters
+
+The source path for application.
+
+### Optional parameters
+
++ --model
++ --instance
++ --licence
+
+### Returns
+
 ## SSREPI\_argument
+
+This set
 ## SSREPI\_call
 ## SSREPI\_content
 ## SSREPI\_contributor
@@ -44,12 +67,13 @@ The following calls are available in Bash > 4.0.
 ## ENVRIONMENT VARIABLES
 
 This enviroment inherits all the enviornment variables from [ssrepi.py](./ssrepi.1)
-SSREPI\_MAX\_PRCOESSES
 
-SSREPI\_SLURM
+### SSREPI\_MAX\_PRCOESSES
 
-SSREPI\_SLURM\_PREFIX
-SSREPI\_SLURM\_PENDING\_BLOCKS
+### SSREPI\_SLURM
+
+### SSREPI\_SLURM\_PREFIX
+### SSREPI\_SLURM\_PENDING\_BLOCKS
 
 ## AUTHORS
 
@@ -65,6 +89,7 @@ This is free software: you are free to change and redistribute it.  There is NO 
 
 ## SEE ALSO
 
+[ssrepi.py](./ssrepi.1)
 
 ## STANDARDS
 
