@@ -17,11 +17,13 @@
 # The convention here is that any function that starts with an underscore, "_"
 # is an internal function.
 
-export SSREPI_DBNAME="$PWD"/ssrep.db
-export DEBUG=1
 export PRCESSSES_STARTED=()
 export PROCESSES_DONE=()
 
+if [ -n $SSREPI_DEBUG ]
+then 
+    export DEBUG=1
+fi
 
 if which create_database.py >/dev/null 2>&1
 then
@@ -65,16 +67,7 @@ id_container_type=$(update.py \
 	--format='application/x-executable' \
 	--identifier=magic:'^.*ELF 64-bit LSB executable\, x86-64.*$'
 )
-# Some sanity checking
 
-if [ -z "$SSREPI_SLURM" ]
-then
-	if [ -z "$SSREPI_MAX_PROCESSES" ]
-	then
-		(>&2 echo $0: No max processes and not using a scheduler will assume 1.)
-		SSREPI_MAX_PROCESSES=1
-	fi
-fi
 SSREPI_require_minimum() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	# $1 - app id
@@ -402,7 +395,7 @@ _get_executable() {
 
 SSREPI_call() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
-	_run $@ --in-line $STANDARD_ARGS
+	_run $@ --blocking $STANDARD_ARGS
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 }
 
@@ -410,429 +403,425 @@ SSREPI_invoke() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	if [ -n "$SSREPI_SLURM" ]
 	then
-		if [ -z "$SSREPI_PREFIX" ]
+		if [ -z "$SSREPI_SLURM_PREFIX" ]
 		then
-			export SSREPI_PREFIX=SSREPI_$(_uniq)
-		fi
-	fi
-	_run $@ $STANDARD_ARGS
-	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
-}
+                export SSREPI_SLURM_PREFIX=SSREPI_$(uniq)
+            fi
+        fi
+        _run $@ $STANDARD_ARGS
+        [ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
+    }
 
-_run() {
-	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+    _run() {
+        [ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 
-	id_application=$1
-	if [ -z "$SSREPI_pipe" ]
-	then
-		export SSREPI_pipe=$(SSREPI_pipeline $(SSREPI_me $(_parent_script)))
-	fi
+        if [ -z "$SSREPI_MAX_PROCESSES" ]
+        then
+            SSREPI_MAX_PROCESSES=4
+        fi
 
-	# The reasoning behind the next two lines is that the argument may be
-	# an id_application or a path may be passed as the first argument
+        id_application=$1
+        if [ -z "$SSREPI_pipe" ]
+        then
+            export SSREPI_pipe=$(SSREPI_pipeline $(SSREPI_me $(_parent_script)))
+        fi
 
-	APP=$(_get_executable $@)
-	id_application=$(SSREPI_me $@)
+        # The reasoning behind the next two lines is that the argument may be
+        # an id_application or a path may be passed as the first argument
 
-	shift
+        APP=$(_get_executable $@)
+        id_application=$(SSREPI_me $@)
 
-	# Remove cwd
-	CWD=
-	if [[ "$@" == *--cwd* ]]
-	then	
-		CWD=$(echo "$@" | egrep -s "cwd=" | \
-			sed "s/^.*--cwd=\([^ ][^ ]*\).*$/\1/")
-		if [ ! -d "$CWD" ]
-		then
-			mkdir "$CWD"
-		fi
-		PARAMS=$(echo "$PARAMS" | egrep -s "cwd=" | \
-			sed "s/--cwd=[^ ][^ ]* *//")
-	fi
+        shift
 
-	inline=
-	# Remove --inline
-	if [[ "$@" == *--inline* ]]
-	then	
-		inline=1
-		PARAMS=$(echo "$PARAMS" | egrep -s "\-\-inline" | \
-			sed "s/--inline\s*//")
-	fi
+        # Remove cwd
+        CWD=
+        if [[ "$@" == *--cwd* ]]
+        then	
+            CWD=$(echo "$@" | egrep -s "cwd=" | \
+                sed "s/^.*--cwd=\([^ ][^ ]*\).*$/\1/")
+            if [ ! -d "$CWD" ]
+            then
+                mkdir "$CWD"
+            fi
+            PARAMS=$(echo "$PARAMS" | egrep -s "cwd=" | \
+                sed "s/--cwd=[^ ][^ ]* *//")
+        fi
 
-	# So PIPE is the pipe line we want to attach to
+        blocking=
+        # Remove --blocking
+        if [[ "$@" == *--blocking* ]]
+        then	
+            blocking=1
+            PARAMS=$(echo "$PARAMS" | egrep -s "\-\-blocking" | \
+                sed "s/--blocking\s*//")
+        fi
 
-        id_pipeline=$(update.py \
-		--table=Pipeline \
-		--id_pipeline=calls_${id_application} \
-		--calls_application=$id_application \
-	)
-	[ -n "id_pipeline" ] || exit -1
-	# Now we attach this new pipe to the existing pipe and replace
-	# PIPE with this value.
-        SSREPI_pipe=$(update.py \
-		--table=Pipeline \
-		--id_pipeline=$SSREPI_pipe \
-		--next=$id_pipeline \
-	)
-	[ -n "SSREPI_pipe" ] || exit -1
-	export SSREPI_pipe=$id_pipeline
-		
-	if [[ "$@" == *--dependency=* ]]
-	then
-		# This is for something that must be run before this part can
-		# be run. For instance we may have some post processing to be
-		# done, or pre-processing. We need some way of determing
-		# whether this has been run. I think we we will have to look
-		# through the database looking to see if there is a record of
-		# the dependency have been executed successfully this time.
+        # So PIPE is the pipe line we want to attach to
 
-		DEPENDENCY=$(echo "$@" | egrep -s "dependency=" | \
-			sed "s/^.*\(--dependency=[^ ][^ ]*\).*$/\1/")
-		id_call_application=$(SSREPI_application $DEPENDENCY \
-			--instance=$(which $DEPENDENCY) \
-		)
-		[ -n "$id_call_application" ] || exit -1
-		id_dependency=$(update.py \
-			--table=Dependency \
-			--optionality=required \
-			--dependant=$id_application \
-			--dependency=$id_call_application \
-		)
-		[ -n "$id_dependency" ] || exit -1
-	fi	
+            id_pipeline=$(update.py \
+            --table=Pipeline \
+            --id_pipeline=calls_${id_application} \
+            --calls_application=$id_application \
+        )
+        [ -n "id_pipeline" ] || exit -1
+        # Now we attach this new pipe to the existing pipe and replace
+        # PIPE with this value.
+            SSREPI_pipe=$(update.py \
+            --table=Pipeline \
+            --id_pipeline=$SSREPI_pipe \
+            --next=$id_pipeline \
+        )
+        [ -n "SSREPI_pipe" ] || exit -1
+        export SSREPI_pipe=$id_pipeline
+            
+        if [[ "$@" == *--dependency=* ]]
+        then
+            # This is for something that must be run before this part can
+            # be run. For instance we may have some post processing to be
+            # done, or pre-processing. We need some way of determing
+            # whether this has been run. I think we we will have to look
+            # through the database looking to see if there is a record of
+            # the dependency have been executed successfully this time.
 
-	# Arguably all this could be done from with the the thing that is being
-	# called here, i.e. at a level lower than this (and we may do this
-	# later), but for now we are going to assume that the thing being
-	# called has no provenance primitives and we are having to do this
-	# external to the script. It makes the coding slightly awkward but
-	# leaves a lot of room for speed improvement at a later date. This
-	# means the primitives could be embedeed in Perl, R, NetLogo, and elf
-	# exectuables.	I will put this comment everywhere where we stoop to do
-	# provenance at a level higher than it should. I am doing this because
-	# this got very confused in my head to start with. To be clear,
-	# provenance for a bunch of code should explicitly be done by that code
-	# if at all possible.						
+            DEPENDENCY=$(echo "$@" | egrep -s "dependency=" | \
+                sed "s/^.*\(--dependency=[^ ][^ ]*\).*$/\1/")
+            id_call_application=$(SSREPI_application $DEPENDENCY \
+                --instance=$(which $DEPENDENCY) \
+            )
+            [ -n "$id_call_application" ] || exit -1
+            id_dependency=$(update.py \
+                --table=Dependency \
+                --optionality=required \
+                --dependant=$id_application \
+                --dependency=$id_call_application \
+            )
+            [ -n "$id_dependency" ] || exit -1
+        fi	
 
-	proper_args=
-	declare -A argument_value
-	position_arg=()
-	for arg in $@
-	do
-		if [[ "$arg" == *--SSREPI-argument-* ]]
-		then
-			if [[ "$arg" == *=* ]]
-			then
-				value=$(echo $arg | cut -f2 -d=)
-				id_arg=$(echo $arg | cut -f1 -d= | sed 's/--SSREPI-argument-//')
-				pos=$(get_value.py \
-					--table=Argument \
-					--application=$id_application \
-					--id_argument=$id_arg \
-					--order_value \
-				)
-				[ -n "$pos" ] || exit -1
-				if [[ $pos = 'None' ]]
-				then
-					name=$(get_value.py \
-						--table=Argument \
-						--application=$id_application \
-						--id_argument=$id_arg \
-						--name)
-					[ -n "$name" ] || exit -1
-					separator=$(get_value.py \
-						--table=Argument \
-						--application=$id_application \
-						--id_argument=$id_arg \
-						--separator)
-					[ -n "$separator" ] || exit -1
-					if [[ "$separator" == "None" ]]
-					then
-						separator="--"
-					fi
-					assignment_operator=$(get_value.py \
-						--table=Argument \
-						--application=$id_application \
-						--id_argument=$id_arg \
-						--assignment_operator)
-					[ -n "$assignment_operator" ] || exit -1
-					if [[ $assignment_operator == "equal" ]]
-					then
-						assignment_operator="="
-					elif [[ $assignment_operator == "space" ]]
-					then
-						assignment_operator=" "
-					elif [[ $assignment_operator == "None" ]]
-					then
-						assignment_operator=" "
-					fi
-					proper_args="$proper_args ${separator}${name}${assignment_operator}$value"
-				else
-					arity=$(get_value.py \
-						--table=Argument \
-						--application=$id_application \
-						--id_argument=$id_arg \
-						--arity)
-					[ -n "$arity" ] || exit -1
-					argsep=$(get_value.py \
-						--table=Argument \
-						--application=$id_application \
-						--id_argument=$id_arg \
-						--argsep)
-					[ -n "$argsep" ] || exit -1
-					if ( [[ $arity == "+" ]] || (( $arity > 1 )) ) && [[ "$argsep" == "space" ]] 
-					then
-						value=$(echo $@ | sed 's/.*\-\-SSREPI\-argument\-'$id_arg'=//' | sed 's/\-\-.*//')
-					fi
-					if [[ $arity != "+" ]] && (( $arity > 1 )) 
-					then
-						if [[ $argsep == "space" ]]
-						then
-							argsep=' '
-						fi
-						actual_nof_args=$(( $(echo $value | grep -o "$argsep" | wc -l) + 1 ))
-						if (( $actual_nof_args != $arity ))
-						then
-							(>&2 echo "$FUNCNAME: Trying to call a script $APP with wrong number of arguments in $id_arg. Asked for $arity, got $actual_nof_args")
-							exit -1
-						fi
-					fi
-					position_arg[$pos]=$value
-				fi
-				argument_value[$id_arg]=$value
-			else
-				id_arg=$(echo $arg | sed 's/--SSREPI-argument-//')
-				name=$(get_value.py \
-					--table=Argument \
-					--application=$id_application \
-					--id_argument=$id_arg \
-					--name
-				)
-				[ -n "$name" ] || exit -1
-				separator=$(get_value.py \
-					--table=Argument \
-					--application=$id_application \
-					--id_argument=$id_arg \
-					--separator)
-				[ -n "$separator" ] || exit -1
-				if [[ "$separator" == "None" ]]
-				then
-					separator="--"
-				fi
-				proper_args="$proper_arg ${separator}${name}"
-				argument_value[$id_arg]='True'
-			fi
-		fi
-	done
+        # Arguably all this could be done from with the the thing that is being
+        # called here, i.e. at a level lower than this (and we may do this
+        # later), but for now we are going to assume that the thing being
+        # called has no provenance primitives and we are having to do this
+        # external to the script. It makes the coding slightly awkward but
+        # leaves a lot of room for speed improvement at a later date. This
+        # means the primitives could be embedeed in Perl, R, NetLogo, and elf
+        # exectuables.	I will put this comment everywhere where we stoop to do
+        # provenance at a level higher than it should. I am doing this because
+        # this got very confused in my head to start with. To be clear,
+        # provenance for a bunch of code should explicitly be done by that code
+        # if at all possible.						
 
-	LANGUAGE=
-	id_container_type=
-	if [[ $(file $(which $APP)) == *Bourne-Again* ]]
-	then
-		id_container_type=$(update.py \
-			--table=ContainerType \
-			--id_container_type=bash \
-			--description="A Bourne-again bash script" \
-			--format='text/x-shellscript' \
-			--identifier=magic:'^.*shell script text executable.*$' \
-		)
-		LANGUAGE="Bash"
-	elif [[ $(file $(which $APP)) == *Perl* ]]
-	then
-		id_container_type=$(update.py \
-			--table=ContainerType \
-			--id_container_type=perl \
-			--description="A Perl script" \
-			--format='text/x-perl' \
-			--identifier=magic:'^.*perl script text executable$' \
-		)
-		LANGUAGE="Perl"
-	elif  [[ $(file $(which $APP)) == *Rscript* ]]
-	then
-		id_container_type=$(update.py \
-			--table=ContainerType \
-			--id_container_type=R \
-			--description="An R  script" \
-			--format='text/plain' \
-			--identifier=magic:'^.*Rscript script text executable.*'
-		)
-		LANGUAGE="R"
-	elif  [[ $(file $(which $APP)) == *"ELF 64"* ]]
-	then
-		id_container_type=$(update.py \
-			--table=ContainerType \
-			--id_container_type=elf \
-			--description="64bit Linux Executable" \
-			--format='application/x-executable' \
-			--identifier=magic:'^.*ELF 64-bit LSB executable\, x86-64.*$'
-		)
-		LANGUAGE="Unknown"
-	else
-		(>&2 echo "$FUNCNAME: Trying to call a script $APP we recognise "$(file $(which $APP)))
-	fi
-	[ -n "$id_container_type" ] || exit -1
+        proper_args=
+        declare -A argument_value
+        position_arg=()
+        for arg in $@
+        do
+            if [[ "$arg" == *--SSREPI-argument-* ]]
+            then
+                if [[ "$arg" == *=* ]]
+                then
+                    value=$(echo $arg | cut -f2 -d=)
+                    id_arg=$(echo $arg | cut -f1 -d= | sed 's/--SSREPI-argument-//')
+                    pos=$(get_value.py \
+                        --table=Argument \
+                        --application=$id_application \
+                        --id_argument=$id_arg \
+                        --order_value \
+                    )
+                    [ -n "$pos" ] || exit -1
+                    if [[ $pos = 'None' ]]
+                    then
+                        name=$(get_value.py \
+                            --table=Argument \
+                            --application=$id_application \
+                            --id_argument=$id_arg \
+                            --name)
+                        [ -n "$name" ] || exit -1
+                        separator=$(get_value.py \
+                            --table=Argument \
+                            --application=$id_application \
+                            --id_argument=$id_arg \
+                            --separator)
+                        [ -n "$separator" ] || exit -1
+                        if [[ "$separator" == "None" ]]
+                        then
+                            separator="--"
+                        fi
+                        assignment_operator=$(get_value.py \
+                            --table=Argument \
+                            --application=$id_application \
+                            --id_argument=$id_arg \
+                            --assignment_operator)
+                        [ -n "$assignment_operator" ] || exit -1
+                        if [[ $assignment_operator == "equal" ]]
+                        then
+                            assignment_operator="="
+                        elif [[ $assignment_operator == "space" ]]
+                        then
+                            assignment_operator=" "
+                        elif [[ $assignment_operator == "None" ]]
+                        then
+                            assignment_operator=" "
+                        fi
+                        proper_args="$proper_args ${separator}${name}${assignment_operator}$value"
+                    else
+                        arity=$(get_value.py \
+                            --table=Argument \
+                            --application=$id_application \
+                            --id_argument=$id_arg \
+                            --arity)
+                        [ -n "$arity" ] || exit -1
+                        argsep=$(get_value.py \
+                            --table=Argument \
+                            --application=$id_application \
+                            --id_argument=$id_arg \
+                            --argsep)
+                        [ -n "$argsep" ] || exit -1
+                        if ( [[ $arity == "+" ]] || (( $arity > 1 )) ) && [[ "$argsep" == "space" ]] 
+                        then
+                            value=$(echo $@ | sed 's/.*\-\-SSREPI\-argument\-'$id_arg'=//' | sed 's/\-\-.*//')
+                        fi
+                        if [[ $arity != "+" ]] && (( $arity > 1 )) 
+                        then
+                            if [[ $argsep == "space" ]]
+                            then
+                                argsep=' '
+                            fi
+                            actual_nof_args=$(( $(echo $value | grep -o "$argsep" | wc -l) + 1 ))
+                            if (( $actual_nof_args != $arity ))
+                            then
+                                (>&2 echo "$FUNCNAME: Trying to call a script $APP with wrong number of arguments in $id_arg. Asked for $arity, got $actual_nof_args")
+                                exit -1
+                            fi
+                        fi
+                        position_arg[$pos]=$value
+                    fi
+                    argument_value[$id_arg]=$value
+                else
+                    id_arg=$(echo $arg | sed 's/--SSREPI-argument-//')
+                    name=$(get_value.py \
+                        --table=Argument \
+                        --application=$id_application \
+                        --id_argument=$id_arg \
+                        --name
+                    )
+                    [ -n "$name" ] || exit -1
+                    separator=$(get_value.py \
+                        --table=Argument \
+                        --application=$id_application \
+                        --id_argument=$id_arg \
+                        --separator)
+                    [ -n "$separator" ] || exit -1
+                    if [[ "$separator" == "None" ]]
+                    then
+                        separator="--"
+                    fi
+                    proper_args="$proper_arg ${separator}${name}"
+                    argument_value[$id_arg]='True'
+                fi
+            fi
+        done
 
-	id__pplication=$(SSREPI_application $id_application \
-		--instance=$id_container_type \
-		--language=$LANGUAGE \
-	)
-	[ -n "$id_application" ] || exit -1
+        LANGUAGE=
+        id_container_type=
+        if [[ $(file $(which $APP)) == *Bourne-Again* ]]
+        then
+            id_container_type=$(update.py \
+                --table=ContainerType \
+                --id_container_type=bash \
+                --description="A Bourne-again bash script" \
+                --format='text/x-shellscript' \
+                --identifier=magic:'^.*shell script text executable.*$' \
+            )
+            LANGUAGE="Bash"
+        elif [[ $(file $(which $APP)) == *Perl* ]]
+        then
+            id_container_type=$(update.py \
+                --table=ContainerType \
+                --id_container_type=perl \
+                --description="A Perl script" \
+                --format='text/x-perl' \
+                --identifier=magic:'^.*perl script text executable$' \
+            )
+            LANGUAGE="Perl"
+        elif  [[ $(file $(which $APP)) == *Rscript* ]]
+        then
+            id_container_type=$(update.py \
+                --table=ContainerType \
+                --id_container_type=R \
+                --description="An R  script" \
+                --format='text/plain' \
+                --identifier=magic:'^.*Rscript script text executable.*'
+            )
+            LANGUAGE="R"
+        elif  [[ $(file $(which $APP)) == *"ELF 64"* ]]
+        then
+            id_container_type=$(update.py \
+                --table=ContainerType \
+                --id_container_type=elf \
+                --description="64bit Linux Executable" \
+                --format='application/x-executable' \
+                --identifier=magic:'^.*ELF 64-bit LSB executable\, x86-64.*$'
+            )
+            LANGUAGE="Unknown"
+        else
+            (>&2 echo "$FUNCNAME: Trying to call a script $APP we recognise "$(file $(which $APP)))
+        fi
+        [ -n "$id_container_type" ] || exit -1
 
-	id_dependency=$(update.py \
-		--table=Dependency \
-		--optionality=required \
-		--dependant=$(SSREPI_me $(_parent_script)) \
-		--dependency=$id_application \
-	)
-	[ -n "$id_dependency" ] || exit -1
+        id__pplication=$(SSREPI_application $id_application \
+            --instance=$id_container_type \
+            --language=$LANGUAGE \
+        )
+        [ -n "$id_application" ] || exit -1
 
-	# The bracket means that this in-between code is sub-processed, thus
-	# retaining the process's separate identity for terms of provenance.
-	# That is each run of the perl script is associated with a separate
+        id_dependency=$(update.py \
+            --table=Dependency \
+            --optionality=required \
+            --dependant=$(SSREPI_me $(_parent_script)) \
+            --dependency=$id_application \
+        )
+        [ -n "$id_dependency" ] || exit -1
 
-	# It also has the very useful property that I can fork the code into a
-	# background process
+        # The bracket means that this in-between code is sub-processed, thus
+        # retaining the process's separate identity for terms of provenance.
+        # That is each run of the perl script is associated with a separate
 
-	if [ -n "$include" ]
-	then
-		(
-			THIS_PROCESS=$(_process --executable=$id_application)
+        # It also has the very useful property that I can fork the code into a
+        # background process
 
-			if [ -n "$CWD" ]
-			then
-				cd "$CWD"
-			fi
-			for id in "${!argument_value[@]}"
-			do
-				_argument_value $THIS_PROCESS $id ${argument_value[$id]}
-			done
-			stdout=
-			stderr=
-			for arg in $@
-			do
-				if [[ "$arg" == *--SSREPI-input-* ]]
-				then
-					value=$(echo $arg | cut -f2 -d=)
-					input_type_id=$(echo $arg | cut -f1 -d= | sed 's/--SSREPI-input-//')
-					_input_value $id_application $THIS_PROCESS $input_type_id $value
-				elif [[ "$arg" == *--SSREPI-extend-stdout-* ]]
-				then
-					value=$(echo $arg | cut -f2 -d=)
-					stdout=' >>'$value
-				elif [[ "$arg" == *--SSREPI-stdout-* ]]
-				then
-					value=$(echo $arg | cut -f2 -d=)
-					stdout=' >'$value
-				elif [[ "$arg" == *--SSREPI-stderr-* ]]
-				then
-					value=$(echo $arg | cut -f2 -d=)
-					stderr=' >'$value
-				fi
-			done
+        if [ -n "$blocking" ]
+        then
+            (
+                THIS_PROCESS=$(_process --executable=$id_application)
 
-			[ -n $DEBUG ] && (>&2 echo CWD: $PWD)
-			[ -n $DEBUG ] && (>&2 echo RUNNING: $APP $proper_args ${position_arg[*]} $stdout $stderr)
-			eval $APP $proper_args ${position_arg[*]} $stdout $stderr
-			SYS=$?
-			if [ $SYS -ne 0 ]
-			then
-				exit -1
-			fi
+                if [ -n "$CWD" ]
+                then
+                    cd "$CWD"
+                fi
+                for id in "${!argument_value[@]}"
+                do
+                    _argument_value $THIS_PROCESS $id ${argument_value[$id]}
+                done
+                stdout=
+                stderr=
+                for arg in $@
+                do
+                    if [[ "$arg" == *--SSREPI-input-* ]]
+                    then
+                        value=$(echo $arg | cut -f2 -d=)
+                        input_type_id=$(echo $arg | cut -f1 -d= | sed 's/--SSREPI-input-//')
+                        _input_value $id_application $THIS_PROCESS $input_type_id $value
+                    elif [[ "$arg" == *--SSREPI-extend-stdout-* ]]
+                    then
+                        value=$(echo $arg | cut -f2 -d=)
+                        stdout=' >>'$value
+                    elif [[ "$arg" == *--SSREPI-stdout-* ]]
+                    then
+                        value=$(echo $arg | cut -f2 -d=)
+                        stdout=' >'$value
+                    elif [[ "$arg" == *--SSREPI-stderr-* ]]
+                    then
+                        value=$(echo $arg | cut -f2 -d=)
+                        stderr=' >'$value
+                    fi
+                done
 
-			for arg in $@
-			do
-				if 	[[ "$arg" == *--SSREPI-output-* ]] || \
-					[[ "$arg" == *--SSREPI-extend-stdout-* ]] || \
-					[[ "$arg" == *--SSREPI-stdout-* ]] || \
-					[[ "$arg" == *--SSREPI-stderr-* ]]
-				then
-					value=$(echo $arg | cut -f2 -d=)
-					output_type_id=$(echo $arg | cut -f1 -d= | \
-						sed 's/--SSREPI-output-//' | \
-						sed 's/--SSREPI-stderr-//' | \
-						sed 's/--SSREPI-extend-stdout-//' | \
-						sed 's/--SSREPI-stdout-//')
-					_output_value $THIS_PROCESS $output_type_id $value
-				fi
-			done
+                [ -n $DEBUG ] && (>&2 echo CWD: $PWD)
+                [ -n $DEBUG ] && (>&2 echo RUNNING: $APP $proper_args ${position_arg[*]} $stdout $stderr)
+                eval $APP $proper_args ${position_arg[*]} $stdout $stderr
+                SYS=$?
+                if [ $SYS -ne 0 ]
+                then
+                    exit -1
+                fi
 
-			THIS_PROCESS=$(_process \
-				--id_process=$THIS_PROCESS \
-				--executable=$id_application \
-				--end_time=$(date "+%Y%m%dT%H%M%S"))
+                for arg in $@
+                do
+                    if 	[[ "$arg" == *--SSREPI-output-* ]] || \
+                        [[ "$arg" == *--SSREPI-extend-stdout-* ]] || \
+                        [[ "$arg" == *--SSREPI-stdout-* ]] || \
+                        [[ "$arg" == *--SSREPI-stderr-* ]]
+                    then
+                        value=$(echo $arg | cut -f2 -d=)
+                        output_type_id=$(echo $arg | cut -f1 -d= | \
+                            sed 's/--SSREPI-output-//' | \
+                            sed 's/--SSREPI-stderr-//' | \
+                            sed 's/--SSREPI-extend-stdout-//' | \
+                            sed 's/--SSREPI-stdout-//')
+                        _output_value $THIS_PROCESS $output_type_id $value
+                    fi
+                done
 
-		)
-		if [ $? -ne 0 ]
-		then
-			(>&2 echo "$FUNCNAME: Problem with run for $APP")
-			exit -1
-		fi
-	else
-		(
-			THIS_PROCESS=$(_process --executable=$id_application)
+                THIS_PROCESS=$(_process \
+                    --id_process=$THIS_PROCESS \
+                    --executable=$id_application \
+                    --end_time=$(date "+%Y%m%dT%H%M%S"))
 
-			if [ -n "$CWD" ]
-			then
-				cd "$CWD"
-			fi
-			for id in "${!argument_value[@]}"
-			do
-				_argument_value $THIS_PROCESS $id ${argument_value[$id]}
-			done
-			stdout=
-			stderr=
-			for arg in $@
-			do
-				if [[ "$arg" == *--SSREPI-input-* ]]
-				then
-					value=$(echo $arg | cut -f2 -d=)
-					input_type_id=$(echo $arg | cut -f1 -d= | sed 's/--SSREPI-input-//')
-					_input_value $id_application $THIS_PROCESS $input_type_id $value
-				elif [[ "$arg" == *--SSREPI-extend-stdout-* ]]
-				then
-					value=$(echo $arg | cut -f2 -d=)
-					stdout=' >>'$value
-				elif [[ "$arg" == *--SSREPI-stdout-* ]]
-				then
-					value=$(echo $arg | cut -f2 -d=)
-					stdout=' >'$value
-				elif [[ "$arg" == *--SSREPI-stderr-* ]]
-				then
-					value=$(echo $arg | cut -f2 -d=)
-					stderr=' >'$value
-				fi
-			done
+            )
+            if [ $? -ne 0 ]
+            then
+                (>&2 echo "$FUNCNAME: Problem with run for $APP")
+                exit -1
+            fi
+        else
+            (
+                THIS_PROCESS=$(_process --executable=$id_application)
 
-			if [ -z "$SSREPI_SLURM" ]
-			then
-				instances=$(ps -A -o command | grep $APP | grep -v grep | wc -l)
-			else
-				instances=$(squeue --name=$SLURM_JOBNAME | wc -l)
-			fi
-			[ -n $DEBUG ] && (>&2 echo CWD: $PWD)
-			
-			while [ $instances -ge $SSREPI_NOF_CPUS ]
-			do
-				[ -n $DEBUG ] && (>&2 echo "$FUNCNAME: Waiting to run...")
-				sleep 10  
-				if [ -z "$SSREPI_SLURM" ]
-				then
-					instances=$(ps -A -o command | grep $APP | grep -v grep | wc -l)
-				else
-					instances=$(squeue --name=$SLURM_JOBNAME | wc -l)
-				fi
-			done
+                if [ -n "$CWD" ]
+                then
+                    cd "$CWD"
+                fi
+                for id in "${!argument_value[@]}"
+                do
+                    _argument_value $THIS_PROCESS $id ${argument_value[$id]}
+                done
+                stdout=
+                stderr=
+                for arg in $@
+                do
+                    if [[ "$arg" == *--SSREPI-input-* ]]
+                    then
+                        value=$(echo $arg | cut -f2 -d=)
+                        input_type_id=$(echo $arg | cut -f1 -d= | sed 's/--SSREPI-input-//')
+                        _input_value $id_application $THIS_PROCESS $input_type_id $value
+                    elif [[ "$arg" == *--SSREPI-extend-stdout-* ]]
+                    then
+                        value=$(echo $arg | cut -f2 -d=)
+                        stdout=' >>'$value
+                    elif [[ "$arg" == *--SSREPI-stdout-* ]]
+                    then
+                        value=$(echo $arg | cut -f2 -d=)
+                        stdout=' >'$value
+                    elif [[ "$arg" == *--SSREPI-stderr-* ]]
+                    then
+                        value=$(echo $arg | cut -f2 -d=)
+                        stderr=' >'$value
+                    fi
+                done
 
-			if [ -z "$SSREPI_SLURM" ]
-			then
-				[ -n $DEBUG ] && (>&2 echo RUNNING: $APP $proper_args ${position_arg[*]} $stdout $stderr)
-				eval $APP $proper_args ${position_arg[*]} $stdout $stderr
-			else
+                [ -n $DEBUG ] && (>&2 echo CWD: $PWD)
+                
+                instances=$(_get_instances $APP)
+                while [ $instances -ge $SSREPI_MAX_PROCESSES ]
+                do
+                    [ -n $DEBUG ] && (>&2 echo "$FUNCNAME: Only have $SSREPI_MAX_PROCESSES processes and $instances are running, so ANTE blocking...")
+                    sleep 10  
+                    instances=$(_get_instances $APP)
+                done
 
-				[ -n $DEBUG ] && (>&2 echo "SLURMING...")
-				[ -n $DEBUG ] && (>&2 echo RUNNING: srun --jobname=$SSREPI_PREFIX  $APP $proper_args ${position_arg[*]} $stdout $stderr)
+                if [ -z "$SSREPI_SLURM" ]
+                then
+                    # Cannot use $APP here as it will confuse the count in _get_instances
+                    [ -n $DEBUG ] && (>&2 echo BACKGROUND RUNNING: with arguments $proper_args ${position_arg[*]} $stdout $stderr)
+                    eval $APP $proper_args ${position_arg[*]} $stdout $stderr
+                else
 
-				srun $APP $proper_args ${position_arg[*]} $stdout $stderr
+                    [ -n $DEBUG ] && (>&2 echo "SLURMING...")
+                    [ -n $DEBUG ] && (>&2 echo RUNNING: srun --job-name=$SSREPI_SLURM_PREFIX  $APP $proper_args ${position_arg[*]} $stdout $stderr)
+
+				srun --job-name=$SSREPI_SLURM_PREFIX $APP $proper_args ${position_arg[*]} $stdout $stderr
 			fi
 
 			for arg in $@
@@ -862,22 +851,12 @@ _run() {
 
 		# Dammit these could be initialising but not yet running, so I might get overflow.
 
-		if [ -z "$SSREPI_SLURM" ]
-		then
-			instances=$(ps -A -o command | grep $APP | grep -v grep | wc -l)
-		else
-			instances=$(squeue --name=$SSREPI_JOBNAME | wc -l)
-		fi
-		while [ $instances -ge $SSREPI_NOF_CPUS ]
+        instances=$(_get_instances $APP)
+		while [ $instances -ge $SSREPI_MAX_PROCESSES ]
 		do
-			[ -n $DEBUG ] && (>&2 echo "$FUNCNAME: for stuff to finish...")
-			sleep 60
-			if [ -z "$SSREPI_SLURM" ]
-			then
-				instances=$(ps -A -o command | grep $APP | grep -v grep | wc -l)
-			else
-				instances=$(squeue --name=$SSREPI_JOBNAME | wc -l)
-			fi
+			[ -n $DEBUG ] && (>&2 echo "$FUNCNAME: Only have $SSREPI_MAX_PROCESSES processes and $instances are running, so POST blocking...")
+			sleep 10
+            instances=$(_get_instances $APP)
 		done
 	fi
 
@@ -1122,25 +1101,25 @@ SSREPI_hutton_person() {
 		(>&2 echo "$FUNCNAME: $0 at $BASH_LINENO: Invalid user supplied: $1")
 		exit 1
 	fi
-        NAME=$(_getent passwd $1 | cut -f 5 -d:)
-        EMAIL=$(echo $NAME | sed "s/ /./g")"@hutton.ac.uk"
+    NAME=$(_getent passwd $1 | cut -f 5 -d:)
+    EMAIL=$(echo $NAME | sed "s/ /./g")"@hutton.ac.uk"
 	USER_HOME=$(_getent passwd $1 | cut -f 6 -d:)
 
-        id_person=$(update.py \
-                --table=Person \
-                --id_person=$1 \
-                --name="$NAME" \
-                --email=$EMAIL \
-                )
-        [ -n "$id_person" ] || exit -1
+    id_person=$(update.py \
+         --table=Person \
+         --id_person=$1 \
+         --name="$NAME" \
+         --email=$EMAIL \
+    )
+    [ -n "$id_person" ] || exit -1
 
-        id_user=$(update.py \
-                --table=User \
-                --home_dir=$USER_HOME \
-                --account_of=$id_person \
-                --id_user=$1 \
-                )
-        [ -n "$id_user" ] || exit -1
+    id_user=$(update.py \
+          --table=User \
+          --home_dir=$USER_HOME \
+          --account_of=$id_person \
+          --id_user=$1 \
+    )
+    [ -n "$id_user" ] || exit -1
 
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 	echo $id_person
@@ -1696,6 +1675,10 @@ uniq() {
 }
 
 _getent() {
+
+    # $1 - type of database, e.g. passwd
+    # $2 - user or thing filtering on
+
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	if [[ "$1" != "passwd" ]]
 	then
@@ -1704,7 +1687,7 @@ _getent() {
 	fi
 	if [[ $(uname -s) != "Darwin" ]]
 	then
-		getent $user
+		getent passwd $2
 	else
 		if [ -z $2 ];
 		then
@@ -1764,12 +1747,40 @@ cpus() {
 
 }
 
-_exit() {
+SSREPI_exit() {
 	running=$(_parent_script)
+    if [[ "$1" =~ ^[0-9]++$ ]] 
+    then
+        if [[ "$1" != 0 ]]
+        then
+            killall $running
+        else
+            wait
+        fi
+    fi
+    if [ -z "$1" ]
+    then
+        wait
+        exit
+    fi
 	if [[  "$running" == "_parent_script" ]]
 	then
 		return $1
 	else
 		exit $1
 	fi
+}
+
+_get_instances() {
+    if [ -z "$SSREPI_SLURM" ]
+    then
+        instances=$(ps -A -o command | grep $1 | grep -v grep | wc -l)
+    else
+        instances=$(( $(squeue -t RUNNING --name=$SSREPI_SLURM_PREFIX | wc -l) - 1 ))
+        if [ -n "$SSREPI_SLURM_PENDING_BLOCKS" ]
+        then
+            instances=$(($instances + $(( $(squeue -t PENDING --name=$SSREPI_SLURM_PREFIX | wc -l) -1 )) ))
+        fi
+    fi
+    echo $instances
 }

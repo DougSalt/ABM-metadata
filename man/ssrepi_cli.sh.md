@@ -43,8 +43,13 @@ The following calls are available in Bash > 4.0.
 
 ## ENVRIONMENT VARIABLES
 
-SSREPI\_NOF\_CPUS=2
+This enviroment inherits all the enviornment variables from [ssrepi.py](./ssrepi.1)
+SSREPI\_MAX\_PRCOESSES
+
 SSREPI\_SLURM
+
+SSREPI\_SLURM\_PREFIX
+SSREPI\_SLURM\_PENDING\_BLOCKS
 
 ## AUTHORS
 

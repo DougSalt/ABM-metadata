@@ -11,9 +11,18 @@
 
 date
 
-. lib/ssrepi_cli.sh
+export REQUIRED_NOF_CPUS=2
+#export SSREPI_DEBUG=True
 
-export SSREPI_NOF_CPUS=2
+#export SSREPI_DBFILE=$(pwd)/ssrep.db
+export SSREPI_DBTYPE=postgres
+export SSREPI_DBUSER=$USER
+
+export SSREPI_MAX_PROCESSES=5
+#export SSREPI_SLURM=True
+#export SSREPI_SLURM_PENDING_BLOCKS=True
+
+. lib/ssrepi_cli.sh
 
 # Global Identity
 # ===============
@@ -42,10 +51,20 @@ study_id=$(SSREPI_study \
 )
 [ -n "$study_id" ] || exit -1
 
+# Setting this to force abort if non-zero error code is ever returned. I have
+# done this because  I do a lot of $(...) and a failure in this structure will
+# not automatically cause an abort.
+
+# Interestingly this will abort when a number is returned from $(...), but not
+# a string.
+
+set -e
+
 # People
 # ======
 
 gary_polhill_id=""
+doug_salt_id=
 if [[ $(uname -s) == "Darwin" ]]
 then
 	gary_polhill_id=$(SSREPI_person \
@@ -86,10 +105,10 @@ SSREPI_involvement $study_id $doug_salt_id \
 
 ME=$(SSREPI_application \
 	--language=bash \
-	--version=$VERSION \
-	--licence=$LICENCE \
+	--version=1.0 \
+	--licence=GPLv3 \
 	--purpose="Overall workflow shell script" \
-        --model=fearlus-spom)
+    --model=fearlus-spom)
 [ -n "$ME" ] || exit -1
 
 SSREPI_contributor $ME $doug_salt_id Developer
@@ -154,14 +173,14 @@ SSREPI_tag frivilous --tag=$too_old
 # ===========
 
 dougs_assumption=$(SSREPI_person_makes_assumption \
-        $doug_salt_id dangerous 'Gary knows what he is doing. This is an example
+    $doug_salt_id dangerous 'Gary knows what he is doing. This is an example
 of an assumption, which you might want to fill in....
 ...and could conceivably go over several lines.') 
 
 garys_1st_assumption=$(SSREPI_person_makes_assumption $gary_polhill_id \
-        insane "There are no bugs in this software.")
+    insane "There are no bugs in this software.")
 garys_2nd_assumption=$(SSREPI_person_makes_assumption $gary_polhill_id \
-        likely "There are bugs in this software." )
+    likely "There are bugs in this software." )
 
 # Requirements for this script
 # ============================
@@ -170,37 +189,37 @@ garys_2nd_assumption=$(SSREPI_person_makes_assumption $gary_polhill_id \
 
 if SSREPI_require_minimum $ME perl  "5.0" $(perl -e 'print $];')
 then
-        (>&2 echo "$0: Minimum requirement for Perl failed")
-        (>&2 echo "$0: Required at least Perl 5.0, got " \
+    (>&2 echo "$0: Minimum requirement for Perl failed")
+    (>&2 echo "$0: Required at least Perl 5.0, got " \
 		$(perl -e 'print $];'))
-        exit -1
+    exit -1
 fi
 
 
 if SSREPI_require_minimum $ME python "3.0" $(python --version 2>&1 | cut -f2 -d' ')
 then
-        (>&2 echo "$0: Minimum requirement for Python failed")
-        (>&2 echo "$0: Required 3.0 got " \
+    (>&2 echo "$0: Minimum requirement for Python failed")
+    (>&2 echo "$0: Required 3.0 got " \
 		$(python --version 2>&1 | cut -f2 -d' '))
-        exit -1
+    exit -1
 fi
 
 if SSREPI_require_minimum $ME "R" "3.3.1" $(R --version | head -1 | awk '{print $3}')
 then
-        (>&2 echo "$0: Minimum requirement for R failed")
-        (>&2 echo "$0: Required 3.3.1 got " \
+    (>&2 echo "$0: Minimum requirement for R failed")
+    (>&2 echo "$0: Required 3.3.1 got " \
 		$(R --version | head -1 | awk '{print $3}'))
-        exit -1
+    exit -1
 fi
 
 
 
 if SSREPI_require_minimum $ME bash 3.0 $(bash --version | sed -n 1p | awk '{print $4}' | cut -f1 -d.)
 then
-        (>&2 echo "$0: Minimum requirement for bash failed")
-        (>&2 echo "$0: Required 3.0 got " \
+    (>&2 echo "$0: Minimum requirement for bash failed")
+    (>&2 echo "$0: Required 3.0 got " \
 		$(bash --version | sed -n 1p | awk '{print $4}' | cut -f1 -d.))
-        exit -1
+    exit -1
 fi
 
 #if SSREPI_require_exact $ME fearlus "fearlus-1.1.5.2_spom-2.3") \
@@ -214,9 +233,9 @@ fi
 
 if SSREPI_require_exact $ME os Linux $(uname -s) && SSREPI_require_exact $ME os Darwin $(uname -s) 
 then
-        (>&2 echo "$0: Exact requirement for the OS failed")
+    (>&2 echo "$0: Exact requirement for the OS failed")
 	(>&2 echo "$0: Required Linux or  Darwin got "$(uname -s))
-        exit -1
+    exit -1
 fi
 
 
@@ -224,23 +243,23 @@ fi
 
 if SSREPI_require_minimum $ME disk_space 20G $(disk_space)
 then
-        (>&2 echo "$0: Minimum requirement for disk space failed")
+    (>&2 echo "$0: Minimum requirement for disk space failed")
 	(>&2 echo "$0: Required 20G of disk space got $(disk_space)G")
-        exit -1
+    exit -1
 fi
 
 if SSREPI_require_minimum $ME memory 4 $(memory)
 then
-        (>&2 echo "$0: Minimum requirement for memory failed")
+    (>&2 echo "$0: Minimum requirement for memory failed")
 	(>&2 echo "$0: Required 4G of memory got $(memory)G")
-        exit -1
+    exit -1
 fi
 
-if SSREPI_require_minimum $ME cpus $SSREPI_NOF_CPUS $(cpus)
+if SSREPI_require_minimum $ME cpus $REQUIRED_NOF_CPUS $(cpus)
 then
-        (>&2 echo "$0: Minimum requirement for number of cpus failed")
-	(>&2 echo "$0: Required $SSREPI_NOF_CPUS cpus of memory got $(cpus)")
-        exit -1
+    (>&2 echo "$0: Minimum requirement for number of cpus failed")
+	(>&2 echo "$0: Required $REQUIRED_NOF_CPUS cpus of memory got $(cpus)")
+    exit -1
 fi
 
 SSREPI_call \
@@ -252,6 +271,7 @@ SSREPI_call \
 		to see if it works. Which it does but removes the
 		carriage returns and tabs. So you can nicely format it." \
 
+exit -2
 SSREPI_call \
 	SSS-StopC2-Cluster-create2.sh \
 	--purpose="Sets up the run for the higher value rewards
