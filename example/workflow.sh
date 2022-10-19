@@ -271,7 +271,6 @@ SSREPI_call \
 		to see if it works. Which it does but removes the
 		carriage returns and tabs. So you can nicely format it." \
 
-exit -2
 SSREPI_call \
 	SSS-StopC2-Cluster-create2.sh \
 	--purpose="Sets up the run for the higher value rewards
