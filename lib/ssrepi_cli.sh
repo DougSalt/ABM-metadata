@@ -31,7 +31,7 @@ then
 else
 	(>&2 echo "No ssrepi python functions available. 
 		Have you set the PATH variable correct?")
-	exit -1
+	_exit -1
 fi
 
 # Create some standard containers
@@ -1197,12 +1197,14 @@ SSREPI_involvement() {
 SSREPI_paper() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	DOC="$1"
+    # So if the first argument does not exist
 	if [[ ! -f "$DOC" ]]
 	then
-		APP=$0
-	else
-		shift
+        (>&2 echo "Paper $DOC does not exist.")
+	    _exit -1
 	fi
+	shift
+    
 	PARAMS=$@
 	for param in $PARAMS
 	do
