@@ -1,14 +1,14 @@
 #!/usr/bin/env bash 
-echo "$0: Entering..."
-echo "$0: ARGUMENTS are $@"
+echo "Model: Entering..."
+echo "Model: ARGUMENTS are $@"
 count=0
-top=300
+top=30
 run=$(echo $@ | sed 's/^.*\([0-9][0-9][0-9]\).repcfg.*/\1/')
 sleep $top
 #while [ $count -lt $top ]
 #do
 #	sleep 1
-#	echo $0: Run $run is sleeping...
+#	echo Model: Run $run is sleeping...
 #	count=$(($count + 1))
 #done
 touch $(echo $(basename $PWD) | sed 's/SSS_dir_//')$run.out
@@ -22,4 +22,4 @@ touch $(echo $(basename $PWD) | sed 's/SSS_dir_/SSS_spomresult_/')$run-extinct.c
 touch $(echo $(basename $PWD) | sed 's/SSS_dir_/SSS_spomresult_/')$run-pspp.csv
 touch $(echo $(basename $PWD) | sed 's/SSS_dir_/SSS_spomresult_/')$run-habgrid.csv
 touch $(echo $(basename $PWD) | sed 's/SSS_dir_/SSS_spomresult_/')$run-area.csv
-echo "$0: ...Exiting."
+echo "Model: ...Exiting."

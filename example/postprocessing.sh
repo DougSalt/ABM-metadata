@@ -33,14 +33,12 @@ set -e
 # con_ is content (????)
 # vis_ is a visualisation
 # sv_ is a statistical_variable
-# vv_ is a visualisation_variable
 # par_ is a parameter
 
 # Seemingly the difference between a parameter is that it is fixed.
 # and a parameter may change
 
 # sv_ is used by a sm_
-# vv_ is used by a vm_
 
 # vis_ has a vm_ and points to the visualisation container, a_
 # con_ can have a  vm_, sm_, 
@@ -49,7 +47,6 @@ set -e
 # Remembering the setting values does not return anything and can set an
 
 # sv_
-# vv_
 # sp_
 # vp_
 
@@ -125,10 +122,10 @@ then
         exit -1
 fi
 
-if SSREPI_require_minimum $ME cpus $SSREPI_NOF_CPUS $(cpus)
+if SSREPI_require_minimum $ME cpus $REQUIRED_NOF_CPUS $(cpus)
 then
         (>&2 echo "$0: Minimum requirement for number of cpus failed")
-	(>&2 echo "$0: Required $SSREPI_NOF_CPUS cpus of memory got $(cpus)")
+	(>&2 echo "$0: Required $REQUIRED_NOF_CPUS cpus of memory got $(cpus)")
         exit -1
 fi
 
@@ -332,7 +329,7 @@ o_result_id=$(SSREPI_output $A_ANALYSEGE_GPLU2 result "^(batch1|batch2).csv$")
 #		ARGS="""$ARGS
 #		--SSREPI-extend-stdout-${o_result_id}=batch1.csv
 #		"""
-#		SSREPI_call $A_ANALYSEGE_GPLU2 $ARGS
+#		SSREPI_run $A_ANALYSEGE_GPLU2 $ARGS
 #              done
 #            done
 #          done
@@ -389,7 +386,7 @@ o_result_id=$(SSREPI_output $A_ANALYSEGE_GPLU2 result "^(batch1|batch2).csv$")
 #		ARGS="""$ARGS
 #		--SSREPI-extend-stdout-${o_result_id}=batch2.csv
 #		"""
-#		SSREPI_call $A_ANALYSEGE_GPLU2 --cwd=$DIR $ARGS
+#		SSREPI_run $A_ANALYSEGE_GPLU2 --cwd=$DIR $ARGS
 #              done
 #            done
 #          done
@@ -751,7 +748,7 @@ ARGS="""$ARGS
 --SSREPI-output-${o_final_results_id}=final_results.csv
 """
 
-SSREPI_call $A_POSTPROCESSING $ARGS
+SSREPI_run $A_POSTPROCESSING $ARGS
 
 # ============
 # # Diagrams #
@@ -837,7 +834,7 @@ ARGS="""$ARGS
 --SSREPI-output-${o_figure3_id}=figure3.pdf
 """
 
-SSREPI_call $A_FIGURE2_3PART $ARGS
+SSREPI_run $A_FIGURE2_3PART $ARGS
 
 # figure2-3part.R \
 #	final_results.csv \
@@ -862,13 +859,13 @@ SSREPI_implements $A_FIGURE2_3PART \
 SSREPI_implements $A_FIGURE2_3PART \
 	--visualisation_method=$vm_general_additive_model_id
 
-vv_min_incentive_id=$(SSREPI_visualisation_variable \
+sv_min_incentive_id=$(SSREPI_visualisation_variable \
 	figure3_min_incentive \
 	"Minimum value for horizontal axis in figure 3" \
 	"\Z_{\ne 0}" \
 	$vm_sunflower_plot_id)
 
-var_max_incentive_id=$(SSREPI_visualisation_variable \
+sv_max_incentive_id=$(SSREPI_visualisation_variable \
 	figure3_max_incentive \
 	"Max value for horizontal axis in figure 3" \
 	"\Z_{\ne 0}" \
@@ -884,12 +881,12 @@ con_scenario_id=$(SSREPI_content \
 	--locator='grep -v ^scenario | cut -f1 -d,')
 
 con_min_incentive_id=$(SSREPI_content \
-	--variable=$vv_min_incentive_id \
+	--statistical_variable=$sv_min_incentive_id \
 	--container_type=$o_figure3_id \
 	--locator='grep -v ^scenario | cut -f2 -d,')
 
 con_max_incentive_id=$(SSREPI_content \
-	--variable=$var_max_incentive_id \
+	--statistical_variable=$sv_max_incentive_id \
 	--container_type=$o_figure3_id \
 	--locator='grep -v ^scenario | cut -f3 -d,')
 
@@ -906,70 +903,75 @@ SSREPI_value \
 	"A/F/30/1" \
 	$var_scenario_id \
 	figure3.pdf
-SSREPI_value \
+SSREPI_statistical_variable_value \
 	2 \
-	$vv_min_incentive_id \
+	$sv_min_incentive_id \
 	figure3.pdf 
-SSREPI_value \
+SSREPI_statistical_variable_value \
 	10 \
-	$var_max_incentive_id \
+	$sv_max_incentive_id \
 	figure3.pdf 
+
 SSREPI_value \
 	"A/V/30/1" \
 	$var_scenario_id \
 	figure3.pdf 
-SSREPI_value \
+SSREPI_statistical_variable_value \
 	2 \
-	$vv_min_incentive_id \
+	$sv_min_incentive_id \
 	figure3.pdf 
-SSREPI_value \
+SSREPI_statistical_variable_value \
 	15 \
-	$var_max_incentive_id \
+	$sv_max_incentive_id \
 	figure3.pdf 
+
 SSREPI_value "CA/F/25/5" \
 	$var_scenario_id \
 	figure3.pdf 
-SSREPI_value \
+SSREPI_statistical_variable_value \
 	1 \
-	$vv_min_incentive_id \
+	$sv_min_incentive_id \
 	figure3.pdf 
-SSREPI_value \
-	10 $var_max_incentive_id figure3.pdf 
+SSREPI_statistical_variable_value \
+	10 $sv_max_incentive_id figure3.pdf 
+
 SSREPI_value \
 	"O/F/30/5" \
 	$var_scenario_id \
 	figure3.pdf 
-SSREPI_value \
+SSREPI_statistical_variable_value \
 	1 \
-	$vv_min_incentive_id \
+	$sv_min_incentive_id \
 	figure3.pdf 
-SSREPI_value \
+SSREPI_statistical_variable_value \
 	8 \
-	$var_max_incentive_id \
+	$sv_max_incentive_id \
 	figure3.pdf 
+
 SSREPI_value \
 	"O/V/25/1" \
 	$var_scenario_id \
 	figure3.pdf 
-SSREPI_value \
+SSREPI_statistical_variable_value \
 	1 \
-	$vv_min_incentive_id \
+	$sv_min_incentive_id \
 	figure3.pdf 
-SSREPI_value \
+SSREPI_statistical_variable_value \
 	5 \
-	$var_max_incentive_id \
+	$sv_max_incentive_id \
 	figure3.pdf 
+
 SSREPI_value \
 	"CO/V/25/5" \
 	$var_scenario_id \
 	figure3.pdf 
-SSREPI_value \
+SSREPI_statistical_variable_value \
 	0.1 \
-	$vv_min_incentive_id \
+	$sv_min_incentive_id \
 	figure3.pdf 
-SSREPI_value \
+SSREPI_statistical_variable_value \
 	0.8 \
-	$var_max_incentive_id \
+	$sv_max_incentive_id \
 	figure3.pdf 
 	
 # table 4 for presentation
@@ -1029,7 +1031,7 @@ ARGS="""$ARGS
 --SSREPI-output-${o_table4_id}=table4.csv
 """
 
-SSREPI_call $A_NONLINEARK4BSI $ARGS
+SSREPI_run $A_NONLINEARK4BSI $ARGS
 
 # Metadata
 # --------
@@ -1111,7 +1113,7 @@ ARGS="""$ARGS
 --SSREPI-output-${o_table4_paper_id}=table4.paper.csv
 """
 
-SSREPI_call $A_TABLE4 $ARGS
+SSREPI_run $A_TABLE4 $ARGS
 
 # figure 4
 # ========
@@ -1209,7 +1211,7 @@ ARGS="""$ARGS
 --SSREPI-output-${o_figure4_id}=figure4.a_and_b.pdf
 """
 
-SSREPI_call $A_FIGURE2_3S $ARGS
+SSREPI_run $A_FIGURE2_3S $ARGS
 
 #figure2-3s.R 
 # 	--splits \
@@ -1335,7 +1337,7 @@ ARGS="""$ARGS
 --SSREPI-output-${o_figure5_id}=LOBEC.rpart3Xfr.pdf 
 """
 
-SSREPI_call $A_TREEHIST3 $ARGS
+SSREPI_run $A_TREEHIST3 $ARGS
 
 #treehist3.pl \
 #	-cp 0.0075 \
@@ -1465,7 +1467,7 @@ ARGS="""$ARGS
 --SSREPI-output-${o_appendix_id}=appendix.pdf
 """
 
-SSREPI_call $A_FIGURE2_3SMALL $ARGS
+SSREPI_run $A_FIGURE2_3SMALL $ARGS
 
 #figure2-3small.R -splits final_results.csv \
 #	Richness \

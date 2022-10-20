@@ -9,16 +9,17 @@
 
 # Date: April 2017
 
+echo "$0: started."
 date
 
-export REQUIRED_NOF_CPUS=2
+export REQUIRED_NOF_CPUS=4
 #export SSREPI_DEBUG=True
 
 #export SSREPI_DBFILE=$(pwd)/ssrep.db
 export SSREPI_DBTYPE=postgres
 export SSREPI_DBUSER=$USER
 
-export SSREPI_MAX_PROCESSES=5
+export SSREPI_MAX_PROCESSES=3
 #export SSREPI_SLURM=True
 #export SSREPI_SLURM_PENDING_BLOCKS=True
 
@@ -58,7 +59,7 @@ study_id=$(SSREPI_study \
 # Interestingly this will abort when a number is returned from $(...), but not
 # a string.
 
-set -e
+#set -e
 
 # People
 # ======
@@ -262,42 +263,43 @@ then
     exit -1
 fi
 
-SSREPI_call \
+SSREPI_run \
 	SSS-StopC2-Cluster-create.sh \
 	--purpose="
 
 		Sets up the run for the lower value rewards
 		and this is to test out multi-line,
 		to see if it works. Which it does but removes the
-		carriage returns and tabs. So you can nicely format it." \
+		carriage returns and tabs. So you can nicely format it." 
 
-SSREPI_call \
+SSREPI_run \
 	SSS-StopC2-Cluster-create2.sh \
 	--purpose="Sets up the run for the higher value rewards
 
-		Add some documentary stuff here." \
+		Add some documentary stuff here." 
 
 
-SSREPI_invoke \
+SSREPI_run \
 	SSS-StopC2-Cluster-run.sh \
 	--purpose="Does the runs for the lower value rewards" \
-	--add-to-dependencies=postprocessing.sh.dependencies \
+	--add-to-dependencies=postprocessing.sh.dependencies
 
 
-SSREPI_invoke \
+SSREPI_run \
 	SSS-StopC2-Cluster-run2.sh \
 	--purpose="Does the runs for the higher value rewards" \
-	--add-to-dependencies=postprocessing.sh.dependencies \
+	--add-to-dependencies=postprocessing.sh.dependencies 
 
 
-SSREPI_call \
+SSREPI_run \
 	postprocessing.sh \
 	--purpose="Post processing to almagamate results and produce pretty diagrams" \
-	--with-dependencies=postprocessing.sh.dependencies \
+	--with-dependencies=postprocessing.sh.dependencies
 
 SSREPI_study \
 	--id_study=$study_id \
 	--project=$project_id \
 	--end_time=$(date "+%Y%m%dT%H%M%S") > /dev/null
 
-
+date
+echo "$0: ended."

@@ -4,6 +4,8 @@
 # to cover sinks/nosinks and RewardActivity/RewardSpecies, at various BETs and
 # ASPs, and for flat and var2 market. There will be 20 runs each
 
+echo "$0: started."
+
 . lib/ssrepi_cli.sh
 
 # Identity
@@ -400,7 +402,7 @@ do
                                 --SSREPI-output-${SSS_dummy_id}="$DIR/SSS_dummy___________-7.csv"
                                 """
 
-                                SSREPI_call $PROG $ARGS --cwd="Cluster2-2"
+                                SSREPI_run $PROG $ARGS --cwd="Cluster2-2"
                             done
                         done
                     done
@@ -410,3 +412,4 @@ do
     done
 done
 
+echo "$0: ended."

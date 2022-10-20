@@ -13,7 +13,8 @@
 use strict;
 use File::Path qw(remove_tree);
 
-my $R = '/usr/local/bin/R';
+#my $R = '/usr/local/bin/R';
+my $R = '/usr/bin/R';
 my @Rargs = ('--vanilla');
 my $tmp = '/var/tmp';
 my $asfactor = 1;

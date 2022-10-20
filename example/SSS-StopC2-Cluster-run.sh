@@ -6,7 +6,8 @@
 
 # Date: January 2017
 
-export REQUIRED_NOF_CPUS=4
+echo "$0: Started."
+
 . lib/ssrepi_cli.sh
 
 # The Model
@@ -18,7 +19,7 @@ FEARLUS=$(which $FEARLUS_EXE)
 if [ -z "$FEARLUS" ]
 then
 	(>&2 echo $0: No exectuable found for $FEARLUS_EXE)
-	SSREPI_exit -1
+	exit -1
 fi
 
 # Identity
@@ -37,7 +38,7 @@ PROG=$(SSREPI_application \
 	--version=1.1.5.2_spom-2.3 \
 	--description="Framework for Evaluation and Assessment of Regional Land Use Scenarios (FEARLUS) = Stochastic Patch Occupancy Model (SPOM)" \
 )
-[ -n $PROG ] || SSREPI_exit -1
+[ -n $PROG ] || exit -1
 
 SSREPI_contributor $PROG gary_polhill Author
 
@@ -51,7 +52,7 @@ then
 	(>&2 echo "$0: Minimum requirement for Python failed")
 	(>&2 echo "$0: Required 3.0 got " \
 	$(python --version 2>&1 | cut -f2 -d' '))
-	SSREPI_exit -1
+	exit -1
 fi
 
 if SSREPI_require_minimum $PROG bash 3 $(bash --version | sed -n 1p | awk '{print $4}' | cut -f1 -d.)
@@ -59,14 +60,14 @@ then
 	(>&2 echo "$0: Minimum requirement for bash failed")
 	(>&2 echo "$0: Required 3 got " \
 	$(bash --version | sed -n 1p | awk '{print $4}' | cut -f1 -d.))
-	SSREPI_exit -1
+	exit -1
 fi
 
 if SSREPI_require_exact $PROG os Linux $(uname -s) && SSREPI_require_exact $PROG os Darwin $(uname -s) 
 then
 	(>&2 echo "$0: Exact requirement for the OS failed")
 	(>&2 echo "$0: Required Linux or  Darwin got "$(uname -s))
-	SSREPI_exit -1
+	exit -1
 fi
 
 # Hardware
@@ -75,21 +76,21 @@ if SSREPI_require_minimum $PROG disk_space 20G $(disk_space)
 then
 	(>&2 echo "$0: Minimum requirement for disk space failed")
 	(>&2 echo "$0: Required 20G of disk space got "$(disk_space))
-	SSREPI_exit -1
+	exit -1
 fi
 
 if SSREPI_require_minimum $PROG memory 4 $(memory)
 then
 	(>&2 echo "$0: Minimum requirement for memory failed")
 	(>&2 echo "$0: Required 4G of memory got $(memory)G")
-	SSREPI_exit -1
+	exit -1
 fi
 
 if SSREPI_require_minimum $PROG cpus $REQUIRED_NOF_CPUS $(cpus) 
 then
 	(>&2 echo "$0: Minimum requirement for number of cpus failed")
 	(>&2 echo "$0: Required $REQUIRED_NOF_CPUS cpus of memory got $(cpus)")
-	SSREPI_exit -1
+	exit -1
 fi
 
 # Inputs Types
@@ -98,112 +99,112 @@ fi
 SSS_economystate_id=$(SSREPI_input $PROG \
 	SSS_economystate \
 	"______[^_]+_____.state")
-[ -n "$SSS_economystate_id" ] || SSREPI_exit -1 
+[ -n "$SSS_economystate_id" ] || exit -1 
 
 SSS_top_level_subpop_id=$(SSREPI_input $PROG \
 	SSS_top-level-subpop \
 	"________[^_]+_[^_]+_[^_]+_.ssp")
-[ -n "$SSS_top_level_subpop_id" ] || SSREPI_exit -1 
+[ -n "$SSS_top_level_subpop_id" ] || exit -1 
 
 SSS_grid_id=$(SSREPI_input $PROG \
 	SSS_grid \
 	"___________[^_]+.grd")
-[ -n "$SSS_grid_id" ] || SSREPI_exit -1 
+[ -n "$SSS_grid_id" ] || exit -1 
 
 SSS_top_level_id=$(SSREPI_input $PROG \
 	SSS_top-level \
 	"_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+.model")
-[ -n "$SSS_top_level_id" ] || SSREPI_exit -1 
+[ -n "$SSS_top_level_id" ] || exit -1 
 
 SSS_species_id=$(SSREPI_input $PROG \
 	SSS_species \
 	"_[^_]+__________.csv")
-[ -n "$SSS_species_id" ] || SSREPI_exit -1 
+[ -n "$SSS_species_id" ] || exit -1 
 
 SSS_subpop_id=$(SSREPI_input $PROG \
 	SSS_subpop \
 	"________[^_]+_[^_]+_[^_]+_.sp")
-[ -n "$SSS_subpop_id" ] || SSREPI_exit -1 
+[ -n "$SSS_subpop_id" ] || exit -1 
 
 SSS_yieldtree_id=$(SSREPI_input $PROG \
 	SSS_yieldtree \
 	"___________.tree")
-[ -n "$SSS_yieldtree_id" ] || SSREPI_exit -1 
+[ -n "$SSS_yieldtree_id" ] || exit -1 
 
 SSS_fearlus_id=$(SSREPI_input $PROG \
 	SSS_fearlus \
 	"__[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+.fearlus")
-[ -n "$SSS_fearlus_id" ] || SSREPI_exit -1 
+[ -n "$SSS_fearlus_id" ] || exit -1 
 
 SSS_government_id=$(SSREPI_input $PROG \
 	SSS_government \
 	"__[^_]+_[^_]+_[^_]+_[^_]+______.gov")
-[ -n "$SSS_government_id" ] || SSREPI_exit -1 
+[ -n "$SSS_government_id" ] || exit -1 
 
 SSS_sink_id=$(SSREPI_input $PROG \
 	SSS_sink \
 	"_[^_]+__________.csv")
-[ -n "$SSS_sink_id" ] || SSREPI_exit -1 
+[ -n "$SSS_sink_id" ] || exit -1 
 
 SSS_incometree_id=$(SSREPI_input $PROG \
 	SSS_incometree \
 	"______[^_]+_____.tree")
-[ -n "$SSS_incometree_id" ] || SSREPI_exit -1 
+[ -n "$SSS_incometree_id" ] || exit -1 
 
 SSS_luhab_id=$(SSREPI_input $PROG \
 	SSS_luhab \
 	"___________.csv")
-[ -n "$SSS_luhab_id" ] || SSREPI_exit -1 
+[ -n "$SSS_luhab_id" ] || exit -1 
 
 SSS_climateprob_id=$(SSREPI_input $PROG \
 	SSS_climateprob \
 	"___________.prob")
-[ -n "$SSS_climateprob_id" ] || SSREPI_exit -1 
+[ -n "$SSS_climateprob_id" ] || exit -1 
 
 SSS_patch_id=$(SSREPI_input $PROG \
 	SSS_patch \
 	"_[^_]+__________[^_]+.csv")
-[ -n "$SSS_patch_id" ] || SSREPI_exit -1 
+[ -n "$SSS_patch_id" ] || exit -1 
 
 SSS_report_config_id=$(SSREPI_input $PROG \
 	SSS_report-config \
 	"_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+.repcfg")
-[ -n "$SSS_report_config_id" ] || SSREPI_exit -1 
+[ -n "$SSS_report_config_id" ] || exit -1 
 
 SSS_yielddata_id=$(SSREPI_input $PROG \
 	SSS_yielddata \
 	"___________.data")
-[ -n "$SSS_yielddata_id" ] || SSREPI_exit -1 
+[ -n "$SSS_yielddata_id" ] || exit -1 
 
 SSS_spom_id=$(SSREPI_input $PROG \
 	SSS_spom \
 	"_[^_]+__________[^_]+.spom")
-[ -n "$SSS_spom_id" ] || SSREPI_exit -1 
+[ -n "$SSS_spom_id" ] || exit -1 
 
 SSS_economyprob_id=$(SSREPI_input $PROG \
 	SSS_economyprob \
 	"___________.prob")
-[ -n "$SSS_economyprob_id" ] || SSREPI_exit -1 
+[ -n "$SSS_economyprob_id" ] || exit -1 
 
 SSS_dummy_id=$(SSREPI_input $PROG \
 	SSS_dummy \
 	"___________[^_]+.csv")
-[ -n "$SSS_dummy_id" ] || SSREPI_exit -1 
+[ -n "$SSS_dummy_id" ] || exit -1 
 
 SSS_incomedata_id=$(SSREPI_input $PROG \
 	SSS_incomedata \
 	"______[^_]+_____.data")
-[ -n "$SSS_incomedata_id" ] || SSREPI_exit -1 
+[ -n "$SSS_incomedata_id" ] || exit -1 
 
 SSS_event_id=$(SSREPI_input $PROG \
 	SSS_event \
 	"________[^_]+___.event")
-[ -n "$SSS_event_id" ] || SSREPI_exit -1 
+[ -n "$SSS_event_id" ] || exit -1 
 
 SSS_trigger_id=$(SSREPI_input $PROG \
 	SSS_trigger \
 	"________[^_]+___.trig")
-[ -n "$SSS_trigger_id" ] || SSREPI_exit -1 
+[ -n "$SSS_trigger_id" ] || exit -1 
 
 	
 
@@ -218,7 +219,7 @@ batch_id=$(SSREPI_argument \
 	--short_name="b" \
 	--type=flag \
 	)
-[ -n $batch_id ] || SSREPI_exit -1
+[ -n $batch_id ] || exit -1
 
 varyseed_id=$(SSREPI_argument \
 	$PROG \
@@ -228,7 +229,7 @@ varyseed_id=$(SSREPI_argument \
 	--description="Select random number seed from current time" \
 	--type=flag \
 	)
-[ -n $varyseed_id ] || SSREPI_exit -1
+[ -n $varyseed_id ] || exit -1
 
 show_current_time_id=$(SSREPI_argument \
 	$PROG \
@@ -238,7 +239,7 @@ show_current_time_id=$(SSREPI_argument \
 	--description="Show current time in control panel" \
 	--type=flag \
 	)
-[ -n $show_current_time_id ] || SSREPI_exit -1
+[ -n $show_current_time_id ] || exit -1
 
 no_init_file_id=$(SSREPI_argument \
 	$PROG \
@@ -247,7 +248,7 @@ no_init_file_id=$(SSREPI_argument \
 	--description="Inhibit loading of ~/.swarmArchiver" \
 	--type=flag \
 	)
-[ -n $no_init_file_id ] || SSREPI_exit -1
+[ -n $no_init_file_id ] || exit -1
 
 verbose_id=$(SSREPI_argument \
 	$PROG \
@@ -257,7 +258,7 @@ verbose_id=$(SSREPI_argument \
 	--description="Activate verbose messages" \
 	--type=flag \
 	)
-[ -n $verbose_id ] || SSREPI_exit -1
+[ -n $verbose_id ] || exit -1
 
 append_report_id=$(SSREPI_argument \
 	$PROG \
@@ -268,7 +269,7 @@ append_report_id=$(SSREPI_argument \
 	--arity=0 \
 	--description="If report file exists, then append to it" \
 	)
-[ -n $append_report_id ] || SSREPI_exit -1
+[ -n $append_report_id ] || exit -1
 
 ontology_all_years_id=$(SSREPI_argument \
 	$PROG \
@@ -278,7 +279,7 @@ ontology_all_years_id=$(SSREPI_argument \
 	--description="Output a model state ontology each year (warning:" \
 	--type=flag \
 	)
-[ -n $ontology_all_years_id ] || SSREPI_exit -1
+[ -n $ontology_all_years_id ] || exit -1
 
 conditions_id=$(SSREPI_argument \
 	$PROG \
@@ -288,7 +289,7 @@ conditions_id=$(SSREPI_argument \
 	--description="Show conditions of redistribution" \
 	--type=flag \
 	)
-[ -n $conditions_id ] || SSREPI_exit -1
+[ -n $conditions_id ] || exit -1
 
 warranty_id=$(SSREPI_argument \
 	$PROG \
@@ -298,7 +299,7 @@ warranty_id=$(SSREPI_argument \
 	--description="Show warranty information" \
 	--type=flag \
 	)
-[ -n $waranty_id ] || SSREPI_exit -1
+[ -n $waranty_id ] || exit -1
 
 help_id=$(SSREPI_argument \
 	$PROG \
@@ -308,7 +309,7 @@ help_id=$(SSREPI_argument \
 	--description="Give this help list" \
 	--type=flag \
 	)
-[ -n $help_id ] || SSREPI_exit -1
+[ -n $help_id ] || exit -1
 
 usage_id=$(SSREPI_argument \
 	$PROG \
@@ -317,7 +318,7 @@ usage_id=$(SSREPI_argument \
 	--description="Give a short usage message" \
 	--type=flag \
 	)
-[ -n $usage_id ] || SSREPI_exit -1
+[ -n $usage_id ] || exit -1
 
 version_id=$(SSREPI_argument \
 	$PROG \
@@ -327,7 +328,7 @@ version_id=$(SSREPI_argument \
 	--description="Print program version" \
 	--type=flag \
 	)
-[ -n $version_id ] || SSREPI_exit -1
+[ -n $version_id ] || exit -1
 
 seed_id=$(SSREPI_argument \
 	$PROG \
@@ -339,7 +340,7 @@ seed_id=$(SSREPI_argument \
 	--range="[0-9]+" \
 	--type=option \
 	)
-[ -n $seed_id ] || SSREPI_exit -1
+[ -n $seed_id ] || exit -1
 
 mode_id=$(SSREPI_argument \
 	$PROG \
@@ -351,7 +352,7 @@ mode_id=$(SSREPI_argument \
 	--type=option \
 	--range="^\s+" \
 	)
-[ -n $mode_id ] || SSREPI_exit -1
+[ -n $mode_id ] || exit -1
 	
 
 ontology_class_id=$(SSREPI_argument \
@@ -364,7 +365,7 @@ ontology_class_id=$(SSREPI_argument \
 	--type=option \
 	--range="^\s+" \
 	)
-[ -n $class_id ] || SSREPI_exit -1
+[ -n $class_id ] || exit -1
 
 debug_id=$(SSREPI_argument \
 	$PROG \
@@ -376,7 +377,7 @@ debug_id=$(SSREPI_argument \
 	--type=option \
 	--range="^\s+((\+|\-)\s+)?$" \
 	)
-[ -n $debug_id ] || SSREPI_exit -1
+[ -n $debug_id ] || exit -1
 
 gridServiceUID_id=$(SSREPI_argument \
 	$PROG \
@@ -388,7 +389,7 @@ gridServiceUID_id=$(SSREPI_argument \
 	--type=option \
 	--range="^\s+" \
 	)
-[ -n $gridServiceUID_id ] || SSREPI_exit -1
+[ -n $gridServiceUID_id ] || exit -1
 
 gridServiceURL_id=$(SSREPI_argument \
 	$PROG \
@@ -400,7 +401,7 @@ gridServiceURL_id=$(SSREPI_argument \
 	--type=option \
 	--range="absolute_URI" \
 	)
-[ -n $gridServiceURI_id ] || SSREPI_exit -1
+[ -n $gridServiceURI_id ] || exit -1
 
 gridModelDescription_id=$(SSREPI_argument \
 	$PROG \
@@ -412,7 +413,7 @@ gridModelDescription_id=$(SSREPI_argument \
 	--type=option \
 	--range="^\s+$" \
 	)
-[ -n $gridModelDescription_id ] || SSREPI_exit -1
+[ -n $gridModelDescription_id ] || exit -1
 
 javapath_id=$(SSREPI_argument \
 	$PROG \
@@ -424,7 +425,7 @@ javapath_id=$(SSREPI_argument \
 	--type=option \
 	--range="relative_ref" \
 	)
-[ -n $javapath_id ] || SSREPI_exit -1
+[ -n $javapath_id ] || exit -1
 
 rng_id=$(SSREPI_argument \
 	$PROG \
@@ -436,7 +437,7 @@ rng_id=$(SSREPI_argument \
 	--type=option \
 	--range="^\s+$" \
 	)
-[ -n $rng_id ] || SSREPI_exit -1
+[ -n $rng_id ] || exit -1
 
 observers_id=$(SSREPI_argument \
 	$PROG \
@@ -448,7 +449,7 @@ observers_id=$(SSREPI_argument \
 	--type=option \
 	--range="relative_ref" \
 	)
-[ -n $observers_id ] || SSREPI_exit -1
+[ -n $observers_id ] || exit -1
 
 ontology_id=$(SSREPI_argument \
 	$PROG \
@@ -460,7 +461,7 @@ ontology_id=$(SSREPI_argument \
 	--type=option \
 	--range="relative_ref" \
 	)
-[ -n $ontology_id ] || SSREPI_exit -1
+[ -n $ontology_id ] || exit -1
 
 parameters_id=$(SSREPI_argument \
 	$PROG \
@@ -472,7 +473,7 @@ parameters_id=$(SSREPI_argument \
 	--type=option \
 	--range="relative_ref" \
 	)
-[ -n $parameters_id ] || SSREPI_exit -1
+[ -n $parameters_id ] || exit -1
 
 report_id=$(SSREPI_argument \
 	$PROG \
@@ -484,7 +485,7 @@ report_id=$(SSREPI_argument \
 	--type=option \
 	--range="relative_ref" \
 	)
-[ -n $report_id ] || SSREPI_exit -1
+[ -n $report_id ] || exit -1
 
 repconfig_id=$(SSREPI_argument \
 	$PROG \
@@ -496,7 +497,7 @@ repconfig_id=$(SSREPI_argument \
 	--type=option \
 	--range="relative_ref" \
 	)
-[ -n $repconfig_id ] || SSREPI_exit -1
+[ -n $repconfig_id ] || exit -1
 
 ontology_uri_id=$(SSREPI_argument \
 	$PROG \
@@ -508,7 +509,7 @@ ontology_uri_id=$(SSREPI_argument \
 	--type=option \
 	--range="absolute_URI" \
 	)
-[ -n $ontology_uri_id ] || SSREPI_exit -1
+[ -n $ontology_uri_id ] || exit -1
 
 withseed_id=$(SSREPI_argument \
 	$PROG \
@@ -520,7 +521,7 @@ withseed_id=$(SSREPI_argument \
 	--type=option \
 	--range="^([0-9]+|TIME|DEFAULT)$" \
 	)
-[ -n $withseed_id ] || SSREPI_exit -1
+[ -n $withseed_id ] || exit -1
 
 postinitseed_id=$(SSREPI_argument \
 	$PROG \
@@ -532,7 +533,7 @@ postinitseed_id=$(SSREPI_argument \
 	--type=option \
 	--range="^([0-9]+|TIME)" \
 	)
-[ -n $postinitseed_id ] || SSREPI_exit -1
+[ -n $postinitseed_id ] || exit -1
 
 # Output types
 # ------------
@@ -540,67 +541,67 @@ postinitseed_id=$(SSREPI_argument \
 SSS_OUT_id=$(SSREPI_output $PROG \
 	OUT \
 	"[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_].out")
-[ -n "$SSS_OUT_id" ] || SSREPI_exit -1 
+[ -n "$SSS_OUT_id" ] || exit -1 
 
 SSS_ERR_id=$(SSREPI_output $PROG \
 	ERR \
 	"[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_].err")
-[ -n "$SSS_ERR_id" ] || SSREPI_exit -1 
+[ -n "$SSS_ERR_id" ] || exit -1 
 
 	
 # SSS_report_nosink_ClusterActivity_all_1.0_1.0_var2_25.0_noapproval_0.0_1.0_001.txt
 SSS_report_id=$(SSREPI_output $PROG \
 	SSS_report \
 	"SSS_report_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_].txt")
-[ -n "$SSS_report_id" ] || SSREPI_exit -1 
+[ -n "$SSS_report_id" ] || exit -1 
 
 # SSS_report_nosink_ClusterActivity_all_1.0_1.0_var2_25.0_noapproval_0.0_1.0_001.grd
 SSS_report_grd_id=$(SSREPI_output $PROG \
 	SSS_report_grd \
 	"SSS_report_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_].grd")
-[ -n "$SSS_report_grd_id" ] || SSREPI_exit -1 
+[ -n "$SSS_report_grd_id" ] || exit -1 
 
 # SSS_spomresult_nosink_ClusterActivity_all_1.0_1.0_var2_25.0_noapproval_0.0_1.0_001-prop.csv
 SSS_spomresult_prop_id=$(SSREPI_output $PROG \
 	SSS_spomresult \
 	"SSS_spomresult_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]-prop.csv")
-[ -n "$SSS_spomresult_prop_id" ] || SSREPI_exit -1 
+[ -n "$SSS_spomresult_prop_id" ] || exit -1 
 
 #SSS_spomresult_nosink_ClusterActivity_all_1.0_1.0_var2_25.0_noapproval_0.0_1.0_001-nspp.csv
 SSS_spomresult_nspp_id=$(SSREPI_output $PROG \
 	SSS_spomresult_nspp \
 	"SSS_spomresult_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]-nspp.csv")
-[ -n "$SSS_spomresult_nspp_id" ] || SSREPI_exit -1 
+[ -n "$SSS_spomresult_nspp_id" ] || exit -1 
 
 # SSS_spomresult_nosink_ClusterActivity_all_1.0_1.0_var2_25.0_noapproval_0.0_1.0_001-lspp.csv
 SSS_spomresult_lspp_id=$(SSREPI_output $PROG \
 	SSS_spomresult_lspp \
 	"SSS_spomresult_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]-lspp.csv")
-[ -n "$SSS_spomresult_lspp_id" ] || SSREPI_exit -1 
+[ -n "$SSS_spomresult_lspp_id" ] || exit -1 
 
 # SSS_spomresult_nosink_ClusterActivity_all_1.0_1.0_var2_25.0_noapproval_0.0_1.0_001-extinct.csv
 SSS_spomresult_extinct_id=$(SSREPI_output $PROG \
 	SSS_spomresult_extinct \
 	"SSS_spomresult_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]-nspp.csv")
-[ -n "$SSS_spomresult_extinct_id" ] || SSREPI_exit -1 
+[ -n "$SSS_spomresult_extinct_id" ] || exit -1 
 
 # SSS_spomresult_nosink_ClusterActivity_all_1.0_1.0_var2_25.0_noapproval_0.0_1.0_001-pspp.csv
 SSS_spomresult_pspp_id=$(SSREPI_output $PROG \
 	SSS_spomresult_pspp \
 	"SSS_spomresult_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]-pspp.csv")
-[ -n "$SSS_spomresult_pspp_id" ] || SSREPI_exit -1 
+[ -n "$SSS_spomresult_pspp_id" ] || exit -1 
 
 # SSS_spomresult_nosink_ClusterActivity_all_1.0_1.0_var2_25.0_noapproval_0.0_1.0_001-habgrid.csv
 SSS_spomresult_habgrid_id=$(SSREPI_output $PROG \
 	SSS_spomresult_habgrid \
 	"SSS_spomresult_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]-habgrid.csv")
-[ -n "$SSS_spomresult_habgrid_id" ] || SSREPI_exit -1 
+[ -n "$SSS_spomresult_habgrid_id" ] || exit -1 
 
 # SSS_spomresult_nosink_ClusterActivity_all_1.0_1.0_var2_25.0_noapproval_0.0_1.0_001-area.csv
 SSS_spomresult_area_id=$(SSREPI_output $PROG \
 	SSS_spomresult_area \
 	"SSS_spomresult_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]-area.csv")
-[ -n "$SSS_spomresult_area_id" ] || SSREPI_exit -1 
+[ -n "$SSS_spomresult_area_id" ] || exit -1 
 
 	
 #for govt in ClusterActivity RewardActivity RewardSpecies ClusterSpecies 
@@ -617,7 +618,6 @@ do
                 #for rwd in 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0
                 for rwd in 1.0
                 do
-                     #for asp in 1.0 5.0
                      for asp in 1.0 5.0
                      do
                           #for bet in 25.0 30.0
@@ -683,7 +683,7 @@ do
                                     --SSREPI-output-${SSS_spomresult_area_id}=SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-area.csv
                                     """
 
-                                    SSREPI_invoke $PROG $ARGS --cwd=$DIR
+                                    SSREPI_batch $PROG $ARGS --cwd=$DIR
                             done
                         done
                     done
@@ -693,5 +693,7 @@ do
 	done
 done                    
 
-SSREPI_exit
+wait
+echo $0: Ended.
+
 

@@ -6,6 +6,8 @@
 
 # Date: January 2017
 
+echo "$0: Started."
+
 . lib/ssrepi_cli.sh
 
 # The Model
@@ -606,92 +608,93 @@ SSS_spomresult_area_id=$(SSREPI_output $PROG \
 #for govt in RewardActivity RewardSpecies 
 for govt in RewardActivity
 do
-  for run in 001 
-#  for run in 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020
-  do
-#    for market in flat var2
-    for market in flat
+#    for run in 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020
+    for run in 001 
     do
-      for sink in nosink
-      do
-#    for rwd in 15.0 20.0 25.0 30.0 40.0 50.0 100.0
-    for rwd in 15.0
-    do
-#      for asp in 1.0 5.0
-      for asp in 1.0 
-      do
-#            for bet in 25.0 30.0
-            for bet in 25.0
+#        for market in flat var2
+        for market in flat
         do
-          for rat in 1.0
-          do
+            for sink in nosink
+            do
+#                for rwd in 15.0 20.0 25.0 30.0 40.0 50.0 100.0
+                for rwd in 15.0
+                do
+#                    for asp in 1.0 5.0
+                    for asp in 1.0 
+                    do
+#                       for bet in 25.0 30.0
+                        for bet in 25.0
+                        do
+                            for rat in 1.0
+                            do
 
-            DIR=Cluster2-2/SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_
-            report=${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}
-            param=SSS_top-level_${report}.model
+                                DIR=Cluster2-2/SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_
+                                report=${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}
+                                param=SSS_top-level_${report}.model
 
-            ARGS="""
-            --SSREPI-argument-${batch_id}
-            --SSREPI-argument-${varyseed_id}
-            --SSREPI-argument-${repconfig_id}=SSS_report-config_${report}.repcfg
-            --SSREPI-argument-${report_id}=SSS_report_${report}.txt
-            --SSREPI-argument-${parameters_id}=$param
-            """
+                                ARGS="""
+                                --SSREPI-argument-${batch_id}
+                                --SSREPI-argument-${varyseed_id}
+                                --SSREPI-argument-${repconfig_id}=SSS_report-config_${report}.repcfg
+                                --SSREPI-argument-${report_id}=SSS_report_${report}.txt
+                                --SSREPI-argument-${parameters_id}=$param
+                                """
 
-            ARGS="""$ARGS
-            --SSREPI-input-${SSS_economystate_id}=SSS_economystate______${market}_____.state 
-            --SSREPI-input-${SSS_top_level_subpop_id}=SSS_top-level-subpop________noapproval_0_${asp}_.ssp 
-            --SSREPI-input-${SSS_grid_id}=SSS_grid___________${run}.grd 
-            --SSREPI-input-${SSS_top_level_id}=SSS_top-level_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.model 
-            --SSREPI-input-${SSS_species_id}=SSS_species_${sink}__________.csv 
-            --SSREPI-input-${SSS_subpop_id}=SSS_subpop________noapproval_0_${asp}_.sp 
-            --SSREPI-input-${SSS_yieldtree_id}=SSS_yieldtree___________.tree 
-            --SSREPI-input-${SSS_fearlus_id}=SSS_fearlus__${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.fearlus 
-            --SSREPI-input-${SSS_government_id}=SSS_government__${govt}_all_${rwd}_${rat}______.gov 
-            --SSREPI-input-${SSS_sink_id}=SSS_sink_${sink}__________.csv 
-            --SSREPI-input-${SSS_incometree_id}=SSS_incometree______${market}_____.tree 
-            --SSREPI-input-${SSS_luhab_id}=SSS_luhab___________.csv 
-            --SSREPI-input-${SSS_climateprob_id}=SSS_climateprob___________.prob 
-            --SSREPI-input-${SSS_patch_id}=SSS_patch_${sink}__________${run}.csv 
-            --SSREPI-input-${SSS_report_config_id}=SSS_report-config_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.repcfg 
-            --SSREPI-input-${SSS_yielddata_id}=SSS_yielddata___________.data 
-            --SSREPI-input-${SSS_spom_id}=SSS_spom_${sink}__________${run}.spom 
-            --SSREPI-input-${SSS_economyprob_id}=SSS_economyprob___________.prob 
-            --SSREPI-input-${SSS_dummy_id}=SSS_dummy___________-1.csv 
-            --SSREPI-input-${SSS_dummy_id}=SSS_dummy___________-2.csv 
-            --SSREPI-input-${SSS_dummy_id}=SSS_dummy___________-3.csv 
-            --SSREPI-input-${SSS_dummy_id}=SSS_dummy___________-4.csv 
-            --SSREPI-input-${SSS_dummy_id}=SSS_dummy___________-5.csv 
-            --SSREPI-input-${SSS_dummy_id}=SSS_dummy___________-6.csv 
-            --SSREPI-input-${SSS_dummy_id}=SSS_dummy___________-7.csv 
-            --SSREPI-input-${SSS_incomedata_id}=SSS_incomedata______${market}_____.data 
-            --SSREPI-input-${SSS_event_id}=SSS_event________noapproval___.event 
-            --SSREPI-input-${SSS_trigger_id}=SSS_trigger________noapproval___.trig 
-             """
+                                ARGS="""$ARGS
+                                --SSREPI-input-${SSS_economystate_id}=SSS_economystate______${market}_____.state 
+                                --SSREPI-input-${SSS_top_level_subpop_id}=SSS_top-level-subpop________noapproval_0_${asp}_.ssp 
+                                --SSREPI-input-${SSS_grid_id}=SSS_grid___________${run}.grd 
+                                --SSREPI-input-${SSS_top_level_id}=SSS_top-level_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.model 
+                                --SSREPI-input-${SSS_species_id}=SSS_species_${sink}__________.csv 
+                                --SSREPI-input-${SSS_subpop_id}=SSS_subpop________noapproval_0_${asp}_.sp 
+                                --SSREPI-input-${SSS_yieldtree_id}=SSS_yieldtree___________.tree 
+                                --SSREPI-input-${SSS_fearlus_id}=SSS_fearlus__${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.fearlus 
+                                --SSREPI-input-${SSS_government_id}=SSS_government__${govt}_all_${rwd}_${rat}______.gov 
+                                --SSREPI-input-${SSS_sink_id}=SSS_sink_${sink}__________.csv 
+                                --SSREPI-input-${SSS_incometree_id}=SSS_incometree______${market}_____.tree 
+                                --SSREPI-input-${SSS_luhab_id}=SSS_luhab___________.csv 
+                                --SSREPI-input-${SSS_climateprob_id}=SSS_climateprob___________.prob 
+                                --SSREPI-input-${SSS_patch_id}=SSS_patch_${sink}__________${run}.csv 
+                                --SSREPI-input-${SSS_report_config_id}=SSS_report-config_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.repcfg 
+                                --SSREPI-input-${SSS_yielddata_id}=SSS_yielddata___________.data 
+                                --SSREPI-input-${SSS_spom_id}=SSS_spom_${sink}__________${run}.spom 
+                                --SSREPI-input-${SSS_economyprob_id}=SSS_economyprob___________.prob 
+                                --SSREPI-input-${SSS_dummy_id}=SSS_dummy___________-1.csv 
+                                --SSREPI-input-${SSS_dummy_id}=SSS_dummy___________-2.csv 
+                                --SSREPI-input-${SSS_dummy_id}=SSS_dummy___________-3.csv 
+                                --SSREPI-input-${SSS_dummy_id}=SSS_dummy___________-4.csv 
+                                --SSREPI-input-${SSS_dummy_id}=SSS_dummy___________-5.csv 
+                                --SSREPI-input-${SSS_dummy_id}=SSS_dummy___________-6.csv 
+                                --SSREPI-input-${SSS_dummy_id}=SSS_dummy___________-7.csv 
+                                --SSREPI-input-${SSS_incomedata_id}=SSS_incomedata______${market}_____.data 
+                                --SSREPI-input-${SSS_event_id}=SSS_event________noapproval___.event 
+                                --SSREPI-input-${SSS_trigger_id}=SSS_trigger________noapproval___.trig 
+                                 """
 
-            ARGS="""$ARGS
-            --SSREPI-output-${SSS_OUT_id}=${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.out
-            --SSREPI-output-${SSS_ERR_id}=${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.err
-            --SSREPI-output-${SSS_report_id}=SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.txt
-            --SSREPI-output-${SSS_report_grd_id}=SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.grd
-            --SSREPI-output-${SSS_spomresult_prop_id}=SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-prop.csv
-            --SSREPI-output-${SSS_spomresult_nspp_id}=SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-nspp.csv
-            --SSREPI-output-${SSS_spomresult_lspp_id}=SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-lspp.csv
-            --SSREPI-output-${SSS_spomresult_extinct_id}=SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-extinct.csv
-            --SSREPI-output-${SSS_spomresult_pspp_id}=SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-pspp.csv
-            --SSREPI-output-${SSS_spomresult_habgrid_id}=SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-habgrid.csv
-            --SSREPI-output-${SSS_spomresult_area_id}=SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-area.csv
-            """
+                                ARGS="""$ARGS
+                                --SSREPI-output-${SSS_OUT_id}=${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.out
+                                --SSREPI-output-${SSS_ERR_id}=${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.err
+                                --SSREPI-output-${SSS_report_id}=SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.txt
+                                --SSREPI-output-${SSS_report_grd_id}=SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.grd
+                                --SSREPI-output-${SSS_spomresult_prop_id}=SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-prop.csv
+                                --SSREPI-output-${SSS_spomresult_nspp_id}=SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-nspp.csv
+                                --SSREPI-output-${SSS_spomresult_lspp_id}=SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-lspp.csv
+                                --SSREPI-output-${SSS_spomresult_extinct_id}=SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-extinct.csv
+                                --SSREPI-output-${SSS_spomresult_pspp_id}=SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-pspp.csv
+                                --SSREPI-output-${SSS_spomresult_habgrid_id}=SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-habgrid.csv
+                                --SSREPI-output-${SSS_spomresult_area_id}=SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-area.csv
+                                """
 
-            SSREPI_invoke $PROG $ARGS --cwd=$DIR
+                                SSREPI_batch $PROG $ARGS --cwd=$DIR
 
-          done
+                            done
+                        done
+                    done
+                done
+            done
         done
-      done
     done
-      done
-    done
-  done
 done
 
-
+wait
+echo $0: Ended.

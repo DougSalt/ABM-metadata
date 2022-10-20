@@ -1131,9 +1131,12 @@ LINK_LOCATOR TEXT,
 AGENT_LOCATOR TEXT,
 CONTAINER_TYPE TEXT,
 VARIABLE TEXT,
+STATISTICAL_VARIABLE TEXT,
 VISUALISATION_METHOD TEXT,
 CONSTRAINT ContainerTypeVariable
 UNIQUE( CONTAINER_TYPE, VARIABLE ),
+CONSTRAINT ContainerTypeStatisticalVariable
+UNIQUE( CONTAINER_TYPE, STATISTICAL_VARIABLE ),
 CONSTRAINT ContainerTypeVisualisationMethod
 UNIQUE( CONTAINER_TYPE, VISUALISATION_METHOD ),
 FOREIGN KEY (CONTAINER_TYPE)
@@ -1150,7 +1153,8 @@ DEFERRABLE INITIALLY DEFERRED
     @classmethod
     def primaryKeys(cls):
         return [ [ "CONTAINER_TYPE", "VARIABLE" ],
-             [ "CONTAINER_TYPE", "VISUALISATION_METHOD" ] ]
+             [ "CONTAINER_TYPE", "VISUALISATION_METHOD" ],
+             [ "CONTAINER_TYPE", "STATISTICAL_VARIABLE" ]]
 
     def __init__(self, values = None):
         Table.__init__(self)
@@ -1162,6 +1166,7 @@ DEFERRABLE INITIALLY DEFERRED
         self.AGENT_LOCATOR = None
         self.CONTAINER_TYPE = None # Foreign key in table ContainerTypes
         self.VARIABLE = None # Foreign key in table Variables
+        self.STATISTICAL_VARIABLE = None # Foreign key in table StatisticalVariables
         self.VISUALISATION_METHOD = None # Foreign key in table VisualisationMethods
         Table.setValues(self,values)
 

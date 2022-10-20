@@ -32,14 +32,27 @@ The source path for application.
 
 ## SSREPI\_argument
 
-This set
-## SSREPI\_call
+This sets some basic arguments that may be common to 
+
+### Mandatory parameters
+
+### Optional paarameters
+
+### Returns
+
+Nothing.
+
+## SSREPI\_batch
+
+Remember to put wait at the end of the script that uses this approach, as the
+script in the foreground will just finish and leave the background processes to
+run.
+
 ## SSREPI\_content
 ## SSREPI\_contributor
 ## SSREPI\_hutton\_person
 ## SSREPI\_implements
 ## SSREPI\_input
-## SSREPI\_invoke
 ## SSREPI\_involvement
 ## SSREPI\_make\_tag
 ## SSREPI\_me
@@ -52,6 +65,10 @@ This set
 ## SSREPI\_project
 ## SSREPI\_require\_exact
 ## SSREPI\_require\_minimum
+## SSREPI\_run
+
+This will interactively run an application.
+
 ## SSREPI\_set
 ## SSREPI\_statistical\_method
 ## SSREPI\_statistical\_variable
@@ -59,6 +76,7 @@ This set
 ## SSREPI\_study
 ## SSREPI\_tag
 ## SSREPI\_value
+## SSREPI\_visualisation\_variable\_value
 ## SSREPI\_variable
 ## SSREPI\_visualisation
 ## SSREPI\visualisation\_method
