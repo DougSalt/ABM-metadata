@@ -285,119 +285,101 @@ o_result_id=$(SSREPI_output $A_ANALYSEGE_GPLU2 result "^(batch1|batch2).csv$")
 [ -n "$o_result_id" ] || exit -1
 
 
-##for run in 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020
-#for run in 001
-#do
-##  for govt in ClusterActivity ClusterSpecies RewardActivity RewardSpecies
-#  for govt in ClusterActivity 
-#  do
-#    for sink in nosink
-#    do
-##      for market in flat var2
-#      for market in flat
-#      do
-##        for bet in 25.0 30.0
-#        for bet in 25.0 
-#        do
-##          for asp in 1.0 5.0
-#          for asp in 1.0
-#          do
-##            for rwd in 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0
-#            for rwd in 1.0
-#            do
-##              for rat in 1.0 2.0 10.0
-#              for rat in 1.0
-#              do
-#
-#    DIR="Cluster2/SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_"
-#    IN_1="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.txt"
-#    IN_2="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.grd"
-#    IN_3="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-extinct.csv"
-#    IN_4="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-lspp.csv"
+for run in 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020
+do
+    for govt in ClusterActivity ClusterSpecies RewardActivity RewardSpecies
+    do
+        for sink in nosink
+        do
+            for market in flat var2
+            do
+                for bet in 25.0 30.0
+                do
+                    for asp in 1.0 5.0
+                    do
+                        for rwd in 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0
+                        do
+                            for rat in 1.0 2.0 10.0
+                            do
 
-#    ARGS="""
-#    --SSREPI-argument-$a_experiment=8
-#    """
-#
-#  ARGS="""$ARGS
-#   --SSREPI-input-${i_SSS_report_id}=$DIR/$IN_1
-#    --SSREPI-input-${i_SSS_report_grd_id}=$DIR/$IN_2
-#    --SSREPI-input-${i_SSS_spomresult_extinct_id}=$DIR/$IN_3
-#    --SSREPI-input-${i_SSS_spomresult_lspp_id}=$DIR/$IN_4
-#    """
-#
-#    ARGS="""$ARGS
-#    --SSREPI-extend-stdout-${o_result_id}=batch1.csv
-#    """
-#    SSREPI_run $A_ANALYSEGE_GPLU2 $ARGS
-#              done
-#            done
-#          done
-#        done
-#      done
-#    done
-#  done
-#done
-#
-#
-#
-##for run in 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020
-#for run in 001
-#do
-##  for govt in ClusterActivity ClusterSpecies RewardActivity RewardSpecies
-#  for govt in ClusterActivity 
-#  do
-#    for sink in nosink
-#    do
-#
-##      for market in flat var2
-#      for market in flat
-#      do
-##        for bet in 25.0 30.0
-#        for bet in 25.0 
-#        do
-##          for asp in 1.0 5.0
-#          for asp in 1.0
-#          do
-##            for rwd in 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0
-#            for rwd in 1.0
-#            do
-##              for rat in 1.0 2.0 10.0
-#              for rat in 1.0
-#              do
-#
-#  DIR="SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_"
-#   IN_1="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.txt"
-#   IN_2="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.grd"
-#   IN_3="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-extinct.csv"
-#    IN_4="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-lspp.csv"
-#
-#    ARGS="""
-#    --SSREPI-argument-$a_experiment=9
-#    """
+                                DIR="Cluster2/SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_"
+                                IN_1="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.txt"
+                                IN_2="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.grd"
+                                IN_3="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-extinct.csv"
+                                IN_4="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-lspp.csv"
 
-#    ARGS="""$ARGS
-#    --SSREPI-input-${i_SSS_report_id}=$IN_1
-#  --SSREPI-input-${i_SSS_report_grd_id}=$IN_2
-#   -SSREPI-input-${i_SSS_spomresult_extinct_id}=$IN_3
-#    --SSREPI-input-${SSS_spomresult_lspp_id}=$IN_4
-#    """
-#
-#    ARGS="""$ARGS
-#    --SSREPI-extend-stdout-${o_result_id}=batch2.csv
-#    """
-#    SSREPI_run $A_ANALYSEGE_GPLU2 --cwd=$DIR $ARGS
-#              done
-#            done
-#          done
-#        done
-#      done
-#    done
-#  done
-#done
-#
+                                ARGS="""
+                                --SSREPI-argument-$a_experiment=8
+                                """
 
-# Metadata
+                                ARGS="""$ARGS
+                                --SSREPI-input-${i_SSS_report_id}=$DIR/$IN_1
+                                --SSREPI-input-${i_SSS_report_grd_id}=$DIR/$IN_2
+                                --SSREPI-input-${i_SSS_spomresult_extinct_id}=$DIR/$IN_3
+                                --SSREPI-input-${i_SSS_spomresult_lspp_id}=$DIR/$IN_4
+                                """
+
+                                ARGS="""$ARGS
+                                --SSREPI-extend-stdout-${o_result_id}=batch1.csv
+                                """
+                                SSREPI_run $A_ANALYSEGE_GPLU2 $ARGS
+                            done
+                        done
+                    done
+                done
+            done
+        done
+    done
+done
+
+for run in 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020
+do
+    for govt in ClusterActivity ClusterSpecies RewardActivity RewardSpecies
+    do
+        for sink in nosink
+        do
+            for market in flat var2
+            do
+                for bet in 25.0 30.0
+                do
+                    for asp in 1.0 5.0
+                    do
+                        for rwd in 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0
+                        do
+                            for rat in 1.0 2.0 10.0
+                            do
+
+                                DIR="Cluster2/SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_"
+                                IN_1="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.txt"
+                                IN_2="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.grd"
+                                IN_3="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-extinct.csv"
+                                IN_4="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-lspp.csv"
+
+                                ARGS="""
+                                --SSREPI-argument-$a_experiment=9
+                                """
+
+                                ARGS="""$ARGS
+                                --SSREPI-input-${i_SSS_report_id}=$DIR/$IN_1
+                                --SSREPI-input-${i_SSS_report_grd_id}=$DIR/$IN_2
+                                --SSREPI-input-${i_SSS_spomresult_extinct_id}=$DIR/$IN_3
+                                --SSREPI-input-${i_SSS_spomresult_lspp_id}=$DIR/$IN_4
+                                """
+
+                                ARGS="""$ARGS
+                                --SSREPI-extend-stdout-${o_result_id}=batch2.csv
+                                """
+                                SSREPI_run $A_ANALYSEGE_GPLU2 $ARGS
+                            done
+                        done
+                    done
+                done
+            done
+        done
+    done
+done
+
+ Metadata
 # --------
 
 # Metadata should normally follow the run. Although not strictly necessary, if
