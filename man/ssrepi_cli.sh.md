@@ -1,9 +1,9 @@
-# ssrepi.sh - interface libary for SSREPI
+# ssrepi\_cli.sh - the Bash interface libary for SSREPI
 
 ## SYNOPSIS
 
 The library for doing (Social Simulation REPository Interface) SSREPI
-provenance and metadata collection
+provenance and metadata collection. This allow invocation of the interface from the command line and as such can be used in normal scripts. SLURM has been built in, although the queue management of SLURM is superior and the queueing mechanism
 
 ## DESCRIPTION
 
@@ -20,13 +20,25 @@ executable, Python or a Julia script, or even another Bash or zsh script.
 
 ### Mandatory parameters
 
+These parameters are positional.
+
 The source path for application.
 
 ### Optional parameters
 
-+ --model
-+ --instance
-+ --licence
++ --model - This is documentary and refers to the model this is running. This
+  in conjuction with the project and study (a study is a thing we refer to as
+  an experiment), will make this run unique
++ --name - A meaningful english name that can be used in the diagramming.
+
++ --instance - the type of container this is. Some containers are already
+  created such as bash, perl, R, etc.
+
++ --licence - a string describing the licence
+
++ --description - descibes what the application does. This is not mandatory,
+  but we strongly advise that this field is filled in any time it is available.
+  This will take a multi-line string and the hard 3 speach mark type of string.
 
 ### Returns
 
@@ -35,6 +47,8 @@ The source path for application.
 This sets some basic arguments that may be common to 
 
 ### Mandatory parameters
+
++ $
 
 ### Optional paarameters
 

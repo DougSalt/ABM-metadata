@@ -78,6 +78,7 @@ class InvalidEntity(Exception):
 class Table:
     def __init__(self):
         self.DESCRIPTION = None
+        self.NAME = None
         self.ABOUT = None
         self.CREATED = None
         self.CREATOR = None
@@ -352,6 +353,7 @@ CREATOR TEXT NOT NULL,
 MODIFIED DATE,
 MODIFIER TEXT,
 DESCRIPTION TEXT,
+NAME TEXT,
 ABOUT TEXT,"""
 
     @classmethod
