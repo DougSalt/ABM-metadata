@@ -1477,5 +1477,9 @@ SSREPI_run $A_FIGURE2_3SMALL $ARGS
 #    CA/V/30/5 CO/F/25/1 CO/F/25/5 CO/F/30/1 CO/F/30/5 CO/V/25/1 CO/V/30/1 \
 #    CO/V/30/5
 
+# This is a bit of a PITA. Sometimes you need the following, sometimes you
+# don't. But it ensures that zero status is returned from the $SSREPI_run
+# program above, and thus the flow of the code is not terminated
+
 exit 0
 
