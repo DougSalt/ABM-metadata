@@ -556,7 +556,6 @@ class Argument(Table):
 ID_ARGUMENT TEXT PRIMARY KEY, 
 TYPE TEXT, 
 ORDER_VALUE TEXT, 
-NAME TEXT, 
 ASSIGNMENT_OPERATOR TEXT,
 SEPARATOR TEXT, 
 SHORT_NAME TEXT, 
@@ -587,7 +586,6 @@ DEFERRABLE INITIALLY DEFERRED
         self.ID_ARGUMENT = None
         self.TYPE = None
         self.ORDER_VALUE = None
-        self.NAME = None
         self.ASSIGNMENT_OPERATOR = None
         self.SEPARATOR = None
         self.SHORT_NAME = None
@@ -851,7 +849,6 @@ class Computer(Table):
         return """CREATE TABLE IF NOT EXISTS """ + cls.tableName() + """ (
 """ + Table.commonFields() + """
 ID_COMPUTER TEXT PRIMARY KEY, 
-NAME TEXT NOT NULL, 
 HOST_ID TEXT NOT NULL, 
 IP_ADDRESS TEXT, 
 MAC_ADDRESS TEXT
@@ -864,7 +861,6 @@ MAC_ADDRESS TEXT
     def __init__(self, values = None):
         Table.__init__(self)
         self.ID_COMPUTER = None
-        self.NAME = None
         self.HOST_ID = None
         self.IP_ADDRESS = None
         self.MAC_ADDRESS = None
@@ -1747,7 +1743,6 @@ class Person(Table):
         return """CREATE TABLE IF NOT EXISTS """ + cls.tableName() + """ (
 """ + Table.commonFields() + """
 ID_PERSON TEXT PRIMARY KEY, 
-NAME TEXT NOT NULL, 
 EMAIL TEXT NOT NULL
 )"""
 
@@ -1758,7 +1753,6 @@ EMAIL TEXT NOT NULL
     def __init__(self, values = None):
         Table.__init__(self)
         self.ID_PERSON = None
-        self.NAME = None
         self.EMAIL = None
         Table.setValues(self,values)
 

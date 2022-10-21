@@ -26,6 +26,7 @@ if [ -n "$SSREPI_DEBUG" ]
 then 
     export DEBUG=1
 fi
+DEBUG=1
 
 if which create_database.py >/dev/null 2>&1
 then
@@ -288,6 +289,7 @@ SSREPI_application() {
 		--table=Application \
 		--id_application=application_$(cksum $(which $APP) | awk '{print $1}') \
 		--location=$id_container \
+        --name=$APP \
 		$PARAMS
 	)
 	[ -n "$id_app" ] || exit -1
