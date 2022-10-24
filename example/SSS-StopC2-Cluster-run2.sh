@@ -605,25 +605,19 @@ SSS_spomresult_area_id=$(SSREPI_output $PROG \
     "SSS_spomresult_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]-area.csv")
 [ -n "$SSS_spomresult_area_id" ] || exit -1 
 
-#for govt in RewardActivity RewardSpecies 
-for govt in RewardActivity
+for govt in RewardActivity RewardSpecies 
 do
-#    for run in 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020
-    for run in 001 
+    for run in 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020
     do
-#        for market in flat var2
-        for market in flat
+        for market in flat var2
         do
             for sink in nosink
             do
-#                for rwd in 15.0 20.0 25.0 30.0 40.0 50.0 100.0
-                for rwd in 15.0
+                for rwd in 15.0 20.0 25.0 30.0 40.0 50.0 100.0
                 do
-#                    for asp in 1.0 5.0
-                    for asp in 1.0 
+                    for asp in 1.0 5.0
                     do
-#                       for bet in 25.0 30.0
-                        for bet in 25.0
+                       for bet in 25.0 30.0
                         do
                             for rat in 1.0
                             do
