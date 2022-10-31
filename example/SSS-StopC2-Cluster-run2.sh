@@ -30,8 +30,6 @@ ME=$(SSREPI_me)
 SSREPI_contributor $ME gary_polhill Author
 SSREPI_contributor $ME doug_salt Author 
 
-pipe=$(SSREPI_pipeline)
-
 PROG=$(SSREPI_application \
     $FEARLUS \
     --licence=GPLv3 \
@@ -683,7 +681,7 @@ do
 
                                 if [ -n "$test" ]
                                 then
-                                    exit 0
+                                    break 8
                                 fi
                             done
                         done

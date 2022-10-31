@@ -16,8 +16,6 @@ ME=$(SSREPI_me)
 SSREPI_contributor $ME gary_polhill Author
 SSREPI_contributor $ME doug_salt Author
 
-pipe=$(SSREPI_pipeline $ME)
-
 # Called script
 # =============
 
@@ -405,7 +403,7 @@ do
                                     
                                 if [ -n "$test" ]
                                 then
-                                    break
+                                    break 8
                                 fi
                             done
                         done

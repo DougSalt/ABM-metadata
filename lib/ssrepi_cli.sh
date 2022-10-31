@@ -700,12 +700,10 @@ _run() {
     fi
     [ -n "$id_container_type" ] || exit -1
 
-    set -xv
     id_application=$(SSREPI_application $id_application \
         --instance=$id_container_type \
         --language=$LANGUAGE \
     )
-    set +xv
     [ -n "$id_application" ] || exit -1
 
     id_dependency=$(update.py \

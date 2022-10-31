@@ -16,8 +16,6 @@ ME=$(SSREPI_me)
 SSREPI_contributor $ME gary_polhill Author
 SSREPI_contributor $ME doug_salt Author
 
-pipe=$(SSREPI_pipeline $ME)
-
 # Called script
 # =============
 
@@ -398,7 +396,7 @@ do
                                 SSREPI_run $PROG $ARGS --cwd="Cluster2-2"
                                 if [ -n "$test" ]
                                 then
-                                    exit 0
+                                    break 8
                                 fi
                             done
                         done
