@@ -286,6 +286,9 @@ class Table:
         # I am a little wary here, because this doesn't cover the case
         # primaryKeys[>1][1], i.e., more than one primary key of
         # 1 column. Arguably this is silly and should never happen...
+
+        # Actually sir, this does happen, e.g. value but you can override 
+        # it with a class method specific to that class.
                 
         if len(cls.primaryKeys()) > 1:
             for primaryKey in cls.primaryKeys():
@@ -1838,15 +1841,15 @@ DEFERRABLE INITIALLY DEFERRED
 
     def validate(self):
         Table.validate(self)
-        if   ( self.CALLS_PIPELINE != None and
-               self.CALLS_APPLICATION != None):
-            raise InvalidEntity('ERROR: Class: ' + 
-                self.__class__.__name__ + 
-                   ": columns: Invalid primary key: " + 
-                    " CALLS_APPLICATION: " + 
-                str(self.CALLS_APPLICATION) +
-                ", CALLS_PIPELINE: " + 
-                str(self.CALLS_PIPELINE))
+#        if   ( self.CALLS_PIPELINE != None and
+#               self.CALLS_APPLICATION != None):
+#            raise InvalidEntity('ERROR: Class: ' + 
+#                self.__class__.__name__ + 
+#                   ": columns: cannot call both an application and pipeline: " + 
+#                    " CALLS_APPLICATION: " + 
+#                str(self.CALLS_APPLICATION) +
+#                ", CALLS_PIPELINE: " + 
+#                str(self.CALLS_PIPELINE))
 
 # Specialisation of PROV:Activity
 # Automatic population?
@@ -2383,8 +2386,8 @@ class TagMap(Table):
     def schema(cls):
         return """CREATE TABLE IF NOT EXISTS """ + cls.tableName() + """ (
 """ + Table.commonFields() + """
-TARGET_TAG TEXT NOT NULL,
-TAG TEXT,
+TAG TEXT NOT NULL,
+OTHER_TAG TEXT,
 CONTAINER_TYPE TEXT,
 ASSUMPTION TEXT,
 APPLICATION TEXT,
@@ -2395,29 +2398,29 @@ DOCUMENTATION TEXT,
 PERSON TEXT,
 STUDY INTEGER,
 CONSTRAINT TargetTagContainerType
-UNIQUE( TARGET_TAG, CONTAINER_TYPE ),
+UNIQUE( TAG, CONTAINER_TYPE ),
 CONSTRAINT TargetTagTag
-UNIQUE( TARGET_TAG, TAG ),
+UNIQUE( TAG, OTHER_TAG ),
 CONSTRAINT TargetTagApplciation
-UNIQUE( TARGET_TAG, APPLICATION ),
+UNIQUE( TAG, APPLICATION ),
 CONSTRAINT TargetTagContainer
-UNIQUE( TARGET_TAG, CONTAINER ),
+UNIQUE( TAG, CONTAINER ),
 CONSTRAINT TargetTagDocumentation
-UNIQUE( TARGET_TAG, DOCUMENTATION ),
+UNIQUE( TAG, DOCUMENTATION ),
 CONSTRAINT TargetTagStudy
-UNIQUE( TARGET_TAG, STUDY ),
+UNIQUE( TAG, STUDY ),
 CONSTRAINT TargetTagAssumption
-UNIQUE( TARGET_TAG, ASSUMPTION),
+UNIQUE( TAG, ASSUMPTION),
 CONSTRAINT TargetTagStatisticalMethod
-UNIQUE( TARGET_TAG, STATISTICAL_METHOD ),
+UNIQUE( TAG, STATISTICAL_METHOD ),
 CONSTRAINT TargetTagPerson
-UNIQUE( TARGET_TAG, PERSON ),
+UNIQUE( TAG, PERSON ),
 CONSTRAINT TargetTagVisualisationMethod
-UNIQUE( TARGET_TAG, VISUALISATION_METHOD ),
-FOREIGN KEY (TARGET_TAG)
+UNIQUE( TAG, VISUALISATION_METHOD ),
+FOREIGN KEY (TAG)
 REFERENCES Tags(ID_TAG)
 DEFERRABLE INITIALLY DEFERRED,
-FOREIGN KEY (TAG)
+FOREIGN KEY (OTHER_TAG)
 REFERENCES Tags(ID_TAG)
 DEFERRABLE INITIALLY DEFERRED,
 FOREIGN KEY (CONTAINER_TYPE)
@@ -2450,22 +2453,22 @@ DEFERRABLE INITIALLY DEFERRED
 
     @classmethod
     def primaryKeys(cls):
-        return [ [ "TARGET_TAG", "CONTAINER_TYPE" ],
-             [ "TARGET_TAG", "TAG"    ],
-             [ "TARGET_TAG", "APPLICATION"    ],
-             [ "TARGET_TAG", "CONTAINER" ],
-             [ "TARGET_TAG", "DOCUMENTATION" ],
-             [ "TARGET_TAG", "STUDY" ],
-             [ "TARGET_TAG", "ASSUMPTION" ],
-             [ "TARGET_TAG", "STATISTICAL_METHOD" ],
-             [ "TARGET_TAG", "PERSON" ],
-             [ "TARGET_TAG", "VISUALISATION_METHOD" ] ]
+        return [ [ "TAG", "CONTAINER_TYPE" ],
+             [ "TAG", "OTHER_TAG"    ],
+             [ "TAG", "APPLICATION"    ],
+             [ "TAG", "CONTAINER" ],
+             [ "TAG", "DOCUMENTATION" ],
+             [ "TAG", "STUDY" ],
+             [ "TAG", "ASSUMPTION" ],
+             [ "TAG", "STATISTICAL_METHOD" ],
+             [ "TAG", "PERSON" ],
+             [ "TAG", "VISUALISATION_METHOD" ] ]
 
 
     def __init__(self, values = None):
         Table.__init__(self)
-        self.TARGET_TAG = None  # Foreign key of the table Tags
         self.TAG = None  # Foreign key of the table Tags
+        self.OTHER_TAG = None  # Foreign key of the table Tags
         self.CONTAINER_TYPE = None  # Foreign key of the table ContainerTypes
         self.APPLICATION = None  # Foreign key of the table Applications
         self.CONTAINER = None  # Foreign key of the table Containers
@@ -2502,7 +2505,7 @@ DEFERRABLE INITIALLY DEFERRED
             notNones += 1
         if self.STUDY != None:
             notNones += 1
-        if self.TAG != None:
+        if self.OTHER_TAG != None:
             notNones += 1
         if notNones != 1:
             raise InvalidEntity('ERROR: Class: ' + 
@@ -2527,7 +2530,7 @@ DEFERRABLE INITIALLY DEFERRED
                 " STUDY: " +
                 str(self.STUDY) +
                 " TAG: " +
-                str(self.TAG))
+                str(self.OTHER_TAG))
 
 # Specialisation of PROV:Agent
 # Automatic population?
@@ -2617,6 +2620,9 @@ DEFERRABLE INITIALLY DEFERRED
 # Specialisation of PROV:Entity
 # Automatic population?
 class Value(Table):
+    @classmethod
+    def is_relation(cls):
+        return False
     @classmethod
     def schema(cls):
         return """CREATE TABLE IF NOT EXISTS """ + cls.tableName() + """ (
@@ -3340,12 +3346,15 @@ def derive_edges():
     edges.update(derive_edge(Visualisation.schema()))
     edges.update(derive_edge(VisualisationMethod.schema()))
     edges.update(derive_edge(VisualisationValue.schema()))
+    for edge in edges:
+        sys.stderr.write("HECKLE " + str(edge) + " " + str(edges[edge]) + "\n")
     return edges
+
 
 def derive_edge(schema):
     """
     This is a dictionary indexed on the name of the edge
-    Each edge value is a dictionary which may have one of three indexes
+    Each edge value is a dictionary which may have one of four indexes
 
     + join
     + source
@@ -3363,7 +3372,17 @@ def derive_edge(schema):
     The "source" specifies the source table of the edge
     The "target" specifies the target table of the edge
     The "id" specifies the where you will find the origin in the source
-    table
+        table
+
+    The join through another relation is a little bit more comple
+
+    source -> join.source <=> join.target -> target 
+
+    edge[edge_name] = { join = {source = join.source(join.source.column)
+                                target = join.target(join.target.colum) }
+                        source = source(sourceColumn)
+                        target = target(targetColumn) }
+
     """
     edge = {}
     node = re.search(
@@ -3372,37 +3391,48 @@ def derive_edge(schema):
     if node == None:
         sys.exit("No create table statement for " + schema)
     table = globals()[getattr(Table, node.group(1))()]
+    # The next test indicates if the table itself is merely a link
+    used = list()
     if table.is_relation():
         
-        # Two foreign keys will provide a single link.
-        # All combinations of foreign keys will be valid many-to-many links
+        for key in table.primaryKeys():
+            edgeDetail = {}
+            join = {}
+            join["source"] = table.__name__ + "(" + key[0] + ")"
+            join["target"] = table.__name__ + "(" + key[1] + ")"
+            edgeDetail["join"] = join
+#            source = globals()[getattr(Table, key[0])()]
+#            edgeDetail["source"] = source.__name__ + "(" + source.primaryKey[0][0] + ")"
+#            target = globals()[getattr(Table, key[1])()]
+#            edgeDetail["target"] = target.__name__ + "(" + target.primaryKey[0][0] + ")"
+            edgeDetail["source"] = key[0] + "(ID_" +  key[0] + ")"
+            edgeDetail["target"] = key[1] + "(ID_" +  key[1] + ")"
+            used.append(key[0])
+            used.append(key[1])
+            edge[table.__name__.lower() + "-to-" + key[1].lower()] = edgeDetail                
 
-        theKeys = table.foreignKeys()
+#        i = 0
+#        while i <= len(theKeys) - 2:
+#            j = i
+#            while j <= len(theKeys) - 1:
+#                edgeDetail = {}
+#                join = {}
+#                join["source"] = (theKeys[i]["sourceTable"] + "(" +
+#                    theKeys[i]["sourceColumn"] + ")")                
+#                join["target"] = ( theKeys[j]["sourceTable"] + "(" +
+#                    theKeys[j]["sourceColumn"] + ")")                
+#                edgeDetail["join"] = join
+#                edgeDetail["source"] = (theKeys[i]["sourceTable"] +
+#                    "(" + theKeys[i]["sourceColumn"] + ")")
+#                edgeDetail["target"] = (theKeys[j]["targetTable"] +
+#                    "(" + theKeys[j]["targetColumn"] + ")")
+#                edge[(table.__name__ + "-to-" + 
+#                    theKeys[j]["targetTable"]).lower()] = edgeDetail                
+#                j = j + 1
+#            i = i + 1
 
-        # Fsck me, you can use "range" to single loop over zero. How crap
-        # is that? So rather than using a for loop, I have to use a bloody
-        # while construction. Nowt like consistency is there?
-        i = 0
-        while i <= len(theKeys) - 2:
-            j = i
-            while j <= len(theKeys) - 1:
-                edgeDetail = {}
-                join = {}
-                join["source"] = (theKeys[i]["sourceTable"] + "(" +
-                    theKeys[i]["sourceColumn"] + ")")                
-                join["target"] = ( theKeys[j]["sourceTable"] + "(" +
-                    theKeys[j]["sourceColumn"] + ")")                
-                edgeDetail["join"] = join
-                edgeDetail["source"] = (theKeys[i]["targetTable"] +
-                    "(" + theKeys[i]["targetColumn"] + ")")
-                edgeDetail["target"] = (theKeys[j]["targetTable"] +
-                    "(" + theKeys[j]["targetColumn"] + ")")
-                edge[(table.__name__ + "-to-" + 
-                    theKeys[j]["targetTable"]).lower()] = edgeDetail                
-                j = j + 1
-            i = i + 1
-    else:
-        for key in table.foreignKeys():
+    for key in table.foreignKeys():
+        if key not in used:
             edgeDetail = {}
             targetTable = globals()[getattr(Table, key["sourceTable"])()]
             edgeDetail["source"] = (
@@ -3512,13 +3542,13 @@ def get_nodes(conn, nodes, labels):
                 sys.exit('Problem with ' + node + ': no labels provided')
             nodeSQL =   'SELECT ' + ','.join(labels[node]) + ' FROM ' + node
 
-            #if debug:
-            #    sys.stderr.write(nodeSQL + "\n")
+            if debug:
+                sys.stderr.write(nodeSQL + "\n")
             cur.execute(nodeSQL)
             rows = cur.fetchall()
             for row in rows:
-                #if debug:
-                #    sys.stderr.write("Row = " + str(row) + "\n")
+                if debug:
+                    sys.stderr.write("Row = " + str(row) + "\n")
                 nodeText = "" 
                 className = ""
                 # A dictionary should make life easier.
@@ -3526,7 +3556,9 @@ def get_nodes(conn, nodes, labels):
                 for key in row:
                     if key.lower() == nodes[node].lower():
                         className = str(row[key.lower()])
-                        nodeText = '< <U>' + node + '</U><BR/><B>' + str(row[key.lower()]) + '</B><BR/>' + nodeText
+                        nodeText = '<<U>' + node + '</U><BR/><B>' + str(row[key.lower()]) + '</B><BR/>' + nodeText
+                    elif key.lower() == "name" and row[key.lower()] != None:
+                        nodeText = nodeText + '<BR/><I> ' + str(os.path.basename(row[key.lower()])) + '</I>'
                     elif row[key.lower()] == None:
                         pass
                     else:
@@ -3593,8 +3625,8 @@ def get_edges(conn, edges, activeNodes):
                     raise InvalidEdge
                 sourceTable = found.group(1)
                 sourceRow = found.group(2)
-                #if debug:
-                #    sys.stderr.write("edge = " + str(edges[edge]) + "\n")
+                if debug:
+                    sys.stderr.write("edge = " + str(edges[edge]) + "\n")
                 if 'join' in edges[edge]:
                     found = re.search('^(.*)\((.*)\)$',edges[edge]['join']['target'])
                     if not found:
@@ -3698,7 +3730,7 @@ def remove_edges(nodes,edges):
 
     for edge in edges:
         if debug:
-            sys.stderr.write("Pickling Edge = " + str(edge) + " = " + str(edges[edge]) +'\n')
+            sys.stderr.write("Examining edge = " + str(edge) + " = " + str(edges[edge]) +'\n')
         if edge in edges and (edge[0][0] not in tables or edge[1][0] not in tables):
             del edgesLeft[edge]
     return edgesLeft
@@ -3707,7 +3739,8 @@ def draw_graph(nodes, edges, output=None):
 
     graph = graphviz.Digraph()
     #graph.attr(ratio="fill", size = "8.3,11.7", margin = 0)
-    graph.attr(size = "8.3,11.7", margin = "0", ratio="fill")
+    #graph.attr(size = "8.3,11.7", margin = "0", ratio="fill")
+    graph.attr(margin = "0", ratio="fill")
     
     if nodes != None:
         for node in nodes:

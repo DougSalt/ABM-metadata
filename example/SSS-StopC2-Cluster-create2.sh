@@ -396,6 +396,10 @@ do
                                 """
 
                                 SSREPI_run $PROG $ARGS --cwd="Cluster2-2"
+                                if [ -n "$test" ]
+                                then
+                                    exit 0
+                                fi
                             done
                         done
                     done

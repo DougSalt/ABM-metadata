@@ -11,6 +11,7 @@
 
 echo "$0: started."
 date
+export test=1
 
 export REQUIRED_NOF_CPUS=4
 #export SSREPI_DEBUG=True
@@ -167,8 +168,8 @@ SSREPI_tag too_slow --container_type=bash
 
 # Tagging tags (or groups).
 
-SSREPI_tag frivilous --tag=mad
-SSREPI_tag frivilous --tag=$too_old
+SSREPI_tag frivilous --other_tag=mad
+SSREPI_tag frivilous --other_tag=$too_old
 
 # Assumptions
 # ===========

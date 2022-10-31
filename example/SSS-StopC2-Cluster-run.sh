@@ -678,6 +678,10 @@ do
                                     """
 
                                     SSREPI_batch $PROG $ARGS --cwd=$DIR
+                                    if [ -n "$test" ]
+                                    then
+                                        exit 0
+                                    fi
                             done
                         done
                     done

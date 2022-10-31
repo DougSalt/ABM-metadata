@@ -424,19 +424,66 @@ _run() {
         SSREPI_MAX_PROCESSES=4
     fi
 
-    id_application=$1
-    if [ -z "$SSREPI_pipe" ]
-    then
-        export SSREPI_pipe=$(SSREPI_pipeline $(SSREPI_me $(_parent_script)))
-    fi
-
     # The reasoning behind the next two lines is that the argument may be
     # an id_application or a path may be passed as the first argument
 
+    set -xv
     APP=$(_get_executable $@)
     id_application=$(SSREPI_me $@)
-
+    set +xv
     shift
+
+    invoking_application=application_$(cksum $(_parent_script) | \
+        awk '{print $1}')
+
+    # Now we find the end of the next chain for the the calling application
+    # and add to the end of that.
+
+    next_pipe=$invoking_application
+    if [[ $(exists.py --table=Pipeline --id_pipeline=$next_pipe ) == True ]]
+    then
+        next=$(get_value.py \
+            --table=Pipeline \
+            --id_pipeline=$next_pipe \
+            --next \
+        ) 
+    else
+        next_pipe=$(update.py \
+            --table=Pipeline \
+            --id_pipeline=$next_pipe \
+            --calls_application=$invoking_application \
+        ) 
+        next=None
+    fi
+    while [[ "$next" != "None" ]]
+    do
+        next_pipe=$next    
+        next=$(get_value.py \
+            --table=Pipeline \
+            --id_pipeline=$next_pipe \
+            --next \
+        )
+    done
+    if [[ $(exists.py --table=Pipeline --id_pipeline=$id_application) == "True" ]]
+    then
+        our_pipe=$(update.py \
+                --table=Pipeline \
+                --id_pipeline=${id_application}_$(uniq) \
+                --calls_application=$id_application \
+        )
+     else
+        our_pipe=$(update.py \
+                --table=Pipeline \
+                --id_pipeline=$id_application \
+                --calls_application=$id_application \
+        )
+    fi
+    next_pipe=$(update.py \
+		    --table=Pipeline \
+            --id_pipeline=$next_pipe \
+            --next=$our_pipe \
+    )
+
 
     # Remove cwd
     CWD=
@@ -461,24 +508,6 @@ _run() {
             sed "s/--blocking\s*//")
     fi
 
-    # So PIPE is the pipe line we want to attach to
-
-    id_pipeline=$(update.py \
-        --table=Pipeline \
-        --id_pipeline=calls_${id_application} \
-        --calls_application=$id_application \
-    )
-    [ -n "id_pipeline" ] || exit -1
-    # Now we attach this new pipe to the existing pipe and replace
-    # PIPE with this value.
-        SSREPI_pipe=$(update.py \
-        --table=Pipeline \
-        --id_pipeline=$SSREPI_pipe \
-        --next=$id_pipeline \
-    )
-    [ -n "SSREPI_pipe" ] || exit -1
-    export SSREPI_pipe=$id_pipeline
-        
     if [[ "$@" == *--dependency=* ]]
     then
         # This is for something that must be run before this part can
@@ -673,10 +702,12 @@ _run() {
     fi
     [ -n "$id_container_type" ] || exit -1
 
-    id__pplication=$(SSREPI_application $id_application \
+    set -xv
+    id_application=$(SSREPI_application $id_application \
         --instance=$id_container_type \
         --language=$LANGUAGE \
     )
+    set +xv
     [ -n "$id_application" ] || exit -1
 
     id_dependency=$(update.py \
@@ -1292,7 +1323,7 @@ SSREPI_tag() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	id_tag_map=$(update.py \
 		--table=TagMap \
-		--target_tag=$1 \
+		--tag=$1 \
 		$2
 	)
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
@@ -1342,17 +1373,6 @@ SSREPI_contributor() {
 		exit -1
 	fi
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
-}
-SSREPI_pipeline() {
-	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
-	id_pipeline=$(update.py \
-		--table=Pipeline \
-		--id_pipeline=pipeline_$1 \
-		--calls_application=$1 \
-	)
-	[ -n "$id_pipeline" ] || exit -1
-	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
-	echo $id_pipeline
 }
 SSREPI_statistical_method() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")

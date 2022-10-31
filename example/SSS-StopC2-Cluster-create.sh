@@ -352,7 +352,7 @@ do
     do
         for sink in nosink
         do
-            for market in flat var2
+            for market in flat
             do
                 for bet in 25.0 30.0
                 do
@@ -403,6 +403,10 @@ do
 
                                 SSREPI_run $PROG $ARGS --cwd="Cluster2"
                                     
+                                if [ -n "$test" ]
+                                then
+                                    break
+                                fi
                             done
                         done
                     done
