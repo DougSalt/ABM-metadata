@@ -427,10 +427,8 @@ _run() {
     # The reasoning behind the next two lines is that the argument may be
     # an id_application or a path may be passed as the first argument
 
-    set -xv
     APP=$(_get_executable $@)
     id_application=$(SSREPI_me $@)
-    set +xv
     shift
 
     invoking_application=application_$(cksum $(_parent_script) | \
