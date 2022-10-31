@@ -354,7 +354,7 @@ do
                 do
                     for asp in 1.0 5.0
                     do
-                        for rwd in 15.0 20.0 25.0 30.0 40.0 50.0 100.0 for rwd in 15.0 
+                        for rwd in 15.0 20.0 25.0 30.0 40.0 50.0 100.0
                         do
                             for rat in 1.0 2.0 10.0
                             do
