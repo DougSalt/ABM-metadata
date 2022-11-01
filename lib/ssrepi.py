@@ -2922,11 +2922,6 @@ DEFERRABLE INITIALLY DEFERRED
 #    return ss_rep
 
 
-# ++ Database
-# db type: SQLite
-
-
-
 def connect_db(working_dir):
     """function to create a connection with a SQLite db
     """
@@ -3347,7 +3342,7 @@ def derive_edges():
     edges.update(derive_edge(VisualisationMethod.schema()))
     edges.update(derive_edge(VisualisationValue.schema()))
     for edge in edges:
-        sys.stderr.write("HECKLE " + str(edge) + " " + str(edges[edge]) + "\n")
+        sys.stderr.write("ALL EDGES " + str(edge) + " " + str(edges[edge]) + "\n")
     return edges
 
 
@@ -3654,9 +3649,6 @@ def get_edges(conn, edges, activeNodes):
                                 " = '" +
                                  str(className) +
                                 "'")
-                    if debug:
-                        sys.stderr.write(sql_string + '\n')
-                    cur.execute(sql_string)
                 else:
                     found = re.search('^(.*)\((.*)\)$',edges[edge]['id'])
                     if not found:
@@ -3666,7 +3658,7 @@ def get_edges(conn, edges, activeNodes):
                     if idTable != sourceTable:
                         raise InvalidEdge
 
-                    cur.execute("SELECT " +  
+                    sql_string = ("SELECT " +  
                                 idRow + 
                                 " FROM " +
                                 sourceTable +
@@ -3676,6 +3668,9 @@ def get_edges(conn, edges, activeNodes):
                                 str(className) +
                                 "'")
 
+                #if debug:
+                sys.stderr.write("Edge: " + sql_string + '\n')
+                cur.execute(sql_string)
                 rows = cur.fetchall()
                 for row in rows:
                     label = edge
@@ -3696,25 +3691,15 @@ def get_edges(conn, edges, activeNodes):
 
     return activeEdges
                 
-def draw_edges(conn, graph, edges, activeNodes):
-    with conn:
-        activeEdges = get_edges(conn, edges, activeNodes)
-        for activeEdge in activeEdges:
-            label=activeEdges[activeEdge]
-            graph.edge(activeEdge[0][0] + '.' + activeEdge[0][1],
-                   activeEdge[1][0] + '.' + activeEdge[1][1],
-                   label=label)
-        return graph;
-
 def remove_orphans(nodes, edges):
-    nodesLeft = nodes.copy()
+    remaining_nodes = nodes.copy()
     result = nodes.copy()
     for edge in edges:
-        if edge[0] in nodesLeft:
-            del nodesLeft[edge[0]]
-        if edge[1] in nodesLeft:
-            del nodesLeft[edge[1]]
-    for orphan in nodesLeft:
+        if edge[0] in remaining_nodes:
+            del remaining_nodes[edge[0]]
+        if edge[1] in remaining_nodes:
+            del remaining_nodes[edge[1]]
+    for orphan in remaining_nodes:
         del result[orphan] 
     return result
 
@@ -3735,7 +3720,7 @@ def remove_edges(nodes,edges):
             del edgesLeft[edge]
     return edgesLeft
 
-def draw_graph(nodes, edges, output=None):
+def save_dot(nodes, edges, output=None):
 
     graph = graphviz.Digraph()
     #graph.attr(ratio="fill", size = "8.3,11.7", margin = 0)
@@ -3748,9 +3733,22 @@ def draw_graph(nodes, edges, output=None):
 
     if edges != None:
         for edge in edges:
+            if debug:
+                sys.stderr.write("DRAWING edge = " + str(edge) + " = " + str(edges[edge]) +'\n')
             graph.edge(edge[0][0] + '.' + edge[0][1], edge[1][0] + '.' + edge[1][1], label=edges[edge])
 
     if output == None:
         print(graph)
     else:
         graph.save(output)
+
+def draw_graph (conn, nodes, output):
+
+    original_nodes = get_nodes(conn, nodes, labels())
+    possible_edges = get_edges(conn, derive_edges(), original_nodes)
+    active_nodes = remove_orphans(original_nodes, possible_edges)
+    active_edges = remove_edges(active_nodes, possible_edges)
+    save_dot(active_nodes,active_edges,output=output)
+
+
+

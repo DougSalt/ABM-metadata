@@ -401,11 +401,15 @@ do
 
                                 SSREPI_run $PROG $ARGS --cwd="Cluster2"
                                     
+#                                if [ -n "$test" ]
+#                                then
+#                                    break 8
+#                                fi
+                            done
                                 if [ -n "$test" ]
                                 then
-                                    break 8
+                                    break 7
                                 fi
-                            done
                         done
                     done
                 done

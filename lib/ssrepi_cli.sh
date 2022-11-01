@@ -11,8 +11,8 @@
 
 # I have decided to do this in the bash script
 
-# Remember because this is in-line, exit causes a stop program, return to abort
-# to calling program.
+# Remember because this is in-line, exit causes a stop program, return to
+# abort to calling program.
 
 # The convention here is that any function that starts with an underscore, "_"
 # is an internal function.
@@ -26,7 +26,7 @@ if [ -n "$SSREPI_DEBUG" ]
 then 
     export DEBUG=1
 fi
-DEBUG=1
+#DEBUG=1
 
 if which create_database.py >/dev/null 2>&1
 then
@@ -232,12 +232,65 @@ SSREPI_application() {
 	# used to update the model entry.
 
 	APP=$(which "$1" 2>/dev/null)
-	if [[ ! -f "$APP" ]]
+    if [[ $(exists.py --table=Application --id_application=$1) == "True" ]]
+    then
+        id_application=$1
+        APP=$(_get_executable $id_application)
+	elif [[ ! -f "$APP" ]]
 	then
 		APP=$(which $0)
+        id_application=container_$(cksum $(which $APP) | awk '{print $1}') 
 	else
+        id_application=container_$(cksum $(which $APP) | awk '{print $1}') 
 		shift
 	fi
+
+    LANGUAGE=
+    id_container_type=
+    if [[ $(file $(which $APP)) == *Bourne-Again* ]]
+    then
+        id_container_type=$(update.py \
+            --table=ContainerType \
+            --id_container_type=bash \
+            --description="A Bourne-again bash script" \
+            --format='text/x-shellscript' \
+            --identifier=magic:'^.*shell script text executable.*$' \
+        )
+        LANGUAGE="Bash"
+    elif [[ $(file $(which $APP)) == *Perl* ]]
+    then
+        id_container_type=$(update.py \
+            --table=ContainerType \
+            --id_container_type=perl \
+            --description="A Perl script" \
+            --format='text/x-perl' \
+            --identifier=magic:'^.*perl script text executable$' \
+        )
+        LANGUAGE="Perl"
+    elif  [[ $(file $(which $APP)) == *Rscript* ]]
+    then
+        id_container_type=$(update.py \
+            --table=ContainerType \
+            --id_container_type=R \
+            --description="An R  script" \
+            --format='text/plain' \
+            --identifier=magic:'^.*Rscript script text executable.*'
+        )
+        LANGUAGE="R"
+    elif  [[ $(file $(which $APP)) == *"ELF 64"* ]]
+    then
+        id_container_type=$(update.py \
+            --table=ContainerType \
+            --id_container_type=elf \
+            --description="64bit Linux Executable" \
+            --format='application/x-executable' \
+            --identifier=magic:'^.*ELF 64-bit LSB executable\, x86-64.*$'
+        )
+        LANGUAGE="Unknown"
+    else
+        (>&2 echo "$FUNCNAME: Trying to call a script $APP we recognise "$(file $(which $APP)))
+    fi
+    [ -n "$id_container_type" ] || exit -1
 
 	PARAMS=$@
 
@@ -264,7 +317,7 @@ SSREPI_application() {
 
 	id_container=$(update.py \
 		--table=Container \
-		--id_container=container_$(cksum $(which $APP) | awk '{print $1}') \
+		--id_container=$id_application \
 		--location_value=$(which $APP) \
 		--location_type="relative_ref" \
 		--encoding=$(file -b --mime-encoding $(which $APP)) \
@@ -289,6 +342,7 @@ SSREPI_application() {
 		--table=Application \
 		--id_application=application_$(cksum $(which $APP) | awk '{print $1}') \
 		--location=$id_container \
+        --language=$LANGUAGE \
         --name=$APP \
 		$PARAMS
 	)
@@ -476,11 +530,13 @@ _run() {
                 --calls_application=$id_application \
         )
     fi
+    set -xv
     next_pipe=$(update.py \
 		    --table=Pipeline \
             --id_pipeline=$next_pipe \
             --next=$our_pipe \
     )
+    set +xv
 
 
     # Remove cwd
@@ -652,59 +708,6 @@ _run() {
             fi
         fi
     done
-
-    LANGUAGE=
-    id_container_type=
-    if [[ $(file $(which $APP)) == *Bourne-Again* ]]
-    then
-        id_container_type=$(update.py \
-            --table=ContainerType \
-            --id_container_type=bash \
-            --description="A Bourne-again bash script" \
-            --format='text/x-shellscript' \
-            --identifier=magic:'^.*shell script text executable.*$' \
-        )
-        LANGUAGE="Bash"
-    elif [[ $(file $(which $APP)) == *Perl* ]]
-    then
-        id_container_type=$(update.py \
-            --table=ContainerType \
-            --id_container_type=perl \
-            --description="A Perl script" \
-            --format='text/x-perl' \
-            --identifier=magic:'^.*perl script text executable$' \
-        )
-        LANGUAGE="Perl"
-    elif  [[ $(file $(which $APP)) == *Rscript* ]]
-    then
-        id_container_type=$(update.py \
-            --table=ContainerType \
-            --id_container_type=R \
-            --description="An R  script" \
-            --format='text/plain' \
-            --identifier=magic:'^.*Rscript script text executable.*'
-        )
-        LANGUAGE="R"
-    elif  [[ $(file $(which $APP)) == *"ELF 64"* ]]
-    then
-        id_container_type=$(update.py \
-            --table=ContainerType \
-            --id_container_type=elf \
-            --description="64bit Linux Executable" \
-            --format='application/x-executable' \
-            --identifier=magic:'^.*ELF 64-bit LSB executable\, x86-64.*$'
-        )
-        LANGUAGE="Unknown"
-    else
-        (>&2 echo "$FUNCNAME: Trying to call a script $APP we recognise "$(file $(which $APP)))
-    fi
-    [ -n "$id_container_type" ] || exit -1
-
-    id_application=$(SSREPI_application $id_application \
-        --instance=$id_container_type \
-        --language=$LANGUAGE \
-    )
-    [ -n "$id_application" ] || exit -1
 
     id_dependency=$(update.py \
         --table=Dependency \
@@ -1730,7 +1733,8 @@ _parent_script() {
 
 uniq() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
-	cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1
+	#cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1
+	cat /dev/urandom | tr -dc '0-9' | fold -w 32 | head -n 1
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 }
 
