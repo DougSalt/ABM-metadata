@@ -26,7 +26,7 @@ if [ -n "$SSREPI_DEBUG" ]
 then 
     export DEBUG=1
 fi
-#DEBUG=1
+DEBUG=1
 
 if which create_database.py >/dev/null 2>&1
 then
@@ -343,7 +343,7 @@ SSREPI_application() {
 		--id_application=application_$(cksum $(which $APP) | awk '{print $1}') \
 		--location=$id_container \
         --language=$LANGUAGE \
-        --name=$APP \
+        --name=$(basename $APP) \
 		$PARAMS
 	)
 	[ -n "$id_app" ] || exit -1
@@ -592,7 +592,7 @@ _run() {
     # provenance primitives and we are having to do this external to the
     # script. It makes the coding slightly awkward but leaves a lot of room for
     # speed improvement at a later date. This means the primitives could be
-    # embedeed in Perl, R, NetLogo, and elf exectuables.	I will put this
+    # embedeed in Perl, R, NetLogo, and elf exectuables. I will put this
     # comment everywhere where we stoop to do provenance at a level higher than
     # it should. I am doing this because this got very confused in my head to
     # start with. To be clear, provenance for a bunch of code should explicitly
@@ -1640,11 +1640,15 @@ SSREPI_content() {
 }
 
 SSREPI_person_makes_assumption() {
+    person=$1
+    id_assumption=$2
+    description=$3
+    shift 3
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	id_assumption=$(update.py \
 		--table=Assumption \
-		--id_assumption=$2 \
-		--description=$3 \
+		--id_assumption=$id_assumption \
+		--description=$description \
 		)
 	if [ -z "$id_assumption" ] 
 	then
@@ -1653,7 +1657,7 @@ SSREPI_person_makes_assumption() {
 	fi
 	id_assumes=$(update.py \
 		--table=Assumes \
-		--person=$1 \
+		--person=$person \
 		--assumption=$id_assumption)
 	if [ -z "$id_assumes" ] 
 	then

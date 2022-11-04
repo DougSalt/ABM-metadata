@@ -23,4 +23,3 @@ import ssrepi
 conn = ssrepi.connect_db(os.getcwd())
 ssrepi.create_tables(conn)
 ssrepi.disconnect_db(conn)
-ssrepi.disconnect_db(conn)

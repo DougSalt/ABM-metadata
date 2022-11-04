@@ -16,23 +16,17 @@ import ssrepi
 # graphviz diagram.
 
 nodes = {
-    'Tags': 'ID_TAG',
-    'Applications': 'ID_APPLICATION',
-    'ContainerTypes': 'ID_CONTAINER_TYPE',
-    'Studies': 'ID_STUDY',
-    'Documentation': 'ID_DOCUMENTATION',
-    'StatisticalMethods': 'ID_STATISTICAL_METHOD',
-    'VisualisationMethods': 'ID_VISUALISATION_METHOD',
+    'Tags': ['ID_TAG'],
+    'Applications': ['name'],
+    'ContainerTypes': ['ID_CONTAINER_TYPE'],
+    'Studies': ['ID_STUDY'],
+    'Documentation': ['ID_DOCUMENTATION'],
+    'StatisticalMethods': ['ID_STATISTICAL_METHOD'],
+    'VisualisationMethods': ['ID_VISUALISATION_METHOD'],
     }
 
 working_dir = os.getcwd()
 
 conn = ssrepi.connect_db(working_dir)
-
-original_nodes = ssrepi.get_nodes(conn, nodes, ssrepi.labels())
-possible_edges = ssrepi.get_edges(conn, ssrepi.derive_edges(), original_nodes)
-active_nodes = ssrepi.remove_orphans(original_nodes, possible_edges)
-active_edges = ssrepi.remove_edges(active_nodes, possible_edges)
-ssrepi.draw_graph(active_nodes,active_edges,output="folksonomy.dot")
-
+ssrepi.draw_graph(conn, nodes, output="fine_grain.dot")
 ssrepi.disconnect_db(conn)

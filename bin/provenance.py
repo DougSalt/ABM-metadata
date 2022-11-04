@@ -13,34 +13,28 @@ sys.path.append("lib")
 import ssrepi
 
 nodes = {
-    'Persons': 'ID_PERSON',
-    'Users': 'ID_USER',
-    'Computers': 'ID_COMPUTER',
-    'Applications': 'ID_APPLICATION',
-    'Processes': 'ID_PROCESS',
-    'Arguments': 'ID_ARGUMENT',
-    'Specifications': 'ID_SPECIFICATION',
-    'ArgumentValues': 'ID_ARGUMENT_VALUE',
-    'Studies': 'ID_STUDY',
-    'Containers': 'ID_CONTAINER',
-    'VisualisationMethods': 'ID_VISUALISATION_METHOD',
-    'StatisticalMethods': 'ID_STATISTICAL_METHOD',
-    'Visualisations': 'ID_VISUALISATION',
-    'Statistics': 'ID_STATISTIC',
-    'Parameters': 'ID_PARAMETER',
-    'StatisticalVariables': 'ID_STATISTICAL_VARIABLE',
-    'Value': 'ID_VALUE'
+    'Persons': ['ID_PERSON'],
+    'Users': ['ID_USER'],
+    'Computers': ['ID_COMPUTER'],
+    'Applications': ['name'],
+    'Processes': ['ID_PROCESS'],
+    'Arguments': ['ID_ARGUMENT'],
+    'Specifications': ['ID_SPECIFICATION'],
+    'ArgumentValues': ['ID_ARGUMENT_VALUE'],
+    'Studies': ['ID_STUDY'],
+    'Containers': ['ID_CONTAINER'],
+    'VisualisationMethods': ['ID_VISUALISATION_METHOD'],
+    'StatisticalMethods': ['ID_STATISTICAL_METHOD'],
+    'Visualisations': ['ID_VISUALISATION'],
+    'Statistics': ['ID_STATISTIC'],
+    'Parameters': ['ID_PARAMETER'],
+    'StatisticalVariables': ['ID_STATISTICAL_VARIABLE'],
+    'Value': ['ID_VALUE']
     }
 
 
 working_dir = os.getcwd()
 
 conn = ssrepi.connect_db(working_dir)
-
-original_nodes = ssrepi.get_nodes(conn, nodes, ssrepi.labels())
-possible_edges = ssrepi.get_edges(conn, ssrepi.derive_edges(), original_nodes)
-active_nodes = ssrepi.remove_orphans(original_nodes, possible_edges)
-active_edges = ssrepi.remove_edges(original_nodes, possible_edges)
-ssrepi.draw_graph(active_nodes,active_edges,output="provenance.dot")
-
+ssrepi.draw_graph(conn,nodes,output="provenance.dot")
 ssrepi.disconnect_db(conn)

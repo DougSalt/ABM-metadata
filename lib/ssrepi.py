@@ -28,6 +28,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 import os, sys, subprocess, re, mimetypes, rfc3987, os.path, datetime, magic
 import graphviz, getpass
+import inspect
 
 db_type = 'postgres'
 #db_type = 'sqlite3'
@@ -66,6 +67,56 @@ mimetypes_map["application/x-executable"] = ""
 # Regex for the LOCATOR field in Uses and Product
 locator = re.compile('^(arg[0-9]*|opt=.+|env=.+|STDOUT|STDERR|CWD|CWD PATH REGEX(\:.*)?)$',re.IGNORECASE)
 
+foreign_key_table = {
+    "application": "Applications(ID_APPLICATION)",
+    "argument": "Arguments(ID_ARGUMENT)",
+    "argumentvalue": "ArgumentValue",
+    "assumes": "Assumes",
+    "assumption": "Assumptions",
+    "computer_specification": "Computers",
+    "container": "Containers",
+    "container_type": "ContainerTypes",
+    "content": "Contents",
+    "context": "Contexts",
+    "contributor": "Persons",
+    "dependency": "Dependency",
+    "dependant": "Dependency",
+    "documentation": "Documentation",
+    "employs": "Employs",
+    "entailment": "Entailments",
+    "exact": "Specifications",
+    "implements": "Implements",
+    "input": "Inputs",
+    "involvement": "Involvement",
+    "match": "Specifications",
+    "meets": "Meets",
+    "minimum": "Specifications",
+    "model": "Models",
+    "other_tag": "Tags",
+    "parameter": "Parameters",
+    "person": "Persons",
+    "personaldata": "PersonalData",
+    "pipeline": "Pipelines",
+    "process": "Processes",
+    "product": "Products",
+    "project": "Projects",
+    "requirement_specification": "Requirements",
+    "specification": "Specifications",
+    "statistical_input": "StatisticalInputs",
+    "statistical_method": "StatisticalMethods",
+    "statistical_variable": "StatisticalVariables",
+    "statistics": "Statistics",
+    "study": "Studies",
+    "tag": "Tags",
+    "tagmap": "TagMaps",
+    "user": "Users",
+    "uses": "Uses",
+    "value": "Value",
+    "variable": "Variables",
+    "visualisation": "Visualisations",
+    "visualisation_method": "VisualisationMethods",
+    "visualisation_value": "VisualisationValues",
+    }
 def dict_factory(cursor, row):
     d = {}
     for idx, col in enumerate(cursor.description):
@@ -829,7 +880,7 @@ class Assumption(Table):
     def schema(cls):
         return """CREATE TABLE IF NOT EXISTS """ + cls.tableName() + """ (
 """ + Table.commonFields() + """
-ID_ASSUMPTION TEXT PRIMARY KEY 
+ID_ASSUMPTION TEXT PRIMARY KEY
 )"""
     @classmethod
     def primaryKeys(cls):
@@ -1228,15 +1279,15 @@ class Contributor(Table):
     def schema(cls):
         return """CREATE TABLE IF NOT EXISTS """ + cls.tableName() + """ (
 """ + Table.commonFields() + """
+CONTRIBUTOR TEXT NOT NULL,
 CONTRIBUTION TEXT NOT NULL, 
 ALIAS TEXT, 
-CONTRIBUTOR TEXT NOT NULL, 
 DOCUMENTATION TEXT,
 APPLICATION TEXT,
 CONSTRAINT ContributorApplication
 UNIQUE( CONTRIBUTOR, APPLICATION ),
 CONSTRAINT ContributorDocumentation
-UNIQUE( CONTRIBUTOR, APPLICATION ),
+UNIQUE( CONTRIBUTOR, DOCUMENTATION ),
 FOREIGN KEY (CONTRIBUTOR)
 REFERENCES Persons(ID_PERSON)
 DEFERRABLE INITIALLY DEFERRED,
@@ -1260,6 +1311,7 @@ DEFERRABLE INITIALLY DEFERRED
 
     def __init__(self, values = None):
         Table.__init__(self)
+        self.CONTRIBUTOR = None
         self.CONTRIBUTION = None
         self.ALIAS = None
         self.CONTRIBUTOR = None # Foreign key in table Persons
@@ -2978,6 +3030,14 @@ def disconnect_db(conn):
 def create_tables(conn):
     """Creates all the tables for the Repository for a Social Simulation database
     """
+    #for name, cls in inspect.getmembers(sys.modules[__name__]):
+    #    if inspect.isclass(cls) and issubclass(cls, Table) and cls != Table:
+    #        cls.create(conn)
+    # I want to create tables in the neat way shown above. Unfortunately there
+    # are constraint dependencies in the database, so they need to be created
+    # in a speific order. What would be nice would be some way to derive this,
+    # but I suspect if I could do this then I might be able to publish a paper
+    # on it.
     Person.createTable(conn)
     User.createTable(conn)
     Computer.createTable(conn)
@@ -3297,55 +3357,16 @@ def graph():
 
 def derive_edges():
 
-    edges = {} 
-    edges.update(derive_edge(Application.schema()))
-    edges.update(derive_edge(Argument.schema()))
-    edges.update(derive_edge(ArgumentValue.schema()))
-    edges.update(derive_edge(Assumes.schema()))
-    edges.update(derive_edge(Assumption.schema()))
-    edges.update(derive_edge(Computer.schema()))
-    edges.update(derive_edge(Container.schema()))
-    edges.update(derive_edge(ContainerType.schema()))
-    edges.update(derive_edge(Content.schema()))
-    edges.update(derive_edge(Context.schema()))
-    edges.update(derive_edge(Contributor.schema()))
-    edges.update(derive_edge(Dependency.schema()))
-    edges.update(derive_edge(Documentation.schema()))
-    edges.update(derive_edge(Employs.schema()))
-    edges.update(derive_edge(Entailment.schema()))
-    edges.update(derive_edge(Implements.schema()))
-    edges.update(derive_edge(Input.schema()))
-    edges.update(derive_edge(Involvement.schema()))
-    edges.update(derive_edge(Meets.schema()))
-    edges.update(derive_edge(Model.schema()))
-    edges.update(derive_edge(Parameter.schema()))
-    edges.update(derive_edge(Person.schema()))
-    edges.update(derive_edge(PersonalData.schema()))
-    edges.update(derive_edge(Pipeline.schema()))
-    edges.update(derive_edge(Process.schema()))
-    edges.update(derive_edge(Product.schema()))
-    edges.update(derive_edge(Project.schema()))
-    edges.update(derive_edge(Requirement.schema()))
-    edges.update(derive_edge(Specification.schema()))
-    edges.update(derive_edge(StatisticalInput.schema()))
-    edges.update(derive_edge(StatisticalMethod.schema()))
-    edges.update(derive_edge(StatisticalVariable.schema()))
-    edges.update(derive_edge(Statistics.schema()))
-    edges.update(derive_edge(Study.schema()))
-    edges.update(derive_edge(Tag.schema()))
-    edges.update(derive_edge(TagMap.schema()))
-    edges.update(derive_edge(User.schema()))
-    edges.update(derive_edge(Uses.schema()))
-    edges.update(derive_edge(Value.schema()))
-    edges.update(derive_edge(Variable.schema()))
-    edges.update(derive_edge(Visualisation.schema()))
-    edges.update(derive_edge(VisualisationMethod.schema()))
-    edges.update(derive_edge(VisualisationValue.schema()))
-    for edge in edges:
-        sys.stderr.write("ALL EDGES " + str(edge) + " " + str(edges[edge]) + "\n")
-    return edges
-
-
+    edges= {}
+    foreign_key_table = {}
+    for name, cls in inspect.getmembers(sys.modules[__name__]):
+        if inspect.isclass(cls) and issubclass(cls, Table) and cls != Table:
+            edges.update(derive_edge(cls.schema()))
+    if debug or True:
+        for edge in edges:
+            sys.stderr.write('ALL edges: ' + str(edge) + ' = ' + str(edges[edge]) + "\n")
+    return edges                       
+        
 def derive_edge(schema):
     """
     This is a dictionary indexed on the name of the edge
@@ -3386,45 +3407,28 @@ def derive_edge(schema):
     if node == None:
         sys.exit("No create table statement for " + schema)
     table = globals()[getattr(Table, node.group(1))()]
-    # The next test indicates if the table itself is merely a link
+    # This next list which keys have alread been used as many-to-many keys
+    # and therefore cannot be used as  one-to-one keys
     used = list()
+    # The next test indicates if the table itself is merely a link
     if table.is_relation():
         
         for key in table.primaryKeys():
             edgeDetail = {}
+            source_foreign_key = re.search('^\s*FOREIGN\s+KEY\s*\(' + key[0].upper()  +  '\)\s*REFERENCES\s+(\S+)\s*\((\S+)\)', schema, re.MULTILINE)
+            target_foreign_key = re.search('^\s*FOREIGN\s+KEY\s*\(' + key[1].upper()  +  '\)\s*REFERENCES\s+(\S+)\s*\((\S+)\)', schema, re.MULTILINE)
+            if debug:
+                sys.stderr.write(str(key[0]) + " -> " + str(source_foreign_key.group(1)) + "(" + str(source_foreign_key.group(2)) + ")\n")
+                sys.stderr.write(str(key[1]) + " -> " + str(target_foreign_key.group(1)) + "(" + str(target_foreign_key.group(2)) + ")\n")
             join = {}
-            join["source"] = table.__name__ + "(" + key[0] + ")"
-            join["target"] = table.__name__ + "(" + key[1] + ")"
+            edgeDetail["source"] = str(source_foreign_key.group(1)) + "(" + str(source_foreign_key.group(2)) + ")"
+            edgeDetail["target"] = str(target_foreign_key.group(1)) + "(" + str(target_foreign_key.group(2)) + ")"
+            join["source"] = table.tableName() + "(" + key[0] + ")"
+            join["target"] = table.tableName() + "(" + key[1] + ")"
             edgeDetail["join"] = join
-#            source = globals()[getattr(Table, key[0])()]
-#            edgeDetail["source"] = source.__name__ + "(" + source.primaryKey[0][0] + ")"
-#            target = globals()[getattr(Table, key[1])()]
-#            edgeDetail["target"] = target.__name__ + "(" + target.primaryKey[0][0] + ")"
-            edgeDetail["source"] = key[0] + "(ID_" +  key[0] + ")"
-            edgeDetail["target"] = key[1] + "(ID_" +  key[1] + ")"
             used.append(key[0])
             used.append(key[1])
             edge[table.__name__.lower() + "-to-" + key[1].lower()] = edgeDetail                
-
-#        i = 0
-#        while i <= len(theKeys) - 2:
-#            j = i
-#            while j <= len(theKeys) - 1:
-#                edgeDetail = {}
-#                join = {}
-#                join["source"] = (theKeys[i]["sourceTable"] + "(" +
-#                    theKeys[i]["sourceColumn"] + ")")                
-#                join["target"] = ( theKeys[j]["sourceTable"] + "(" +
-#                    theKeys[j]["sourceColumn"] + ")")                
-#                edgeDetail["join"] = join
-#                edgeDetail["source"] = (theKeys[i]["sourceTable"] +
-#                    "(" + theKeys[i]["sourceColumn"] + ")")
-#                edgeDetail["target"] = (theKeys[j]["targetTable"] +
-#                    "(" + theKeys[j]["targetColumn"] + ")")
-#                edge[(table.__name__ + "-to-" + 
-#                    theKeys[j]["targetTable"]).lower()] = edgeDetail                
-#                j = j + 1
-#            i = i + 1
 
     for key in table.foreignKeys():
         if key not in used:
@@ -3438,7 +3442,7 @@ def derive_edge(schema):
                 key["targetColumn"] + ")")
             edgeDetail["id"] = ( table.tableName() + 
                 "(" + ",".join(table.primaryKeys()[0]) +")" )
-            edge[key["sourceColumn"].lower()] = ( edgeDetail )                
+            edge[key["sourceColumn"].lower() + '-from-' + table.__name__.lower()] = ( edgeDetail )                
 
     return edge
 
@@ -3519,8 +3523,8 @@ def get_label(schema):
                 pass
             else:
                 fields[(line.split()[0])] = True
-        for foreignKey in foreignKeys:
-            del fields[foreignKey]
+        #for foreignKey in foreignKeys:
+            #del fields[foreignKey]
         
     return  { table :  fields.keys() }
 
@@ -3533,9 +3537,10 @@ def get_nodes(conn, nodes, labels):
         #    sys.stderr.write("labels = " + str(labels) + "\n")
         cur = conn.cursor()
         for node in nodes:
+            table = globals()[getattr(Table, node)()]
             if labels[node] == None:
                 sys.exit('Problem with ' + node + ': no labels provided')
-            nodeSQL =   'SELECT ' + ','.join(labels[node]) + ' FROM ' + node
+            nodeSQL =   'SELECT ' + ','.join(labels[table.tableName()]) + ' FROM ' + table.tableName()
 
             if debug:
                 sys.stderr.write(nodeSQL + "\n")
@@ -3545,20 +3550,24 @@ def get_nodes(conn, nodes, labels):
                 if debug:
                     sys.stderr.write("Row = " + str(row) + "\n")
                 nodeText = "" 
-                className = ""
+
                 # A dictionary should make life easier.
                 # The first line appears to be treated differently
+                className = ""
+                for primary_key in table.primaryKeys():
+                    for part_primary_key in primary_key:
+                        for key in row:
+                            if key.lower() == part_primary_key.lower():
+                                className = className + row[key]
                 for key in row:
-                    if key.lower() == nodes[node].lower():
-                        className = str(row[key.lower()])
-                        nodeText = '<<U>' + node + '</U><BR/><B>' + str(row[key.lower()]) + '</B><BR/>' + nodeText
-                    elif key.lower() == "name" and row[key.lower()] != None:
-                        nodeText = nodeText + '<BR/><I> ' + str(os.path.basename(row[key.lower()])) + '</I>'
+                    if key.lower() in [a.lower()  for a in nodes[node]]:
+                        nodeText = '<B>' + str(row[key]) + '</B><BR/>' + nodeText
                     elif row[key.lower()] == None:
                         pass
                     else:
                         nodeText = nodeText + '<BR/>' +  str(key) + ' = ' + format_text(row[key])
-                activeNodes[(str(node),str(className.lower()))] = nodeText + " >"
+                nodeText = '<<U>' + node + '</U><BR/>' + nodeText + '>'
+                activeNodes[(str(node),str(className))] = nodeText
 
     return activeNodes;
 
@@ -3607,6 +3616,8 @@ def get_edges(conn, edges, activeNodes):
         cur = conn.cursor()
         activeEdges = {}
         for (classType,className) in activeNodes:
+            if debug:
+                sys.stderr.write("Class type = " + classType + " className = " + className + "\n")
             for edge in edges:
                 found = re.search('^(.*)\((.*)\)$',edges[edge]['target'])
                 if not found:
@@ -3620,9 +3631,9 @@ def get_edges(conn, edges, activeNodes):
                     raise InvalidEdge
                 sourceTable = found.group(1)
                 sourceRow = found.group(2)
-                if debug:
-                    sys.stderr.write("edge = " + str(edges[edge]) + "\n")
                 if 'join' in edges[edge]:
+                    if debug:
+                        sys.stderr.write(classType  + " Processing = " + str(edges[edge]) + "\n")
                     found = re.search('^(.*)\((.*)\)$',edges[edge]['join']['target'])
                     if not found:
                         raise InvalidEdge
@@ -3633,15 +3644,17 @@ def get_edges(conn, edges, activeNodes):
                         raise InvalidEdge
                     mediatorSourceTable = found.group(1)
                     mediatorSourceRow = found.group(2)
-                    # This is where you need to do it. You need to pick out all
-                    # the information here and do the necessary sql select and
-                    # then encode it.
+                    found = re.search('^(.*)\((.*)\)$',edges[edge]['source'])
+                    if not found:
+                        raise InvalidEdge
+                    idTable = found.group(1)
+                    idRow = found.group(2)
                     sql_string = ("SELECT " +  
-                                sourceRow + 
+                                idRow + 
                                 " FROM " +
-                                sourceTable + ',' + mediatorSourceTable +
+                                idTable + ',' + mediatorSourceTable +
                                 " WHERE " +
-                                sourceTable + "." + sourceRow +
+                                idTable + "." + idRow +
                                 " = " +
                                 mediatorSourceTable + '.' + mediatorSourceRow +
                                 " AND " +
@@ -3668,25 +3681,20 @@ def get_edges(conn, edges, activeNodes):
                                 str(className) +
                                 "'")
 
-                #if debug:
-                sys.stderr.write("Edge: " + sql_string + '\n')
+                if debug:
+                    sys.stderr.write("Edge: " + sql_string + '\n')
                 cur.execute(sql_string)
                 rows = cur.fetchall()
                 for row in rows:
                     label = edge
-                    #if debug:
-                    #    sys.stderr.write("Edge " + edge + " = " + str(edges[edge]) +'\n')
-                    #    sys.stderr.write("for " + str(row) + '\n')
+                    if debug:
+                        sys.stderr.write("Found Edge " + edge + " = " + str(edges[edge]) + " for " + str(row) + '\n')
                     if 'label' in edges[edge]:
                         label = edges[edge]['label']
-                    if ('direction' in edges[edge] and
-                        edges[edge]['direction'] == 'reverse'):
-                        activeEdges[((classType ,str(className)),
-                            (sourceTable, str(list(row.values()[0]))))] = label
-                    else:
-                        activeEdges[((sourceTable, str(list(row.values())[0])),
-                            (classType, str(className)))] = label
-                          
+                    activeEdges[((sourceTable, str(list(row.values())[0])),
+                        (classType, str(className)))] = label
+                    if debug:
+                        sys.stderr.write("Will draw  = " + str((sourceTable, str(list(row.values())[0]))) + " to " + str((classType, str(className))) + '\n')
         
 
     return activeEdges
@@ -3746,6 +3754,7 @@ def draw_graph (conn, nodes, output):
 
     original_nodes = get_nodes(conn, nodes, labels())
     possible_edges = get_edges(conn, derive_edges(), original_nodes)
+#    save_dot(original_nodes,possible_edges,output=output)
     active_nodes = remove_orphans(original_nodes, possible_edges)
     active_edges = remove_edges(active_nodes, possible_edges)
     save_dot(active_nodes,active_edges,output=output)

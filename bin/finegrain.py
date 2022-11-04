@@ -12,27 +12,28 @@ import os, sys
 sys.path.append("lib")
 import ssrepi
 
-# This program is going to gather all the folksonomy metadata stuff into a
-# graphviz diagram.
+# The value part of the nodes key are the parts of the data that you want # emboldened if they are present. Note this can be a singleton or a list.
 
 nodes = {
-    'Tags': 'ID_TAG',
-    'Applications': 'ID_APPLICATION',
-    'ContainerTypes': 'ID_CONTAINER_TYPE',
-    'Studies': 'ID_STUDY',
-    'Documentation': 'ID_DOCUMENTATION',
-    'StatisticalMethods': 'ID_STATISTICAL_METHOD',
-    'VisualisationMethods': 'ID_VISUALISATION_METHOD',
+    'Applications': ['name'],
+    'Containers': ['ID_CONTAINERS'],
+    'ContainerTypes': ['ID_CONTAINER_TYPE'],
+    'Contents': ['ID_CONTENT'],
+    'StatisticalMethods': ['ID_STATISTICAL_METHOD'],
+    'StatisticalVariables': ['ID_STATISTICAL_VARIABLE'],
+    'VisualisationMethods': ['ID_VISUALISATION_METHOD'],
+    'Parameters': ['ID_PARAMETERS'],
+    'Persons': ['ID_PERSON'],
+    'Visualisations': ['ID_VISULISATION'],
+    'Assumptions': ['assumption', 'variable', 'person', 'statistics', 'visualisation'],
+    'Statistics': ['ID_STATISTICS'],
+    'Variables': ['ID_VARIABLE'],
+    'Contexts': ['ID_CONTEXT'],
+    'Value': ['ID_VALUE'],
     }
 
 working_dir = os.getcwd()
 
 conn = ssrepi.connect_db(working_dir)
-
-original_nodes = ssrepi.get_nodes(conn, nodes, ssrepi.labels())
-possible_edges = ssrepi.get_edges(conn, ssrepi.derive_edges(), original_nodes)
-active_nodes = ssrepi.remove_orphans(original_nodes, possible_edges)
-active_edges = ssrepi.remove_edges(active_nodes, possible_edges)
-ssrepi.draw_graph(active_nodes,active_edges,output="finegrain.dot")
-
+ssrepi.draw_graph(conn,nodes,output="finegrain.dot")
 ssrepi.disconnect_db(conn)

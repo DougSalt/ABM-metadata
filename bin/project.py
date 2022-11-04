@@ -17,18 +17,14 @@ import psycopg2
 # graphviz diagram.
 
 nodes = {
-    'Persons': 'ID_PERSON',
-    'Projects': 'ID_PROJECT',
-    'Applications': 'ID_APPLICATION',
-    'Documentation': 'ID_DOCUMENTATION',
-    'Containers': 'ID_CONTAINER'
+    'Persons': ['ID_PERSON'],
+    'Projects': ['ID_PROJECT'],
+    'Applications': ['name'],
+    'Documentation': ['ID_DOCUMENTATION'],
+    'Containers': ['ID_CONTAINER']
     }
 
 working_dir = os.getcwd()
 conn = ssrepi.connect_db(working_dir)
-original_nodes = ssrepi.get_nodes(conn, nodes, ssrepi.labels())
-possible_edges = ssrepi.get_edges(conn, ssrepi.derive_edges(), original_nodes)
-active_nodes = ssrepi.remove_orphans(original_nodes, possible_edges)
-active_edges = ssrepi.remove_edges(active_nodes, possible_edges)
-ssrepi.draw_graph(active_nodes,active_edges,output="project.dot")
+ssrepi.draw_graph(conn,nodes,output="project.dot")
 ssrepi.disconnect_db(conn)

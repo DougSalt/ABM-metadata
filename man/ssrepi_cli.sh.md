@@ -60,11 +60,20 @@ Nothing.
 
 Remember to put wait at the end of the script that uses this approach, as the
 script in the foreground will just finish and leave the background processes to
-run.
+run. This can have weird results.
 
 ## SSREPI\_content
+
+Updates the content table.
+
 ## SSREPI\_contributor
+
+Inserts a new contributor row, or updates and existing one.
+
 ## SSREPI\_hutton\_person
+
+Inserts new Hutton person row, or updates and existing one. This is based on there being a user present in /etc/passwd file.
+ps
 ## SSREPI\_implements
 ## SSREPI\_input
 ## SSREPI\_involvement
@@ -75,13 +84,12 @@ run.
 ## SSREPI\_parameter
 ## SSREPI\_person
 ## SSREPI\_person\_makes\_assumption
-## SSREPI\_pipeline
 ## SSREPI\_project
 ## SSREPI\_require\_exact
 ## SSREPI\_require\_minimum
 ## SSREPI\_run
 
-This will interactively run an application.
+This will interactively run an application. That is it will block
 
 ## SSREPI\_set
 ## SSREPI\_statistical\_method

@@ -24,7 +24,9 @@ SSREPI_contributor $ME doug_salt Author
 # scripts.
 
 PROG=$(SSREPI_application SSS-StopC2-Cluster-expt.pl \
-    --purpose="Perl script to create the SSS preliminary experiments. These are designed to cover sinks/nosinks and RewardActivity/RewardSpecies, at various BETs and ASPs, and for flat and var2 market." \
+    --purpose="Perl script to create the SSS preliminary experiments. These are
+    designed to cover sinks/nosinks and RewardActivity/RewardSpecies, at
+    various BETs and ASPs, and for flat and var2 market." \
     --version=1.0 \
     --licence=GPLv3 \
 )
@@ -36,16 +38,17 @@ SSREPI_contributor $PROG gary_polhill Author
 # ===========
 
 dougs_assumption=$(SSREPI_person_makes_assumption \
-    doug_salt "Gary knows what he is doing. This is an example
+    doug_salt generous "Gary knows what he is doing. This is an example
 of an assumption, which you might want to fill in....
 
 ...and could conceivably go over several lines." \
-    --short_name=generous)
-garys_1st_assumption=$(SSREPI_person_makes_assumption gary_polhill \
-    "There are no bugs in this software.")
-garys_2nd_assumption=$(SSREPI_person_makes_assumption gary_polhill \
+)
+garys_1st_assumption=$(SSREPI_person_makes_assumption gary_polhill bugless \
+    "There are no bugs in this software."
+)
+garys_2nd_assumption=$(SSREPI_person_makes_assumption gary_polhill buggy \
     "There are bugs in this software." \
-    --short_name=reasonable)
+)
 
 # Requirements for this script 
 # ============================
@@ -401,15 +404,11 @@ do
 
                                 SSREPI_run $PROG $ARGS --cwd="Cluster2"
                                     
-#                                if [ -n "$test" ]
-#                                then
-#                                    break 8
-#                                fi
-                            done
                                 if [ -n "$test" ]
                                 then
-                                    break 7
+                                    break 8
                                 fi
+                            done
                         done
                     done
                 done

@@ -37,11 +37,11 @@ SSREPI_contributor $PROG gary_polhill Author
 # ===========
 
 governance_assumption=$(SSREPI_person_makes_assumption \
-    gary_polhill "The assumption for this run of the script is that the reward 
+    gary_polhill governance "The assumption for this run of the script is that the reward 
     governance has more of an effect than clustering in changing behaviour
      of land-owners." \
-    --short_name="governance")
-     
+) 
+
 # Requirements for this script 
 # ============================
 

@@ -13,26 +13,16 @@ import ssrepi
 
 # This program is going to gather all the workflow stuff into a graphviz diagram.
 
-active_nodes = {}
-
-class InvalidNode(Exception):
-    pass
-
-#nodes = {
-#    'Applications': 'ID_APPLICATION',
-#    'Pipelines': 'ID_PIPELINE',
-#    'StatisticalMethods': 'ID_STATISTICAL_METHOD',
-#    'ContainerTypes': 'ID_CONTAINER_TYPE',
-#    'StatisticalVariables': 'ID_STATISTICAL_VARIABLE',
-#    'Variables': 'ID_VARIABLE',
-#    'VisualisationMethods': 'ID_VISUALISATION_METHOD',
-#    'Parameters': 'ID_PARAMETER',
-#    'Arguments': 'ID_ARGUMENT'
-#    }
-
 nodes = {
-    'Applications': 'ID_APPLICATION',
-    'Pipelines': 'ID_PIPELINE',
+    'Applications': ['name'],
+    'Pipelines': ['ID_PIPELINE'],
+    'StatisticalMethods': ['ID_STATISTICAL_METHOD'],
+    'ContainerTypes': ['ID_CONTAINER_TYPE'],
+    'StatisticalVariables': ['ID_STATISTICAL_VARIABLE'],
+    'Variables': ['ID_VARIABLE'],
+    'VisualisationMethods': ['ID_VISUALISATION_METHOD'],
+    'Parameters': ['ID_PARAMETER'],
+    'Arguments': ['ID_ARGUMENT'],
     }
 
 
