@@ -3362,7 +3362,7 @@ def derive_edges():
     for name, cls in inspect.getmembers(sys.modules[__name__]):
         if inspect.isclass(cls) and issubclass(cls, Table) and cls != Table:
             edges.update(derive_edge(cls.schema()))
-    if debug or True:
+    if debug:
         for edge in edges:
             sys.stderr.write('ALL edges: ' + str(edge) + ' = ' + str(edges[edge]) + "\n")
     return edges                       
@@ -3557,8 +3557,10 @@ def get_nodes(conn, nodes, labels):
                 for primary_key in table.primaryKeys():
                     for part_primary_key in primary_key:
                         for key in row:
-                            if key.lower() == part_primary_key.lower():
-                                className = className + row[key]
+                            if key.lower() == part_primary_key.lower() and row[key] != None:
+                                if debug:
+                                    sys.stderr.write("table = " + str(table) + "key " + str(key) + " = " + str(row[key]) + ' in row ' + str(row) + "\n")
+                                className = className + str(row[key])
                 for key in row:
                     if key.lower() in [a.lower()  for a in nodes[node]]:
                         nodeText = '<B>' + str(row[key]) + '</B><BR/>' + nodeText

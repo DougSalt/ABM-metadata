@@ -28,5 +28,5 @@ nodes = {
 working_dir = os.getcwd()
 
 conn = ssrepi.connect_db(working_dir)
-ssrepi.draw_graph(conn, nodes, output="fine_grain.dot")
+ssrepi.draw_graph(conn, nodes, output="folksonomy.dot")
 ssrepi.disconnect_db(conn)
