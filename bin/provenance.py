@@ -7,7 +7,7 @@ __authors__ = "Doug Salt"
 __credits__ = ""
 
 
-import os, sys
+import sys
 
 sys.path.append("lib")
 import ssrepi
@@ -33,8 +33,6 @@ nodes = {
     }
 
 
-working_dir = os.getcwd()
-
-conn = ssrepi.connect_db(working_dir)
+conn = ssrepi.connect_db()
 ssrepi.draw_graph(conn,nodes,output="provenance.dot")
 ssrepi.disconnect_db(conn)

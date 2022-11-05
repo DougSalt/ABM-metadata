@@ -8,7 +8,7 @@ __credits__ = "Gary Polhill, Lorenzo Milazzo"
 __modified__ = "2017-03-02"
 
 
-import os, sys
+import sys
 
 # I am going to have to think of a better way of doing this. Need to 
 # research site level Python paths. Additionally I only want to import
@@ -20,6 +20,6 @@ import ssrepi
 
 # A program to initialise the database
 
-conn = ssrepi.connect_db(os.getcwd())
+conn = ssrepi.connect_db()
 ssrepi.create_tables(conn)
 ssrepi.disconnect_db(conn)

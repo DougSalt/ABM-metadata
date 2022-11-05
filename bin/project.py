@@ -7,11 +7,10 @@ __authors__ = "Doug Salt"
 __credits__ = ""
 
 
-import os, sys
+import sys
 
 sys.path.append("lib")
 import ssrepi
-import psycopg2
 
 # This program is going to gather all the project metadata stuff into a
 # graphviz diagram.
@@ -24,7 +23,6 @@ nodes = {
     'Containers': ['ID_CONTAINER']
     }
 
-working_dir = os.getcwd()
-conn = ssrepi.connect_db(working_dir)
+conn = ssrepi.connect_db()
 ssrepi.draw_graph(conn,nodes,output="project.dot")
 ssrepi.disconnect_db(conn)

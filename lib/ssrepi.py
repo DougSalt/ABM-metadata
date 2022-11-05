@@ -30,12 +30,12 @@ import os, sys, subprocess, re, mimetypes, rfc3987, os.path, datetime, magic
 import graphviz, getpass
 import inspect
 
-db_type = 'postgres'
-#db_type = 'sqlite3'
+#db_type = 'postgres'
+db_type = 'sqlite3'
 if 'SSREPI_DBTYPE' in os.environ:
     db_type = os.environ['SSREPI_DBTYPE']
 
-db_file = 'ssrep.db'
+db_file = os.path.join(os.getcwd(),'ssrep.db')
 if 'SSREPI_DBNAME' in os.environ:
     db_file = os.environ['SSREPI_DBNAME']
 
@@ -2974,19 +2974,15 @@ DEFERRABLE INITIALLY DEFERRED
 #    return ss_rep
 
 
-def connect_db(working_dir):
+def connect_db():
     """function to create a connection with a SQLite db
     """
     conn = None
-    sqlite_vers = None
-
-    # SSRep database (SQLite db), FQFN
-    db_fqfn = os.path.join(working_dir, db_file)
 
     if db_type == "sqlite3": 
         try:
             #conn = sqlite3.connect(db_fqfn, row_factory=sqlite3.Row)
-            conn = sqlite3.connect(db_fqfn)
+            conn = sqlite3.connect(db_file)
             # This next statement is very important as it turns off
             # Python's sqlite module's rather random transaction
             # methodology.

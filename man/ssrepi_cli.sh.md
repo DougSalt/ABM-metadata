@@ -108,12 +108,24 @@ This will interactively run an application. That is it will block
 
 This enviroment inherits all the enviornment variables from [ssrepi.py](./ssrepi.1)
 
-### SSREPI\_MAX\_PRCOESSES
+These are sourced from the first calling script. Obviously only processes downstream can be affected by modified values to these. 
+### SSREPI\_MAX\_PROCESSES
 
 ### SSREPI\_SLURM
 
 ### SSREPI\_SLURM\_PREFIX
+
 ### SSREPI\_SLURM\_PENDING\_BLOCKS
+
+### SSREPI\_STUDY
+
+
+
+### SSREPI\_DBNAME
+
+### SSREPI\_DBUSER
+
+### SSREPI\_DBTYPE
 
 ## AUTHORS
 

@@ -25,8 +25,6 @@ nodes = {
     'VisualisationMethods': ['ID_VISUALISATION_METHOD'],
     }
 
-working_dir = os.getcwd()
-
-conn = ssrepi.connect_db(working_dir)
+conn = ssrepi.connect_db()
 ssrepi.draw_graph(conn, nodes, output="folksonomy.dot")
 ssrepi.disconnect_db(conn)

@@ -10,10 +10,7 @@ __credits__ = "Gary Polhill, Lorenzo Milazzo"
 __modified__ = "2017-04-27"
 
 
-debug=False
-
-import os, sys
-import sqlite3
+import sys
 
 # I am going to have to think of a better way of doing this. Need to 
 # research site level Python paths. Additionally I only want to import
@@ -25,6 +22,6 @@ import ssrepi
 if __name__ == "__main__":
 	table = None
 	colums = {}
-	conn = ssrepi.connect_db(os.getcwd())
+	conn = ssrepi.connect_db()
 	(existence, nextStudy) = ssrepi.studies_table_exists(conn)
 	print(nextStudy + 1)

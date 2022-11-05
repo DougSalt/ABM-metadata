@@ -1,11 +1,12 @@
-# ssrepi.sh - interface libary for SSREPI
+# create\_database.py - create an unpopulated 
 
 ## SYNOPSIS
 
-Some blurb
+This creates all the tables required for Social Simulation REPresentaion Interface (SSREPI). 
 
 ## DESCRIPTION
 
+This command create an empty set of tables that define the SSREPI standard. If a postgres database is being used then the database must already have been created under the [SSREPI\_DBUSER](###SSREPI_DBUSER)
 ## OPTIONS
 
 ## ENVRIONMENT 

@@ -114,7 +114,7 @@ def parameters(conn, argv):
 if __name__ == "__main__":
     table = None
     columns = {}
-    conn = ssrepi.connect_db(os.getcwd())
+    conn = ssrepi.connect_db()
     (table,columns) = parameters(conn,sys.argv[1:])
     tableClass = getattr(ssrepi, table)    
     # Sanity check

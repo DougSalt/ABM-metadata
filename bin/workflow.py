@@ -6,7 +6,7 @@ __version__ = "1.0.0"
 __authors__ = "Doug Salt"
 __credits__ = ""
 
-import graphviz, os, sys, re
+import sys
 
 sys.path.append("lib")
 import ssrepi
@@ -26,7 +26,6 @@ nodes = {
     }
 
 
-working_dir = os.getcwd()
-conn = ssrepi.connect_db(working_dir)
+conn = ssrepi.connect_db()
 ssrepi.draw_graph(conn, nodes, "workflow.dot")
 ssrepi.disconnect_db(conn)

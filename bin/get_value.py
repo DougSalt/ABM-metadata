@@ -118,7 +118,7 @@ if __name__ == "__main__":
     target = None
     table = None
     columns = {}
-    conn = ssrepi.connect_db(os.getcwd())
+    conn = ssrepi.connect_db()
     (table,target,columns) = parameters(conn,sys.argv[1:])
     tableClass = getattr(ssrepi, table)    
     row = tableClass(columns) 
