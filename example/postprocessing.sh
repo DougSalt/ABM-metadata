@@ -334,7 +334,6 @@ then
                                     ARGS="""$ARGS
                                     --SSREPI-extend-stdout-${o_result_id}=batch1.csv
                                     """
-                                    set -xv
                                     SSREPI_run $A_ANALYSEGE_GPLU2 $ARGS
 
                                 done

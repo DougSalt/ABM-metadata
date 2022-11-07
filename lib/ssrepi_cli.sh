@@ -429,7 +429,7 @@ _get_executable() {
 			--location \
 		)
 		executable=$(get_value.py \
-			--table=Container \
+			-table=Container \
 			--id_container=$id_container \
 			--location_value \
 		)
@@ -530,13 +530,11 @@ _run() {
                 --calls_application=$id_application \
         )
     fi
-    set -xv
     next_pipe=$(update.py \
 		    --table=Pipeline \
             --id_pipeline=$next_pipe \
             --next=$our_pipe \
     )
-    set +xv
 
 
     # Remove cwd
