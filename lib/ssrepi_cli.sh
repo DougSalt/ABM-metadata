@@ -429,7 +429,7 @@ _get_executable() {
 			--location \
 		)
 		executable=$(get_value.py \
-			-table=Container \
+			--table=Container \
 			--id_container=$id_container \
 			--location_value \
 		)
