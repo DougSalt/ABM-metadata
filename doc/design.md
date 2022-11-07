@@ -2,20 +2,24 @@
 
 ## Introduction 
 
-The philosophy behind the design of this piece of code is that the Python
-program does everything, including the maintenance and creation of the
-database. My usual practice is to create the database and run the program over
-the top of this. I have done it this way because I have slightly broken the
-relational model. I am allowing more than one primary key per table. This is
-always because this is a multipart key and a linking relation (many-to-many),
-but pure relational databases do not allow this. This was forced on me by our
-standard [Social Simulation REPository
-Interface](Metadata_schema_version_1.1.8_documentation.docx). Therefore it is
-curucial that the SSREPI library be responsible for the creation of the
-database.
+The philosophy behind the design of this piece of code is that the
+Python program does everything, including the maintenance and
+creation of the database. My usual practice is to create the
+database and run the program over the top of this. I have done it
+this way because I have slightly broken the relational model. I am
+allowing more than one primary key per table. This is always
+because this is a multipart key and a linking relation
+(many-to-many), but pure relational databases do not allow this.
+This was forced on me by our standard [Social Simulation
+REPository
+Interface](Metadata_schema_version_1.1.8_documentation.docx).
+Therefore it is curucial that the SSREPI library be responsible
+for the creation of the database.
 
-I have tried to automate as much of the path deriving and diagramming behaviour
-from the definitions of the schema.
+Each table maps to a class, each indivdual relations or set of column values maps to an object of that class.
+
+I have tried to automate as much of the path deriving and
+diagramming behaviour from the definitions of the schema.
 
 ### Conventions
 
