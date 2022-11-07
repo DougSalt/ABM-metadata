@@ -234,8 +234,11 @@ SSREPI_application() {
 	APP=$(which "$1" 2>/dev/null)
     if [[ $(exists.py --table=Application --id_application=$1) == "True" ]]
     then
+        set -sv
         id_application=$1
         APP=$(_get_executable $id_application)
+        set +xv
+        exit -51
 	elif [[ ! -f "$APP" ]]
 	then
 		APP=$(which $0)
@@ -480,10 +483,8 @@ _run() {
 
     # The reasoning behind the next two lines is that the argument may be
     # an id_application or a path may be passed as the first argument
-
     APP=$(_get_executable $@)
     id_application=$(SSREPI_me $@)
-    shift
 
     invoking_application=application_$(cksum $(_parent_script) | \
         awk '{print $1}')
