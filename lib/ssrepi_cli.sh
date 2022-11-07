@@ -234,11 +234,8 @@ SSREPI_application() {
 	APP=$(which "$1" 2>/dev/null)
     if [[ $(exists.py --table=Application --id_application=$1) == "True" ]]
     then
-        set -sv
         id_application=$1
         APP=$(_get_executable $id_application)
-        set +xv
-        exit -51
 	elif [[ ! -f "$APP" ]]
 	then
 		APP=$(which $0)
@@ -432,7 +429,7 @@ _get_executable() {
 			--location \
 		)
 		executable=$(get_value.py \
-			-table=Container \
+			--table=Container \
 			--id_container=$id_container \
 			--location_value \
 		)
