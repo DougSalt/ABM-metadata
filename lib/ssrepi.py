@@ -30,8 +30,8 @@ import os, sys, subprocess, re, mimetypes, rfc3987, os.path, datetime, magic
 import graphviz, getpass
 import inspect
 
-#db_type = 'postgres'
-db_type = 'sqlite3'
+db_type = 'postgres'
+#db_type = 'sqlite3'
 if 'SSREPI_DBTYPE' in os.environ:
     db_type = os.environ['SSREPI_DBTYPE']
 
