@@ -10,10 +10,7 @@ __credits__ = "Gary Polhill, Lorenzo Milazzo"
 __modified__ = "2017-04-20"
 
 
-debug=False
-
 import os, sys, getopt, re
-import sqlite3
 
 # I am going to have to think of a better way of doing this. Need to 
 # research site level Python paths. Additionally I only want to import
@@ -24,7 +21,6 @@ import ssrepi
 
 table_parameter = re.compile(r'^--table=([A-Za-z0-9_]+)$')
 column_parameter = re.compile(r'^([A-Za-z0-9_-]+)(=(.*?))?$')
-
 
 class IllegalArgumentError(ValueError):
     pass
@@ -52,7 +48,7 @@ def parameters(conn, argv):
     
     if table == None:
         raise IllegalArgumentError("No --table argument supplied")
-    if debug:
+    if ssrepi.debug:
         sys.stderr.write("Doing table: " + table + "\n")
     
     tableClass = None
@@ -63,7 +59,7 @@ def parameters(conn, argv):
 
     columns = {}
     for arg in re.split(r' --',' '.join(argv)):
-        if debug:
+        if ssrepi.debug:
             sys.stderr.write("Processing argument: " + arg + "\n")
         if table_parameter.match(arg):
             pass

@@ -10,8 +10,6 @@ __credits__ = "Gary Polhill, Lorenzo Milazzo"
 __modified__ = "2017-04-20"
 
 
-debug=False
-
 import os, sys, getopt, re
 import sqlite3
 
@@ -52,7 +50,7 @@ def parameters(conn, argv):
     
     if table == None:
         raise IllegalArgumentError("No --table argument supplied")
-    if debug:
+    if ssrepi.debug:
         sys.stderr.write("Doing table: " + table + "\n")
     
     tableClass = None
@@ -63,7 +61,7 @@ def parameters(conn, argv):
 
     columns = {}
     for arg in re.split(r' --',' '.join(argv)):
-        if debug:
+        if ssrepi.debug:
             sys.stderr.write("Processing argument: " + arg + "\n")
         if table_parameter.match(arg):
             pass
@@ -80,6 +78,8 @@ def parameters(conn, argv):
                     mysql = 'PRAGMA TABLE_INFO("' + tableClass().tableName() + '")'
                 else:
                     mysql = "SELECT columns.column_name FROM information_schema.columns WHERE table_name = '" + tableClass().tableName().lower() + "'"
+                if ssrepi.debug:
+                    sys.stderr.write("Column name query: " + mysql + "\n")
                 cur.execute(mysql)
                 result = cur.fetchall()
                 if ssrepi.db_type == "sqlite3":
@@ -110,8 +110,8 @@ def parameters(conn, argv):
         raise IllegalArgumentError("No valid columns supplied")
 
     # TODO - Table specific validation.
-    if table == "ArgumentValue":
-        pass
+    #if table == "ArgumentValue":
+    #    pass
     return (table,target,columns)
         
 if __name__ == "__main__":
@@ -126,6 +126,6 @@ if __name__ == "__main__":
         row.query(conn.cursor())
     except: raise
     ssrepi.disconnect_db(conn)
-    if debug:
-        sys.stderr.write("Printing: " + getattr(row,target) + "\n")
+    if ssrepi.debug:
+        sys.stderr.write("Printing: " + str(getattr(row,target)) + "\n")
     print(getattr(row,target))

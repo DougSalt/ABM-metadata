@@ -36,8 +36,8 @@ if 'SSREPI_DBTYPE' in os.environ:
     db_type = os.environ['SSREPI_DBTYPE']
 
 db_file = os.path.join(os.getcwd(),'ssrep.db')
-if 'SSREPI_DBNAME' in os.environ:
-    db_file = os.environ['SSREPI_DBNAME']
+if 'SSREPI_DBFILE' in os.environ:
+    db_file = os.environ['SSREPI_DBFILE']
 
 db_user = "ds42723"
 if 'SSREPI_DBUSER' in os.environ:
@@ -561,6 +561,7 @@ VERSION TEXT,
 LICENCE TEXT, 
 LANGUAGE TEXT, 
 ENVS TEXT, 
+SEPARATOR TEXT,
 CALLS_APPLICATION TEXT,
 CALLS_PIPELINE TEXT,
 REVISION TEXT, 
@@ -579,6 +580,7 @@ LOCATION TEXT)"""
         self.VERSION = None
         self.LICENCE = None
         self.LANGUAGE = None
+        self.SEPARATOR = None
         self.ENVS = None
         self.CALLS_APPLICATION = None # Foreign key in table Applications
         self.CALLS_PIPELINE = None # Foreign key in table Pipelines

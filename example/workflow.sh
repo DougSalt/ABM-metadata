@@ -11,19 +11,6 @@
 
 echo "$0: started."
 date
-export test=1
-
-export REQUIRED_NOF_CPUS=4
-#export SSREPI_DEBUG=True
-
-#export SSREPI_DBFILE=$(pwd)/ssrep.db
-export SSREPI_DBTYPE=postgres
-export SSREPI_DBUSER=$USER
-
-export SSREPI_MAX_PROCESSES=256
-export SSREPI_SLURM=True
-#export SSREPI_SLURM_PENDING_BLOCKS=True
-
 . lib/ssrepi_cli.sh
 
 # Global Identity

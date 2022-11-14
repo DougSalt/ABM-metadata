@@ -76,17 +76,16 @@ def parameters(conn, argv):
 				actual_columns = None
 				if ssrepi.db_type == "sqlite3":
 					mysql = 'PRAGMA TABLE_INFO("' + tableClass().tableName() + '")'
-					cur.execute(mysql)
 				else:
 					mysql = "SELECT columns.column_name FROM information_schema.columns WHERE table_name = '" + tableClass().tableName().lower() + "'"
+				if ssrepi.debug:
+					sys.stderr.write(mysql + "\n")
 				cur.execute(mysql)
 				result = cur.fetchall()
 				if ssrepi.db_type == "sqlite3":
 					actual_columns = [ row['name'] for row in result ]
 				else:
 					actual_columns = [ row['column_name'] for row in result ]
-				if ssrepi.debug:
-					sys.stderr.write(mysql + "\n")
 				found = False
 				for col_details in actual_columns:
 					if ssrepi.debug:
@@ -116,8 +115,8 @@ def parameters(conn, argv):
 		raise IllegalArgumentError("No valid columns supplied")
 
 	# TODO - Table specific validation.
-	if table == "ArgumentValue":
-		pass
+	#if table == "ArgumentValue":
+	#	pass
 	return (table, columns)
 		
 if __name__ == "__main__":
