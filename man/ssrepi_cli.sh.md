@@ -121,7 +121,7 @@ These are sourced from the first calling script. Obviously only processes downst
 
 
 
-### SSREPI\_DBNAME
+### SSREPI\_DBFILE
 
 ### SSREPI\_DBUSER
 

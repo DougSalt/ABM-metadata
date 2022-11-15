@@ -3,6 +3,11 @@
 This directory provides a reference implementation for the Social Simulation
 REPository Interface (SSREPI).
 
+An import file is
+
++ path.sh - this should be sourced to set up all the correct environment
+  variables (and in particular, the PATH variable)
+
 The key files to inspect are:
 
 + workflow.sh
@@ -16,7 +21,9 @@ The key files to inspect are:
 
 The actual model itself is this file:
 
-+ fearlus-1.1.5.2\_spom-2.3 - the model
++ fearlus-1.1.5.2\_spom-2.3 - the model - this is either of the following renamed.
++ shell.fearlus-1.1.5.2\_spom-2.3 - a mock version of the model which allows testing
++ elf64.fearlus-1.1.5.2\_spom-2.3 - the real binary model
 
 Note I have replaced this with a bash script for testing at the moment.
 

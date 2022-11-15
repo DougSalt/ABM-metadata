@@ -37,6 +37,12 @@ else
 	exit -1
 fi
 
+if ! which squeue && [ -n "$SSREPI_SLURM" ]
+then
+	(>&2 echo "No squeue and SSREPI_SLURM is set
+		Is Slurm installed?")
+	exit -1
+fi
 # Create some standard containers
 
 id_container_type=$(update.py \
@@ -534,7 +540,6 @@ _run() {
             --next=$our_pipe \
     )
 
-
     # Remove cwd
     CWD=
     if [[ "$@" == *--cwd* ]]
@@ -804,6 +809,7 @@ _run() {
             fi
             for id in "${!argument_value[@]}"
             do
+                (>&2 echo _argument_value==$THIS_PROCESS=$id=${argument_value[$id]}=)
                 _argument_value $THIS_PROCESS $id ${argument_value[$id]}
             done
             stdout=
@@ -920,6 +926,7 @@ _argument_value() {
 		--for_argument=$2 \
 		--has_value=$3 \
 	)	
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 }
 
 SSREPI_output() {
