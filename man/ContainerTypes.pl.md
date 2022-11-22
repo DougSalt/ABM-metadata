@@ -1,4 +1,4 @@
-# ssrepi.sh - interface libary for SSREPI
+# ContainerTypes.pl - 
 
 ## SYNOPSIS
 

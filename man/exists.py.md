@@ -1,4 +1,4 @@
-# ssrepi.sh - interface libary for SSREPI
+# exists.py - Asks if a particular entry exists in the SSREPI database
 
 ## SYNOPSIS
 

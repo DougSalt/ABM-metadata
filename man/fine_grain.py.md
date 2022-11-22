@@ -1,4 +1,4 @@
-# ssrepi.sh - interface libary for SSREPI
+# fine_grain.py - draws the fine grain provenance diagram.
 
 ## SYNOPSIS
 
