@@ -489,6 +489,7 @@ _run() {
 
     APP=$(_get_executable $@)
     id_application=$(SSREPI_me $@)
+# HERE
     invoking_application=application_$(cksum $(_parent_script) | \
         awk '{print $1}')
 
@@ -507,38 +508,61 @@ _run() {
         next_pipe=$(update.py \
             --table=Pipeline \
             --id_pipeline=$next_pipe \
+            --parent_application=$(SSREPI_me $(_parent_script)) \
             --calls_application=$invoking_application \
         ) 
         next=None
     fi
-    while [[ "$next" != "None" ]]
-    do
-        next_pipe=$next    
-        next=$(get_value.py \
-            --table=Pipeline \
-            --id_pipeline=$next_pipe \
-            --next \
-        )
-    done
+    next_pipe=$(get_values.py \
+        --table=Pipeline \
+        --parent_application=$(SSREPI_me $(_parent_script)) \
+        --next="None" \
+    )
+#    while [[ "$next" != "None" ]]
+#    do
+#        # This is causing a massive hold up on configuring. The bigger the
+#        # task, the longer this takes. A LOT LONGER! The problem is how do I
+#        # identify the last entry which is null in this pipeline. This has to
+#        # end up in $next_pipe.
+#        next_pipe=$next    
+#        next=$(get_value.py \
+#            --table=Pipeline \
+#            --id_pipeline=$next_pipe \
+#            --next \
+#        )
+#    done
     if [[ $(exists.py --table=Pipeline --id_pipeline=$id_application) == "True" ]]
     then
         our_pipe=$(update.py \
                 --table=Pipeline \
                 --id_pipeline=${id_application}_$(uniq) \
+                --parent_application=$(SSREPI_me $(_parent_script)) \
                 --calls_application=$id_application \
         )
      else
         our_pipe=$(update.py \
                 --table=Pipeline \
                 --id_pipeline=$id_application \
+                --parent_application=$(SSREPI_me $(_parent_script)) \
                 --calls_application=$id_application \
         )
     fi
-    next_pipe=$(update.py \
-		    --table=Pipeline \
-            --id_pipeline=$next_pipe \
-            --next=$our_pipe \
-    )
+    if [ -z $next_pipe ] 
+    then
+        next_pipe=$(update.py \
+                --table=Pipeline \
+                --id_pipeline=$(SSREPI_me $(_parent_script)) \
+                --parent_application=$(SSREPI_me $(_parent_script)) \
+                --next=$our_pipe \
+        )
+    else
+        next_pipe=$(update.py \
+                --table=Pipeline \
+                --id_pipeline=$next_pipe \
+                --parent_application=$(SSREPI_me $(_parent_script)) \
+                --next=$our_pipe \
+        )
+    fi
 
     # Remove cwd
     CWD=
@@ -709,7 +733,6 @@ _run() {
             fi
         fi
     done
-
     id_dependency=$(update.py \
         --table=Dependency \
         --optionality=required \

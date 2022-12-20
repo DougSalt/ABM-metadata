@@ -1866,6 +1866,7 @@ class Pipeline(Table):
 ID_PIPELINE TEXT PRIMARY KEY, 
 CALLS_APPLICATION TEXT,
 CALLS_PIPELINE TEXT,
+PARENT_APPLICATION TEXT,
 NEXT TEXT,
 FOREIGN KEY (CALLS_APPLICATION)
 REFERENCES Applications(ID_APPLICATION)
@@ -1875,6 +1876,9 @@ REFERENCES Pipelines(ID_PIPELINE)
 DEFERRABLE INITIALLY DEFERRED,
 FOREIGN KEY (NEXT)
 REFERENCES Pipelines(ID_PIPELINE)
+DEFERRABLE INITIALLY DEFERRED,
+FOREIGN KEY (PARENT_APPLICATION)
+REFERENCES Applications(ID_APPLICATION)
 DEFERRABLE INITIALLY DEFERRED
 )"""
     @classmethod
@@ -1887,6 +1891,7 @@ DEFERRABLE INITIALLY DEFERRED
         self.CALLS_APPLICATION = None # Foreign key in the table Applications
         self.CALLS_PIPELINE = None # Foreign key in the table Pipelines
         self.NEXT = None # Foreign key in the table Pipelines
+        self.PARENT_APPLICATION = None # Foreign key in the table Applications
         Table.setValues(self,values)
 
     @classmethod

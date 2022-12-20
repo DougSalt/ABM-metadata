@@ -120,7 +120,7 @@ if __name__ == "__main__":
         result = row.search(conn.cursor(),columns)
     except: raise
     ssrepi.disconnect_db(conn)
-    if debug:
+    if ssrepi.debug:
         sys.stderr.write("Printing: " + str(result) + "\n")
     for entry in result:
         for key,value in entry.items():
