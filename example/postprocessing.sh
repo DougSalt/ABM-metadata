@@ -890,6 +890,14 @@ con_max_incentive_id=$(SSREPI_content \
     --container_type=$o_figure3_id \
     --locator='grep -v ^scenario | cut -f3 -d,')
 
+sos_sunflower_values=$(SSREPI_statistics \
+    statistics.$(uniq) \
+    $sm_recursive_partitioning_id \
+    "Nonsy McNonsy Face Query" \
+    figure3.pdf \
+)
+
+
 vis_sunflower_plot_fig3=$(SSREPI_visualisation \
     visualisation.$(uniq) \
     $vm_sunflower_plot_id \
@@ -903,76 +911,104 @@ SSREPI_value \
     "A/F/30/1" \
     $var_scenario_id \
     figure3.pdf
+
 SSREPI_statistical_variable_value \
     2 \
     $sv_min_incentive_id \
-    figure3.pdf 
+    figure3.pdf \
+    $sos_sunflower_plot_fig3
+
 SSREPI_statistical_variable_value \
     10 \
     $sv_max_incentive_id \
-    figure3.pdf 
+    figure3.pdf \
+    $sos_sunflower_plot_fig3
 
 SSREPI_value \
     "A/V/30/1" \
     $var_scenario_id \
     figure3.pdf 
+
 SSREPI_statistical_variable_value \
     2 \
     $sv_min_incentive_id \
-    figure3.pdf 
+    figure3.pdf \
+    $sos_sunflower_plot_fig3
+
 SSREPI_statistical_variable_value \
     15 \
     $sv_max_incentive_id \
-    figure3.pdf 
+    figure3.pdf \
+    $vis_sunflower_plot_fig3
 
 SSREPI_value "CA/F/25/5" \
     $var_scenario_id \
     figure3.pdf 
-SSREPI_statistical_variable_value \
+
+SSREPI_visualisation_variable_value \
     1 \
     $sv_min_incentive_id \
-    figure3.pdf 
+    figure3.pdf \
+    $vis_sunflower_plot_fig3
+
 SSREPI_statistical_variable_value \
-    10 $sv_max_incentive_id figure3.pdf 
+    10 \
+    $sv_max_incentive_id \
+    figure3.pdf \
+    $sos_sunflower_plot_fig3
 
 SSREPI_value \
     "O/F/30/5" \
     $var_scenario_id \
-    figure3.pdf 
+    figure3.pdf \
+    $vis_sunflower_plot_fig3
+
 SSREPI_statistical_variable_value \
     1 \
     $sv_min_incentive_id \
-    figure3.pdf 
+    figure3.pdf \
+    $sos_sunflower_plot_fig3
+
 SSREPI_statistical_variable_value \
     8 \
     $sv_max_incentive_id \
-    figure3.pdf 
+    figure3.pdf \
+    $sos_sunflower_plot_fig3
 
 SSREPI_value \
     "O/V/25/1" \
     $var_scenario_id \
-    figure3.pdf 
+    figure3.pdf \
+    $vis_sunflower_plot_fig3
+
 SSREPI_statistical_variable_value \
     1 \
     $sv_min_incentive_id \
-    figure3.pdf 
+    figure3.pdf \
+    $sos_sunflower_plot_fig3
+
 SSREPI_statistical_variable_value \
     5 \
     $sv_max_incentive_id \
-    figure3.pdf 
+    figure3.pdf \
+    $sos_sunflower_plot_fig3
 
 SSREPI_value \
     "CO/V/25/5" \
     $var_scenario_id \
     figure3.pdf 
+
 SSREPI_statistical_variable_value \
     0.1 \
     $sv_min_incentive_id \
-    figure3.pdf 
+    figure3.pdf \ 
+    $sos_sunflower_plot_fig3
+
 SSREPI_statistical_variable_value \
     0.8 \
     $sv_max_incentive_id \
-    figure3.pdf 
+    figure3.pdf \
+    $sos_sunflower_plot_fig3
     
 # table 4 for presentation
 # ========================

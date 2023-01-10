@@ -1542,6 +1542,9 @@ SSREPI_visualisation_variable() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 	echo $id_statistical_variable
 }
+
+SSREPI_visualisation_value() {
+}
 SSREPI_variable() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 
@@ -1581,10 +1584,12 @@ SSREPI_variable() {
 }
 SSREPI_statistical_variable_value() {
 
+    # A setter - no return.
+
 	# $1 - value
 	# $2 - id_statistical_variable
 	# $3 - file/image/visualisation/db in which it resides (the container)
-	# Any other arguments to specify this more accurately.
+    # $4 - instance of statistics this refers to.
 
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	val=$1
@@ -1612,17 +1617,78 @@ SSREPI_statistical_variable_value() {
 		--id_value=$val \
 		--statistical_variable=$id_variable \
 		--contained_in=$id_container \
-		$@
+        --result_of=$4 \
+        $@ \
 	)
+
+    # Now need to link this statistical variable to the value using StatisticalInput.
+    
+    id_statistical_input=$(update.py \
+        --table=StatisticalInput \
+        --value=$id_value \
+        --statistics=$4 \
+    )
+	
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
+}
+
+SSREPI_visulisation_variable_value() {
+
+    # A setter - no return.
+
+	# $1 - value
+	# $2 - id_visualisation_variable
+	# $3 - visualisation in which it resides (the container)
+    # $4 - instance of visualisation this refers to.
+
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	val=$1
+	shift 
+	id_value=$1
+	shift
+	if [ ! -f $1 ]
+	then
+		(>&2 echo "$FUNCNAME Unable to find $1")
+		exit -1
+	fi
+	id_container=container_$(cksum $1 | awk '{print $1}')
+	shift
+
+	# The last line is a real hack. This needs to be done better. These
+	# objects should be returned as part of the _run() method. Using the
+	# cksum is contrived IPC, i.e. the spawned process in _run() talking to
+	# the calling process. This will "always" work, but it is invisible to
+	# the coder and can easily be missed and thus broken in future
+	# releases.  Hmmmmm, need to think about this, but for now we will
+	# hack.
+
+	id_value=$(update.py \
+		--table=Value \
+		--id_value=$val \
+		--visualisation_parameter=$id_variable \
+		--contained_in=$id_container \
+        --result_of=$4 \
+        $@ \
+	)
+
+    # Now need to link this statistical variable to the value using StatisticalInput.
+    
+    id_statistical_input=$(update.py \
+        --table=StatisticalInput \
+        --value=$id_value \
+        --visulisation=$4 \
+    )
 	
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 }
 
 SSREPI_value() {
 
+    # A setter - no return
+
 	# $1 - value
-	# $2 - id_variable
-	# $3 - file/image/visualisation/db in which it resides (the container)
+	# $2 - id_value
+	# $3 - file/imagedb in which it resides (the container)
 	# Any other arguments to specify this more accurately.
 
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
