@@ -924,7 +924,7 @@ _run() {
 SSREPI_argument() {
 	
 	# $1 - application_id
-	# $2 - container_type
+	# $2 - id_argument
 	# $@ - the rest
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	id_application=$1
@@ -1154,6 +1154,9 @@ _input_value() {
 	[ -n "$id_input" ] || exit -1
 }
 SSREPI_hutton_person() {
+
+    # $1 - user name
+    # $2 
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	if (( $(_getent passwd $1 | wc -l) != 1 ))
 	then
@@ -1211,6 +1214,8 @@ SSREPI_study() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	id_study=$(update.py \
 		--table=Study \
+        --study_id=$1 \
+        --project=$2 \
 		$@ \
 	)
 	echo $id_study
@@ -1230,10 +1235,10 @@ SSREPI_set() {
 				export SSREPI_STUDY=$STUDY
 				export GENERATED_BY=--generated_by=$SSREPI_STUDY
 				shift;;
-		        --model*) 
+	       --model*) 
 				export STANDARD_ARGS="$STANDARD_ARGS $1"
 				shift;;
-		        --licence*) 
+           --licence*) 
 				export STANDARD_ARGS="$STANDARD_ARGS $1"
 				shift;;
 			--version*) 
@@ -1250,10 +1255,18 @@ SSREPI_involvement() {
 		--study=$1 \
 		--person=$2 \
 		--role=$3 \
+		--table=Study \
 	)
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 }
 SSREPI_paper() {
+
+    # $1 - path to document
+    # $2 - held by - person ID
+    # £3 - sourced_from - person ID
+    # $4 - study ID
+    # $5 - date of publishing
+
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	DOC="$1"
     # So if the first argument does not exist
@@ -1262,19 +1275,10 @@ SSREPI_paper() {
         (>&2 echo "Paper $DOC does not exist.")
 	    exit -1
 	fi
-	shift
-    
-	PARAMS=$@
-	for param in $PARAMS
-	do
-		parameter=$(echo $param | cut -f1 -d=)
-		case "$parameter" in
-			"sourced_by") sourced_by=$(echo $param | cut -f2 -d=);;
-			"held_by") held_by=$(echo $param | cut -f2 -d=);;
-			"describes") describes=$(echo $param | cut -f2 -d=);;
-			"date") date=$(echo $param | cut -f2 -d=);;
-		esac
-	done
+	sourced_by=$2
+	held_by=$3
+	describes=$4
+	date=$5
 
 	id_paper_container_type=$(update.py \
 		--table=ContainerType \
@@ -1335,6 +1339,10 @@ SSREPI_paper() {
 
 }
 SSREPI_make_tag() {
+
+    # $1 - tag ID
+    # $2 - description
+
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	id_tag=$(update.py \
 		--table=Tag \
@@ -1344,7 +1352,17 @@ SSREPI_make_tag() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 	echo $id_tag
 }
+
 SSREPI_tag() {
+
+    # $1 - tag ID
+    # $@ - optional parameters
+   
+    if [ $# -ne 2 ]
+    then
+        (>&2 echo  echo "$FUNCNAME: incorrect number of arguments $# should be 2")
+        exit -2
+    fi
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	id_tag_map=$(update.py \
 		--table=TagMap \
@@ -1353,6 +1371,7 @@ SSREPI_tag() {
 	)
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 }
+
 SSREPI_contributor() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	# $1 id_application
@@ -1400,6 +1419,10 @@ SSREPI_contributor() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 }
 SSREPI_statistical_method() {
+
+    # $1 - statistical_method ID
+    # $2 - description.
+
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	id_statistical_method=$(update.py \
 		--table=StatisticalMethod \
@@ -1409,6 +1432,7 @@ SSREPI_statistical_method() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 	echo "$id_statistical_method"
 }
+
 SSREPI_visualisation_method() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	id_visualisation_method=$(update.py \
@@ -1430,6 +1454,7 @@ SSREPI_statistics() {
 
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	id_statistics=$(update.py \
+
 		--table="Statistics" \
 		--id_statistics=$1 \
 		--date=$(date "+%Y%m%dT%H%M%S") \
@@ -1475,6 +1500,9 @@ SSREPI_visualisation() {
 }
 
 SSREPI_implements() {
+
+    # $1 - Application ID
+
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	id_implements=$(update.py \
 		--table=Implements \
@@ -1485,13 +1513,20 @@ SSREPI_implements() {
 }
 
 SSREPI_parameter() {
+
+    # $1 - parameter id
+    # $2 - description
+    # $3 - data type
+    
+    # $@ - optional parameters
+
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	id_parameter=$(update.py \
 		--table=Parameter \
 		--id_parameter=$1 \
 		--description=$2 \
 		--data_type=$3 \
-		$4 \
+		$@ \
 	)
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 	echo $id_parameter
@@ -1726,16 +1761,18 @@ SSREPI_content() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	id_content=$(update.py \
 		--table=Content \
+        --container_type=$1 \
 		$@)
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 	echo $id_content
 }
 
 SSREPI_person_makes_assumption() {
+
     person=$1
     id_assumption=$2
     description=$3
-    shift 3
+
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	id_assumption=$(update.py \
 		--table=Assumption \
