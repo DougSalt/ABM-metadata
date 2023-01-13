@@ -1,0 +1,73 @@
+\usepackage{hyperref}
+\usepackage[absolute,overlay]{textpos}
+
+% Calibri is a copy righted font, so typical of the JHI we are using 
+% proprietary stuff. I have select carlito in preference
+
+\usepackage[sfdefault,lf]{carlito}
+%% The 'lf' option for lining figures
+%% The 'sfdefault' option to make the base font sans serif
+\usepackage[T1]{fontenc}
+\renewcommand*\oldstylenums[1]{\carlitoOsF #1}
+\fontfamily{carlito}\selectfont
+
+\definecolor{darkolivegreen}{rgb}{0.33, 0.42, 0.18}
+
+\setbeamersize{text margin left=13mm,text margin right=13mm}
+
+\setbeamerfont{author}{size=\large}
+\setbeamercolor{title}{fg=darkolivegreen}
+\setbeamerfont{title}{size=\Large\bfseries}
+\setbeamercolor{frametitle}{fg=black}
+\setbeamerfont{frametitle}{size=\Large\bfseries}
+
+\setbeamercolor{itemize item}{fg=darkolivegreen}
+\setbeamertemplate{itemize item}[square]
+\setbeamercolor{itemize subitem}{fg=YellowOrange}
+\setbeamertemplate{itemize subitem}[square]
+\setbeamercolor{itemize subsubitem}{fg=RoyalBlue}
+\setbeamertemplate{itemize subsubitem}[square]
+\setbeamercolor{itemize subsubsubitem}{fg=RedViolet}
+\setbeamertemplate{itemize subsubsubitem}[square]
+
+
+% Final page
+
+\newcommand{\finalpage}{
+    \begin{textblock*}{\paperwidth}(0.05\paperwidth,0.80\paperheight)
+    \includegraphics[width=0.9\paperwidth]{hutton/footer-bottom.png}
+    \end{textblock*}
+}
+
+% So it looks like beamer parts are persistent and you cannot make them
+% conditional (what a bang of cr*d). 
+
+% Consequently you must declare you title and footer pages with the
+% [plain] suffix, or not use \frametitle
+
+%Body page
+\addtobeamertemplate{frametitle}{}{    
+    \vspace{-1em}
+    \begin{textblock*}{\paperwidth}(0.05\paperwidth,0.85\paperheight)
+        \includegraphics[width=0.9\paperwidth]{hutton/body-bottom.png}
+    \end{textblock*}
+    \begin{textblock*}{0.25\paperwidth}(0.8\paperwidth,0.015\paperheight)
+        \includegraphics[width=0.3\paperwidth]{hutton/body-top-right.png}
+    \end{textblock*}
+}
+
+\addtobeamertemplate{title page}{
+    \begin{textblock*}{\paperwidth}(0cm,0cm)
+        \includegraphics[width=\paperwidth,height=2.0cm]{hutton/title-slide-top.png}
+    \end{textblock*}
+    \begin{textblock*}{0.25\paperwidth}(0.7\paperwidth,0.7\paperheight)
+        \includegraphics[width=0.25\paperwidth]{hutton/title-slide-bottom-right.png}
+    \end{textblock*}
+}{} 
+
+% notes:
+
+% If you want to use \begin{verbatim}...\end{verbatim} in a frame, then you need
+% to mark that frame [fragile] in the frame declaration: \begin{frame}[fragile].
+% Apparently to mark a frame fragile, means there are not short-cuts when
+% compiling.
