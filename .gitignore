@@ -20,8 +20,18 @@ auto-save-list
 tramp
 .\#*
 
-*.dot
+# Apple stuff
+
+.DS_Store
+
+# R Stuff
+
+.RData
+.Rhistory
+
 *.png
 *.out
 
 ssrep.db
+
+
