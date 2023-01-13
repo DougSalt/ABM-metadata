@@ -664,8 +664,8 @@ do
                                  """
 
                                 ARGS="""$ARGS
-                                --SSREPI-output-${SSS_OUT_id}=${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.out
-                                --SSREPI-output-${SSS_ERR_id}=${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.err
+                                --SSREPI-stdout-${SSS_OUT_id}=${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.out
+                                --SSREPI-stder-${SSS_ERR_id}=${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.err
                                 --SSREPI-output-${SSS_report_id}=SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.txt
                                 --SSREPI-output-${SSS_report_grd_id}=SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.grd
                                 --SSREPI-output-${SSS_spomresult_prop_id}=SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-prop.csv

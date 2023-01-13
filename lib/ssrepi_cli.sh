@@ -781,7 +781,7 @@ _run() {
                 elif [[ "$arg" == *--SSREPI-stderr-* ]]
                 then
                     value=$(echo $arg | cut -f2 -d=)
-                    stderr=' >'$value
+                    stderr=' 2>'$value
                 fi
             done
 
@@ -847,15 +847,30 @@ _run() {
                 elif [[ "$arg" == *--SSREPI-extend-stdout-* ]]
                 then
                     value=$(echo $arg | cut -f2 -d=)
-                    stdout=' >>'$value
+                    if  [ -z "$SSREPI_SLURM" ]
+                    then
+                        stdout=' >>'$value
+                    else
+                        stdout=" --output=$value"
+                    fi
                 elif [[ "$arg" == *--SSREPI-stdout-* ]]
                 then
                     value=$(echo $arg | cut -f2 -d=)
-                    stdout=' >'$value
+                    if  [ -z "$SSREPI_SLURM" ]
+                    then
+                        stdout=' >'$value
+                    else
+                        stdout=" --output=$value"
+                    fi
                 elif [[ "$arg" == *--SSREPI-stderr-* ]]
                 then
                     value=$(echo $arg | cut -f2 -d=)
-                    stderr=' >'$value
+                    if  [ -z "$SSREPI_SLURM" ]
+                    then
+                        stderr=' 2>'$value
+                    else
+                        stderr=" --error=$value"
+                    fi
                 fi
             done
 
@@ -877,9 +892,9 @@ _run() {
             else
 
                 [ -n $DEBUG ] && (>&2 echo "SLURMING...")
-                [ -n $DEBUG ] && (>&2 echo RUNNING: srun --job-name=$SSREPI_SLURM_PREFIX  $APP $proper_args ${position_arg[*]} $stdout $stderr)
+                [ -n $DEBUG ] && (>&2 echo RUNNING: srun --job-name=$SSREPI_SLURM_PREFIX $stdout $stderr  $APP $proper_args ${position_arg[*]})
 
-                srun --job-name=$SSREPI_SLURM_PREFIX $APP $proper_args ${position_arg[*]} $stdout $stderr
+                srun --job-name=$SSREPI_SLURM_PREFIX $stdout $stderr $APP $proper_args ${position_arg[*]}
             fi
 
             for arg in $@
@@ -991,7 +1006,7 @@ _output_value() {
 
 	if [ ! -e $3 ]
 	then
-		(>&2 echo "$FUNCNAME: Something wrong in the call \"--SSREPI-output-$id_container_type=$3\": $3 does not exist")
+		(>&2 echo "$FUNCNAME: Something wrong in the call \"--SSREPI-(output|stdout|stderr|extend-stdout)-$2=$3\": $3 does not exist")
 		exit -1 
 	fi
 
