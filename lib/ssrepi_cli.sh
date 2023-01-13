@@ -1212,14 +1212,11 @@ SSREPI_person() {
 }
 SSREPI_project() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
-	if [[ "$@" != *--id_project* ]]
-	then
-		(>&2 echo "$FUNCNAME: $0 at $BASH_LINENO: No project id has been provided")
-		echo ""
-		exit -1
-	fi
+    project=$1
+    shift
 	id_project=$(update.py \
 		--table=Project \
+        --id_project=$project \
 		$@
 	)	
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
@@ -1227,10 +1224,13 @@ SSREPI_project() {
 }
 SSREPI_study() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+    study=$1
+    project=$2
+    shift 2
 	id_study=$(update.py \
 		--table=Study \
-        --study_id=$1 \
-        --project=$2 \
+        --id_study=$study \
+        --project=$project \
 		$@ \
 	)
 	echo $id_study
@@ -1270,7 +1270,6 @@ SSREPI_involvement() {
 		--study=$1 \
 		--person=$2 \
 		--role=$3 \
-		--table=Study \
 	)
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 }

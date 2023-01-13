@@ -297,44 +297,44 @@ o_result_id=$(SSREPI_output $A_ANALYSEGE_GPLU2 result "^(batch1|batch2).csv$")
 
 if [ -z "$test" ]
 then
-    for run in 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020
+    for govt in ClusterActivity RewardActivity RewardSpecies ClusterSpecies 
     do
-        for govt in ClusterActivity ClusterSpecies RewardActivity RewardSpecies
+        for run in 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020
         do
-            for sink in nosink
+            for market in flat var2
             do
-                for market in flat var2
+                for sink in nosink
                 do
-                    for bet in 25.0 30.0
+                    for rwd in 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0
                     do
-                        for asp in 1.0 5.0
-                        do
-                            for rwd in 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0
-                            do
-                                for rat in 1.0 2.0 10.0
-                                do
+                         for asp in 1.0 5.0
+                         do
+                              for bet in 25.0 30.0
+                              do
+                                   for rat in 1.0 2.0 10.0
+                                   do
 
-                                    DIR="Cluster2/SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_"
-                                    IN_1="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.txt"
-                                    IN_2="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.grd"
-                                    IN_3="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-extinct.csv"
-                                    IN_4="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-lspp.csv"
+                                        DIR="Cluster2/SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_"
+                                        IN_1="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.txt"
+                                        IN_2="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.grd"
+                                        IN_3="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-extinct.csv"
+                                        IN_4="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-lspp.csv"
 
-                                    ARGS="""
-                                    --SSREPI-argument-$a_experiment=8
-                                    """
+                                        ARGS="""
+                                        --SSREPI-argument-$a_experiment=8
+                                        """
 
-                                    ARGS="""$ARGS
-                                    --SSREPI-input-${i_SSS_report_id}=$DIR/$IN_1
-                                    --SSREPI-input-${i_SSS_report_grd_id}=$DIR/$IN_2
-                                    --SSREPI-input-${i_SSS_spomresult_extinct_id}=$DIR/$IN_3
-                                    --SSREPI-input-${i_SSS_spomresult_lspp_id}=$DIR/$IN_4
-                                    """
+                                        ARGS="""$ARGS
+                                        --SSREPI-input-${i_SSS_report_id}=$DIR/$IN_1
+                                        --SSREPI-input-${i_SSS_report_grd_id}=$DIR/$IN_2
+                                        --SSREPI-input-${i_SSS_spomresult_extinct_id}=$DIR/$IN_3
+                                        --SSREPI-input-${i_SSS_spomresult_lspp_id}=$DIR/$IN_4
+                                        """
 
-                                    ARGS="""$ARGS
-                                    --SSREPI-extend-stdout-${o_result_id}=batch1.csv
-                                    """
-                                    SSREPI_run $A_ANALYSEGE_GPLU2 $ARGS
+                                        ARGS="""$ARGS
+                                        --SSREPI-extend-stdout-${o_result_id}=batch1.csv
+                                        """
+                                        SSREPI_run $A_ANALYSEGE_GPLU2 $ARGS
 
                                 done
                             done
@@ -344,25 +344,23 @@ then
             done
         done
     done
-
-    for run in 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020
+    for govt in RewardActivity RewardSpecies 
     do
-        for govt in ClusterActivity ClusterSpecies RewardActivity RewardSpecies
+        for run in 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020
         do
-            for sink in nosink
+            for market in flat var2
             do
-                for market in flat var2
+                for sink in nosink
                 do
-                    for bet in 25.0 30.0
+                    for rwd in 15.0 20.0 25.0 30.0 40.0 50.0 100.0
                     do
                         for asp in 1.0 5.0
                         do
-                            for rwd in 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0
+                           for bet in 25.0 30.0
                             do
-                                for rat in 1.0 2.0 10.0
+                                for rat in 1.0
                                 do
-
-                                    DIR="Cluster2/SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_"
+                                    DIR="Cluster2-2/SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_"
                                     IN_1="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.txt"
                                     IN_2="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.grd"
                                     IN_3="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-extinct.csv"
@@ -383,10 +381,6 @@ then
                                     --SSREPI-extend-stdout-${o_result_id}=batch2.csv
                                     """
                                     SSREPI_run $A_ANALYSEGE_GPLU2 $ARGS
-                                    if [ -z "$test" ]
-                                    then
-                                        break
-                                    fi
                                 done
                             done
                         done
