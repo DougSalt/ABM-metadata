@@ -1,0 +1,496 @@
+\documentclass[usenames,dvipsnames,10pt]{beamer}
+%\documentclass[usenames,dvipsnames,10pt,handout]{beamer}
+
+\usepackage{pgfpages}
+\usepackage{tabularx}
+\mode<handout>{%
+    \pgfpagesuselayout{4 on 1}[a4paper]
+    \setbeameroption{show notes}
+}
+
+\usepackage{xcolor}
+\usepackage{hutton/hutton}
+
+\title{SSREPI}
+\author{Doug Salt}
+\institute{The James Hutton Institute}
+
+\begin{document}
+
+\begin{frame}[plain]
+    \maketitle
+\end{frame}
+
+\begin{frame}{Structure of the talk}
+
+    \begin{columns}
+        \column{0.5\textwidth}
+            \begin{itemize}
+                \item The first part
+                    \begin{itemize}
+                        \item Why?
+                    \end{itemize}
+                \item The second part
+                    \begin{itemize}
+                        \item How?
+                    \end{itemize}
+            \end{itemize}
+        \column{0.5\textwidth}
+            \begin{itemize}
+                \item Third part
+                    \begin{itemize}
+                        \item What?
+                    \end{itemize}
+                \item Fourth part
+                    \begin{itemize}
+                        \item {\color{red}\texttt{something important}}
+                    \end{itemize}
+                \item Fifth part
+            \end{itemize}
+    \end{columns}
+    \note{ My really, really important notes. This will show up in the handouts }
+\end{frame}
+
+\begin{frame}{Very basic commands}
+    
+    \vfill
+    There are two really important concepts in containers.
+    \vfill
+    \begin{enumerate}
+        \item An image of a container, generally referred to as a \textit{\textbf{container}}. 
+        
+                {\color{blue}\texttt{docker images}}
+                
+        \item An instantiation of xRa container generally referred to as a \textit{\textbf{image}}.
+
+                {\color{blue}\texttt{docker ps [-a]}} 
+
+    \end{enumerate}
+    \vfill
+    
+    \textbf{\huge {\color{red}There is no state associated with a container.}}
+    
+    \note{You can \texttt{\color{blue} docker commit container-number}, but this will not save memory. This is not like a virtual image where the state of memory is saved as well. Containers are a poor man's virtual machine.}
+  
+\end{frame}
+
+\begin{frame}{Very basic commands (cont.)}
+
+{\color{blue}\texttt{docker images}}
+
+\vfill
+
+gives:
+
+\vfill
+\small
+\begin{tabularx}{\columnwidth}{ l l l l l }
+REPOSITORY & TAG & IMAGE ID & CREATED & SIZE \\
+dougsalt/netlogo &   6.2.2.a &  b93fc5ce8817 &  3 months ago &  1.62GB \\
+dougsalt/netlogo &  latest &   b93fc5ce8817 &  3 months ago  & 1.62GB \\
+\end{tabularx}
+
+\vfill
+\normalsize
+\textbf{dougsalt/netlogo} is the image. Once this is instantiated it becomes a \textit{container}.
+
+\end{frame}
+
+\begin{frame}{Very basic commands (cont.)}
+
+    To instantiate an image and create a container we would use
+
+    \vfill
+    {\color{blue}\texttt{docker -it --rm dougsalt/netlogo}}
+
+    \vfill
+    where 
+
+    \vfill
+    {\color{blue}\texttt{-i}} or {\color{blue}\texttt{---interactive}} means
+    keep the STDIN open and attached.
+
+    {\color{blue}\texttt{-t}} or {\color{blue}\texttt{--tty}} which means
+    connect a pseudo tty to the container (effectively allows the container to
+    run in the backgroud)
+
+    {\color{blue}\texttt{--rm}}  means remove the container when you have
+    finished when it exits or is stopped (ctrl-D)
+
+    \vfill
+
+\end{frame}
+
+
+\begin{frame}{Very basic commands (cont.)}
+
+    \vfill
+    To quit a container and leave it running then <ctrl-p><ctrl-q>
+
+    \vfill
+    To reattach to to the tty, then
+
+    \vfill
+    {\color{blue}\texttt{docker attach some-container}}
+
+    \vfill
+    where from the values in {\color{blue}\texttt{docker ps}}:
+
+    \tiny
+    \begin{flushleft}
+    \begin{tabularx}{\columnwidth}{l l l l l l l l}
+    CONTAINER & ID & IMAGE & COMMAND & CREATED & STATUS & PORTS & NAMES \\
+    \textbf{86ea9326d6b2} & dougsalt/netlogo & "/bin/bash" & 8 seconds ago & Up 7 seconds & \textbf{elated\_meninsky} \\
+    \end{tabularx}
+    \end{flushleft}
+    \normalsize
+
+    {\color{blue}\texttt{docker attach 86ea9326d6b2}} 
+
+    or 
+
+    {\color{blue}\texttt{docker attach elated\_menisky}} 
+
+    to reattach to to the tty.
+    To exit, then at the prompt type <exit> or <ctrl-D>
+    \vfill
+
+\end{frame}
+
+\begin{frame}{Very basic commands (cont.)}
+
+    \vfill
+    You should periodically check {\color{blue}\texttt{docker ps -a}}.
+
+    \vfill
+    This will show stopped containers. They can be removed with
+    {\color{blue}\texttt{docker rm \textit{some-container-name}}}.
+
+    \vfill
+    These defunct containers will take up space, which is where I generally
+    supply {\color{blue}\texttt{--rm}} when invoking the container.
+
+\end{frame}
+
+\begin{frame}{Why?}
+
+    \small
+    \vfill
+    It appears that little work has been done on the creation of infrastructure for the  large scale parallel execution of NetLogo models.
+
+    \vfill
+    There are generalised frameworks for the running of NetLogo models such as Jansssen et al. (2008) and Janssen et al. (2014), and in addition frameworks for the analysis of data produced  from such large scale execution, such as Jin et al. (2017), but these do not have the advantages of containerisation.
+
+    \vfill
+    Whilst research this very subject we now have the suggestion of containers to do this, Ferro et al (2022). This is a good initial start but lacks both specifics sufficient generality, and moreover an implementation.
+
+    \vfill
+    Moreover this workflow was originally designed for the detection of peat
+    degradation for Scotland using random forests, and it is  intended to
+    used for other natural capital and environmental monitoring products,
+    along with being utilised for the purposes of creating work-flows for
+    agent-based modelling.
+    \begin{flushright}
+        Wilkson et al 2016
+    \end{flushright}
+    \vfill
+    \note{One of the main drivers at our research institute is that we are trying to ”mature” ABM. We want a consistent such of tools such a provenance, run infrastructure. We do not want to worry about the things like metadata, how to run a model on a large scale, automation of all this. Obviously you have to understand how this is all put together, but we want to reduce the cognitive load so modellers can concentrate on the truly import things such as hypothesis and theory building and testing underlying any model.
+
+The work was initially motivated by the need to provide an automated pipeline, but as the work progressed it became obvious the work I was undertaking for other models could easily be utilised for either the automatic utilisation  and/or  ad hoc running of NetLogo models.  We want reproducible environments that could run across heterogenous resources such as HPC clusters, clouds and local resource. The novelty here is providing a relatively low configuration environment (we have containers to run single Netlogo models with the minimum of develop) and infrastructure that allows the use of the workflow aspects of this work. 
+    }
+    \normalsize
+\end{frame}
+\begin{frame}{Why?}
+
+    \begin{itemize}
+        \item Findable (unique identifiers)
+            \begin{itemize}
+                \item CoMSES Net, NetLogo library, DOI, etc.
+            \end{itemize}
+        \item Acessible (rich metadata)
+            \begin{itemize}
+                \item ODD, SREPI (Miracle metadata standard), PROV-O
+            \end{itemize}
+        \item Interoperable
+            \begin{itemize}
+                \item Locally, HPC, ”Cloud”. Windows, Mac, Linux
+            \end{itemize}
+        \item Reproducible
+            \begin{itemize}
+                \item Journals, in particular papers lik
+                \begin{itemize}
+                    \item Polhill et al (2017)
+                    \item Hales and Edmonds (2003)
+                \end{itemize}
+            \end{itemize}
+    \end{itemize}
+    \note{This is becoming required in all areas of research. It might be argued that this is already there for ABM, but we think not, when you look at papers and how hard it is to actually reproduce an experiment. One of my first experiences of modelling was to reconstruct the results of an ABM. I had scripts, diaries, models and data and it still took me 3 months to work out the undocumented linking processes. So reproduction is hard and there is not enough resource or time dedicated to it, but then it ain’t sexy, We have no intention of increasing its sex-appeal, but we do wish to make such reproduction trivial. It could therefore be argued that especially the last principle of FAIR is not currently met by any infrastructure in the ABM community.  The others are constrained in practice. This framework should at least implement FAIR closer to the ideal.
+    }
+\end{frame}
+
+\begin{frame}{How?}
+
+    Containers are ideally suited to the running of NetLogo models for several reasons.
+    \begin{itemize}
+        \item Large scale parallel execution of NetLogo models is a classic
+            ‘embarrassingly parallel’ problem.
+        \item Each NetLogo instance of execution is self-contained and requires
+            inputs and outputs that are independent from any other instance.
+        \item Containers are an ideal method of providing an execution
+            environment with a high degree of reliability and specificity. This
+            leads not only to increased reliability, but also improves
+            reproducibility of experiments.
+        \item Lastly containerisation is ‘platform agnostic’ allowing the usage
+            of two kinds of high performance computing environments, grid and
+            utility computing (Sood et al. 2016) with the possibility of these
+            being triggered automatically on demand from local instances of
+            execution.
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{How? - with containers}
+
+    \begin{itemize}
+        \item Findable
+        \begin{itemize}
+            \item docker.io, github.com
+        \end{itemize}
+        \item Acessible (rich metadata)
+        \begin{itemize}
+            \item Dockerfile
+        \end{itemize}
+        \item Interoperable
+        \begin{itemize}
+            \item Locally, HPC, ”Cloud”. Windows, Mac, Linux
+        \end{itemize}
+        \item Reproducible
+        \begin{itemize}
+            \item Should be “easy” (with huge caveats)
+        \end{itemize}
+    \end{itemize}
+    \note{Interoperable – a properly designed container will run on virtually any architecture. There may be reasons why you would not want it to run on other architectures. 
+For example there might be differences in random number generation, or floating point arithmetic, never mind across differing architectures, but differing operating systems on the same architecture
+So correct specification may well include tracing the base image all the way back to the kernel and libc libraries used, specific to architecture and OS.  Containers and not a panacea for the problem of reproducibility. You still need to be aware of the limitations of containers. However generally a container source files may be stored on github. This is versioned, which is a good start on generating origin metadata.
+
+Virtual machines score over containers here. Virtual machines provide an entirely consistent environment whether they be virtualised or emulated. They are consistent and reproduction of an experiment within a virtual machine is actually trivial, providing initial state, and input data are correct. However virtual machines come with enormous 
+    }
+
+\end{frame}
+
+\begin{frame}{Running a container}
+
+    \small
+    \vfill
+    docker run {\color{orange} –env JAVA\_HOME=/usr/lib/jvm/java-9-openjdk-amd64} \textbackslash
+
+    {\color{magenta}-v /Users/doug/git/1.4.2/netlogo/achsium.nlogo:/workdir/achsium.nlogo} \textbackslash
+
+    {\color{magenta}-v /Users/doug/git/1.4.2/netlogo/data:/workdir/data} \textbackslash
+
+    {\color{green}-it --rm} \textbackslash
+
+    {\color{purple}--entrypoint /workdir/netlogo} \textbackslash
+
+    \textbf{dougsalt/netlogo} \textbackslash
+
+    {\color{blue}--model /workdir/achsium.nlogo --experiment torry-new-technology}
+
+    \normalsize
+    \vfill
+\end{frame}
+
+\begin{frame}{Pros and cons of containers}
+
+    \begin{itemize}
+        \item Pros
+        \begin{itemize}
+            \item Lightweight
+            \item Low cognitive entry requirements
+            \item Consistent (for now!)
+            \item HPC standard
+            \item Stateless
+        \end{itemize}
+        \item Cons
+        \begin{itemize}
+            \item Stateless
+            \item Machine and kernel dependent
+            \item Possibly brittle (maybe)
+        \end{itemize}
+    \end{itemize}
+
+    \note{\textbf{Lightweight}, as can be seen from earlier, it takes a few lines of text to define a container. The layers that make up a container do take a considerable amount of space, but they are built locally, so little is passed across the network. Hence it is easy to archive a container. You just need the source files (generally stored on github and linked through to docker.io)
+
+    \textbf{Low cognitive entry requirements}: consequently it is easy to learn containers and I think this is the reason for their current surge in popularity; something I believe they will not go away.
+
+    \textbf{Consistent}: as with all technologies they creep. A good counterexample is markdown. The putative guardians of this standard keep it deliberately simple. Although we have various flavours of markdown such as Rmarkdown, the original has been deliberately unchanged. This is unusual, as what happens with technologies is they scope creep. The worst example of this  IMHO are style sheets and HTML (which should really be called JavaScript now). This will happen with containers especially when there are commercial interests involved, so the ”standard way” of doing things will change but hopefully not so much that it manifests as backwards incompatibility in future. However this is always a concern when selecting technologies to implement reproducibility. What is that technology’s shelf life and how fast is its mutation rate?
+
+HPC Standard At the moment containers are already a de-facto standard for HPC. They are are configurable, repeatable environments that once their built locally can reused with ease.
+
+    \textbf{Stateless}: this is both a blessing and a curse. You should only ever design containers with initial state. You can record state, but it is has to be configuration based (as in the Dockerfile  or some script that the Dockerfile calls), or it can be recorded in persistent storage. Containers do not record memory like a true virtual machine does. Consequently the storage overhead is low, but you cannot for instance suspend an experiment half way through using container technology whereas you can with a virtual machine.  So this falls into both the pro and con category: pro because it reduces overheads and defines precisely how a container will behave; con because you cannot reliably record state at any given moment.
+
+    \textbf{Machine and kernel dependent} : containers have to be designed to do so if you want to run them on more than one machine architecture. This is also true of the kernel. Containers are native to the operating system. If you are running a container on Windows then the kernel for that container is also Windows. This means that a container written for an earlier version of Windows may no longer work because versions of the code may have changed and libraries no longer link. This is true for all OS’es and I am not just picking on Windows.
+
+On the aspect of machine architecture being a dependency, I had personal experience of this recently. My boss kindly bought me a very nice and lovely Macbook Pro (thank you Gary) but it was one of the Apple M1 ARM based machines. Battery life is incredible, but containers written in an Intel/AMD environment will not run on these machines. I had to tailor the execution script and create an installation script that could determine the difference and configure them. This makes me wonder what other environments have  I not catered for. This also makes the unit testing of things a little more difficult because you need the various environments to test that the containers are functionally identical (such evaluation, could, potentially be automated).
+
+Compare this with a virtual machine. This contains a whole computer. All you need is the correct substrate and the virtual machine (if correct) should be indistinguishable no matter where it is run (in terms of results and execution properties – it might be a lot slower or faster)
+
+    \textbf{Brittle}: and the last last leads to brittleness. This is a particular bug-bear of mine and definitely where the resource intensive virtual machines score over containers. I have seen this with Java and Python. For Java design patterns change and libraries change to reflect those new design patterns. You then have libraries which call those libraries. Or libraries that call different versions and because the underlying design pattern changes no longer compatible with each other. This means you cannot upgrade your libraries and cannot backgrade because of the same incompatibilities. This mean that now some Java code is unusable and we may as well just chuck it away. Similarly with python we have `venv`, or virtual env which has evolved into (in one of its incarnations) `conda`. It is not unusual to be given a conda configuration file that will not solve!!! This is what I mean by brittleness. The problem when these things don’t compile is you have to start digging, and the learning curve is huge sometimes. We do not have time for this. It needs to work first time, or not at all. Containers are not brittle as they stand, but with all the commercial pressure around them, I can see the standard fragmenting and them ending up in this state.
+    }
+\end{frame}
+
+\begin{frame}{Rquirements}
+
+    \begin{itemize}
+        \item Automated workflow
+        \item Ad hoc workflow
+        \item “Cloud” storage
+        \item Ability to run locally
+        \item Ability to run on an HPC
+        \item Ability to run in the “cloud”
+    \end{itemize}
+
+    \note{Keep it simple
+        Keep it simple
+
+        Keep it simple
+
+        The error checking is deliberately uncomplex. We want to see how far
+        we can get without complex process evaluation envelopes. Basically
+        success if predicated by the output of files.
+
+        In future we will be checking for abnormal completion as well, by
+        means of inspecting standardised log files.
+    }
+\end{frame}
+
+\begin{frame}{Architecture}
+
+    % \includegraphics[width=9.5cm]{img/architecture.png}
+    \note{
+        So a scheduler can sit on the local machine, a remote machine or in
+        the cluster.
+
+        Similarly a worker may sit locally, on a remote cloud machine, or in
+        an HPC cluster
+
+        The input and output data can be stored locally on in the cloud (this
+        is crucial for large datasets - we do not want to have to move them
+        around too much.
+
+        For clustered runs in the HPC and for those runs in the cloud then the
+        data, if stored locally is pushed to the remote instance by the
+        originator. This originator may be local, remote or part of the
+        cluster.
+
+        Similarly for the output. This originator may be remote from the local
+        invoker.
+    }
+
+\end{frame}
+
+\begin{frame}{Workflow}
+
+    %\includegraphics[width=9.5cm]{img/workflow.png}
+    \note{
+        This shows how the workflow can be strung together to provide more
+        complex work-flows. These works flows can be automatic or ad-hoc. In
+        this case a model is run many times to produce outputs and then a
+        second workflow gathers these results for post-processing. This allows
+        for the possibility of integrating many models and their analysis.
+        This also goes some way to addressing the I in FAIR. Essentially we
+        have a very crude model integration framework.
+    }
+\end{frame}
+
+\begin{frame}{docker.io}
+
+    \vfill
+    You then have to login to docker.io/hub.docker.com to push up your image.
+
+    \vfill
+    \texttt{\color{blue}docker login}
+
+
+    \vfill
+    Now in root on a virtual machine you cannot do this, so you have to do it
+    from one of the users.
+
+    \vfill
+
+    \small
+    \texttt{{\color{blue}docker} {\color{red}tag} {\color{green}[image\_number]} \textbf{user}/{\color{green}[container\_name]}:{\color{orange}tag}}
+
+    \texttt{{\color{blue}docker} {\color{red}tag} {\color{green}[image\_number]} \textbf{user}/{\color{green}[container\_name]}:latest}
+
+    \texttt{{\color{blue}docker} {\color{red}push} {\color{green}[container\_name]} \textbf{user}/{\color{green}[container\_name]}:{\color{orange}tag}}
+
+    \texttt{{\color{blue}docker} {\color{red}push} {\color{green}[container\_name]} \textbf{user}/{\color{green}[container\_name]}:latest}
+
+    \normalsize
+    \vfill
+
+    Then you can go and check out the images on line
+
+    \vfill
+
+\end{frame}
+
+\begin{frame}{docker.io}
+
+    \vfill
+
+    So for example:
+
+    \vfill
+
+    \texttt{\color{blue}docker tag 051b0b6978bb dougsalt/soilmoisture:02}
+
+    \texttt{\color{blue}docker tag 051b0b6978bb dougsalt/soilmoisture:latest}
+
+    \texttt{\color{blue}docker push dougsalt/soilmoisture:02}
+
+    \texttt{\color{blue}docker push dougsalt/soilmoisture:latest}
+    
+    \vfill
+
+    To pull the image down then it is simply
+    
+    \vfill
+
+    \small
+    \texttt{{\color{blue}docker} {\color{red}pull} {\color{green}[container\_name]} \textbf{user}/{\color{green}[container\_name]}:{\color{orange}tag}}
+    \normalsize
+
+    \vfill
+    So for example:
+    \vfill
+    
+    \texttt{\color{blue}docker pull dougsalt/soilmoisture}
+    
+    \vfill
+\end{frame}
+\begin{frame}{Using containers on Ian's cluster}
+
+    Blobble
+\end{frame}
+
+\begin{frame}{Using containers on our cluster}
+
+    \vfill
+    srun docker run -it --rm -v ~/1.4.2/01\_data:/01\_data -v /home/doug/1.4.2/03\_output:/03\_output dougsalt/netlogo some-param
+
+    You need some slides on how to use containers in both HPC environments
+
+    You need to try this out.
+    \vfill
+
+\end{frame}
+
+\begin{frame}
+    Thank you very much
+    \finalpage
+\end{frame}
+
+\end{document}
+
