@@ -1593,8 +1593,6 @@ SSREPI_visualisation_variable() {
 	echo $id_statistical_variable
 }
 
-SSREPI_visualisation_value() {
-}
 SSREPI_variable() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 
