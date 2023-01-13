@@ -18,7 +18,7 @@ date
 # ===============
 
 project_id=$(SSREPI_project \
-	--id_project=MIRACLE \
+	MIRACLE \
 	--title="MIning Relationships Among variables in large datasets 
 		from CompLEx systems
 
@@ -27,8 +27,8 @@ project_id=$(SSREPI_project \
 [ -n "$project_id" ] || exit -1
 
 study_id=$(SSREPI_study \
-	--id_study=$(next_study.py) \
-	--project=$project_id \
+	$(next_study.py) \
+	$project_id \
 	--start_time=$(date "+%Y-%m-%d") \
 	--description="This is a run to reconstruct the diagrams 
 			and results in Polhill et al. 2013.
@@ -118,10 +118,10 @@ SSREPI_set --study=$study_id \
 
 paper_id=$(SSREPI_paper \
 	'doc/Reconstructing the diagrams and results in Polhill et al.docx' \
-	--held_by=$doug_salt_id \
-	--sourced_from=$gary_polhill_id \
-	--describes=$study_id \
-	--date=20170414)
+	$doug_salt_id \
+	$gary_polhill_id \
+	$study_id \
+	20170414)
 
 SSREPI_contributor "$paper_id" $gary_polhill_id Author
 
