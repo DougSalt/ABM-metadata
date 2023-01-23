@@ -23,11 +23,11 @@ The following calls are available in Bash > 4.0.
 ## SSREPI\_application 
 
 Creates an application entry in the database. This links to the actual
-executable and should be used to invoke the actual process as the first
+executable or script and should be used to invoke the actual process as the first
 argument to [SSREPI\_call](#SSREPI_call) or [SSREPI\_invoke](#SSREPI_invoke).
 
 This identifies a piece of callable code. This could be perl, R, an ELF
-executable, Python or a Julia script, or even another Bash or zsh script.
+executable or script, Python or a Julia script, or even another Bash or zsh script.
 
 ### Mandatory parameters
 
@@ -88,7 +88,7 @@ These parameters are positional.
 
 #### Application identifier
 
-This the variable containing the reference to the application for which this is is an argument.
+A reference to the application for which this is is an argument.
 
 #### Argument identifier
 
@@ -133,7 +133,7 @@ string.
   use a single dash in this postion and some Windows arguments which use the
   forward slash.
 
-+ --order_value - if the argument is positional, then this is the position in
++ --order\_value - if the argument is positional, then this is the position in
   which the argument appears
 
 + --arity - the number of parts of the argument. This defaults to a single part.
@@ -145,17 +145,16 @@ string.
   The default is ','. This is the seperator between different elements of the
   argument.
 
-+ --short_name - Part of the Unix convention on arguments (unfortunately not
++ --short\_name - Part of the Unix convention on arguments (unfortunately not
   always followed) is that there are short names for some arguments. These
   short names are generally on one character long, and preceded by a single
   dash rather than two dash as is the default folr  
 
 ### Returns
 
-The id for this argument This is the same as the output and because of the
-methodology used is may therefore be updated or created, hence this being both
-an input and an output parameter. This is generally a single instance of a
-string.
+The id for this argument. This is a reference to the application. This is the
+same as the output and because of the methodology used is may therefore be
+updated or created, hence this being both an input and an output parameter.
 
 ## SSREPI\_batch
 
@@ -209,13 +208,11 @@ well [SSREPI\_application](#SSREPI_application).
 
 ### Returns
 
-Nothing. This is not a function.
+Nothing. This is a setter and  not a function.
 
 ## SSREPI\_content
 
-Updates the content table.  Content acts as a bridge from ContainerType to
-Variable, specifying that a Variable appears in some or all instances of a
-ContainerType. It is associated with fine-grained metadata.
+Updates the content table.  Content acts as a bridge from container type, which in this case is one of the input, output or argument types ([SSREPI_input](#SSREPI_input), [SSREPI_output](#SSREPI_output) or [SSREPI_argument](#SSREPI_argument)) to a named variable of interest ([SSREPI_variable](#SSREPI_variable)), specifying that such a variable appears in some or all instances of these input/output/argument types. It is associated with fine-grained provenance metadata.
 
 ### Mandatory parameters
 
@@ -223,7 +220,9 @@ These parameters are positional.
 
 #### Container type
 
-The type of container type the variable, statistical\_variable, 
+The type of container type the variable, statistical\_variable. At present this
+is restricted to the output from a ([SSREPI_input](#SSREPI_input), a
+[SSREPI_output](#SSREPI_output) or a [SSREPI_argument](#SSREPI_argument).k
 
 ### Optional parameters
 
@@ -245,11 +244,14 @@ The type of container type the variable, statistical\_variable,
 + --visualisation\_method - the visualisation method, if this involes a visualisation method
 
 + --statistical\_variable - the statistical_method involved, if this is for a set of statistics or a visualisation.
+
 ### Returns
+
+A reference  to that  content bridge
 
 ## SSREPI\_contributor
 
-Inserts a new contributor row, or updates and existing one.
+Associates a contributor with a particular script or executable. A contributor is necessarily a person. 
 
 ### Mandatory parameters
 
@@ -257,17 +259,23 @@ These parameters are positional.
 
 #### Application ID
 
+A reference to the executable or script with with which the person is going to be associated with as a contributor.
+
 #### Person ID
+
+The person who has made a contribution to the executable or script referenced above. Note this is not necessarily as author, but might be a maintainer, an enhancer or a curator.
 
 #### Type of contribution
 
+Author, designer, programmer, i.e. any string with relevant semantic loading.
+
 ### Returns
 
-Contributor ID
+A contributor ID.
 
 ## SSREPI\_hutton\_person
 
-Inserts new Hutton person row, or updates and existing one. This is based on there being a user present in /etc/passwd file.
+Inserts new Hutton person into the database, or updates and existing one. This is based on there being a user present in something corrresponding to the /etc/passwd file.
 
 ### Mandatory parameters
 
@@ -275,7 +283,7 @@ These parameters are positional.
 
 #### User
 
-Actual Unix user.
+Actual operating system user. The assumption is that this will allow access to personal information of the user in question.
 
 ### Returns
 
@@ -314,15 +322,23 @@ These parameters are positional.
 
 #### Application ID
 
+This is an input type for an executable or script. This has to define an input for to allow the value to be set as an input. If this is so defined, then the presence of the input file is checked for before the script or executable is run.
+
 #### Container-type ID
 
+The defines the container type. A container type may be thought as a type of input or output. Container types are less specific than this, but the code as it stands just deals with very generalised container types, such as code and more specific container types such as input and outputs to executables and other scripts.
+
 #### Pattern
+
+A command that verify the container type. This might be a file inspection or a regular expression on the file name. File inspection is preferred as this actually verifies the content of a container type, rather than just its existence.
 
 ### Returns
 
 Input type ID
 
 ## SSREPI\_involvement
+  
+Links personnel to a particular study.
 
 ### Mandatory parameters
 
@@ -330,9 +346,17 @@ These parameters are positional.
 
 #### Study ID
 
+The reference to the study that is being linked to.
+
 #### Person ID
 
+A reference to the person involved in the study. The reference is generated b y
+creating a person using [SSREPI\_person](#SSREPI_person) and
+[SSREPI\_hutton\_person](#SSREPI_hutton_person).
+
 #### Role
+
+This is a string and is unvalidated so might be anything. For example "planner", "developer", "project leader" or some such.
 
 ### Returns
 
@@ -346,15 +370,22 @@ These parameters are positional.
 
 #### Tag ID
 
+How the tag will be referred to, it is also a reference to the tag so must be unique.
+
 #### A description of the tag
+
+A piece of text giving a human-readable explanation of the tag.
 
 ### Returns
 
 Tag ID
 
+This is identical to the tag ID in the parameters. This is due to the overall
+design which stresses idempotenency.
+
 ## SSREPI\_me
 
-If no parameters are provided will provide the Application ID of the script (and hopefully executable that is currently being run). 
+If no parameters are provided will provide the Application ID of the script (and hopefully executable or script that is currently being run). 
 
 ### Optional parameters
 
