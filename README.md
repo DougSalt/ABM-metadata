@@ -8,10 +8,9 @@ This repository is for the Miracle simulation metadata outputs specification.
 + analysis.dot - a graphviz rendering of the analsysis subgraph.
 + bin - the directory containing all executables. These are all written in Python.
 + cfg - a directory used by the example code containing 
-+ doc
-+ example
-+ fine_grain.dot
-+ finegrain.dot
++ doc - documentation directory
++ example - the example code
++ finegrain.dot - a graphviz rendering of the finegrain sub-graph
 + folksonomy.dot
 + lib
 + man
@@ -42,6 +41,8 @@ nohup example/workflow.sh > workflow.out 2>workflow.err &
 
 ```
 brew install postgresql
+brew install libmagic
+brew install coreutils
 ```
 
 ### SQLITE3
@@ -54,10 +55,6 @@ brew install sqlite3
 
 #### OSX
 
-```
-brew install libmagic
-brew install coreutils
-```
 add to .zshrc
 ```
 PATH="/opt/homebrew/opt/coreutils/libexec/gnubin:$PATH"
