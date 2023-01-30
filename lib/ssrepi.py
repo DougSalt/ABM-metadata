@@ -298,6 +298,20 @@ class Table:
         # Error condition is the an empty matches
         return matches
     @classmethod
+    def count(cls, conn):
+        cur = conn.cursor()
+        someSQL = ("SELECT COUNT(*) " +
+            " FROM " + cls.tableName())
+        if debug:
+            sys.stderr.write(someSQL + '\n')
+        curry = cur.execute(someSQL)
+        row = cur.fetchone()
+        count = 0
+        for key in row:
+            count = row[key]
+        return count
+
+    @classmethod
     def foreignKeys(cls):
 
         line = cls.schema().splitlines()
@@ -3029,7 +3043,6 @@ def disconnect_db(conn):
     """
     conn.close()
 
-# functions to generate the tables
 def create_tables(conn):
     """Creates all the tables for the Repository for a Social Simulation database
     """

@@ -5,6 +5,7 @@ Contains all the Python and Bash scripts to utilise SSREPI
 # MANIFEST
 
 + analysis.py - takes the database and draws the anlaysis sub graph
++ count\_rows.py - counts the number of rows in the SSREPI database.
 + create\_database.py - used by Bash programs to create the database. The empty database ssrepi must be present for this to work in postgres
 + finegrain.py - converted - uses the database to construct the fine\_grain graph
 + folksonomy.py - converted - utilises database to produce the folksonomy sub-graph.
