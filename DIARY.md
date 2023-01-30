@@ -34,3 +34,16 @@ code has been lost. I am getting an awful sense of deja-vu going through the
 code, I know I made extensive notes about this, but cannot for the life of me,
 find them.
 
+# 2023-01-30
+
+Loads of changing from the last entry. I have amended everything to now use
+Postgres and Sqlite3. I am still re-running the original example (it is stuck
+on the post processing at the moment).
+
+Immediate to that I have been working on a paper for MABS (which I am now going
+to miss - not necessarily a bad thing, and I still need to work on this paper)
+Also working on the documentation for the plugin.
+
+Last week I tided up the documentation.
+
+Specificially, today I have added a new routine to count rows in the database

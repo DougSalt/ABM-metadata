@@ -62,8 +62,10 @@ add to .zshrc
 ```
 PATH="/opt/homebrew/opt/coreutils/libexec/gnubin:$PATH"
 ```
+#### Command line OS'es
 
-then run
+After installing the databases then install the following using pip.
+
 
 ```
 pip install --upgrade pip
@@ -75,7 +77,6 @@ pip install graphviz
 ```
 
 # POSTGRES Useful commands
-
 
 `psql` to get to the database prompt.
 `psql some-database-name` to get to a specific prompt
