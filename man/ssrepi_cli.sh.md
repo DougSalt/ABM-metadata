@@ -292,6 +292,7 @@ Person ID
 ## SSREPI\_implements
 
 Reified relationship between StatisticalMethods or VisualisationMethods and Applications that implement them.
+
 ### Mandatory parameters
 
 These parameters are positional.
@@ -591,6 +592,13 @@ Nothing. This is not a function.
 
 ## SSREPI\_statistical\_method
 
+This declares a statistical method. A statistical method is an approach to
+computing some statistics. It may be implemented in or as part of an
+application. A statistical method generates one or more statistical variables [SSREPI\_statitical_variable](#SSREPI_statistical_variable)
+as its results, and may use the results of another statistical method in its
+computation. For example, computing the standard deviation of some data uses
+the mean of those data.
+
 ### Mandatory parameters
 
 These parameters are positional.
@@ -599,11 +607,24 @@ These parameters are positional.
 
 #### Description
 
+A mandatory set of text describing the statistical method.
+
 ### Returns
 
-Statistical method ID
+Statistical method ID. This is identical to the statistical method ID in the
+parameters. This is due to the overall design which stresses idempotenency.
+This allows the instantiation or update of a particular statistical method.
 
 ## SSREPI\_statistical\_variable
+
+A name for (one of) the result(s) of a statistical method
+[SSREPI\_statistical\_method](#SSREPI_statistical_method).
+
+Each time a statistical method is applied, a Statistics entry should be
+created. For each StatisticalVariable the StatisticalMethod Employs, there
+should be a StatisticalInput entry, and for each StatisticalVariable that is
+generated-by the StatisticalMethod, there should be a Value entry with the
+result-of field containing the ID of the Statistics activity.
 
 ### Mandatory parameters
 

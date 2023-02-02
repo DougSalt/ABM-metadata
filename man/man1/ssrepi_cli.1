@@ -1,0 +1,831 @@
+.\" generated with Ronn/v0.7.3
+.\" http://github.com/rtomayko/ronn/tree/0.7.3
+.
+.TH "SSREPI_CLI\.SH" "" "January 2023" "" ""
+.
+.SH "NAME"
+\fBssrepi_cli\.sh\fR \- the Bash interface libary for SSREPI
+.
+.SH "SYNOPSIS"
+The library for doing (Social Simulation REPository Interface) SSREPI provenance and metadata collection\. This allow invocation of the interface from the command line and as such can be used in normal scripts\. SLURM has been built in, although the queue management of SLURM is superior and the queueing mechanism\.
+.
+.P
+Note nothing is stored in this table\. This \fIis all metadata\fR\. Of note, however is the fact that anyting contained in a file type structure, such as data, code, etc is \fIalways\fR stored in a \fIcontainer\fR\. \fIContainer\fR is the term we have used to denote something which holds a series of \fIvalues\fR\. A value is as the name implies some value and could be a string, number, etc\. A container is just a collection of such values, and therefore could be a file, a diagram, a database, a csv file, etc\.
+.
+.SH "DESCRIPTION"
+The following calls are available in Bash > 4\.0\.
+.
+.SH "SSREPI_application"
+Creates an application entry in the database\. This links to the actual executable or script and should be used to invoke the actual process as the first argument to \fISSREPI_call\fR or \fISSREPI_invoke\fR\.
+.
+.P
+This identifies a piece of callable code\. This could be perl, R, an ELF executable or script, Python or a Julia script, or even another Bash or zsh script\.
+.
+.SS "Mandatory parameters"
+These parameters are positional\.
+.
+.P
+Which container references the location of the application\.
+.
+.SS "Optional parameters"
+.
+.IP "\(bu" 4
+\-\-model \- This is documentary and refers to the model this is running\. This in conjuction with the project and study (a study is a thing we refer to as an experiment), will make this run unique
+.
+.IP "\(bu" 4
+\-\-name \- A meaningful english name that can be used in the diagramming\.
+.
+.IP "\(bu" 4
+\-\-instance \- the type of container this is\. Some containers are already created such as bash, perl, R, etc\.
+.
+.IP "\(bu" 4
+\-\-licence \- a string describing the licence
+.
+.IP "\(bu" 4
+\-\-description \- descibes what the application does\. This is not mandatory, but we strongly advise that this field is filled in any time it is available\. This will take a multi\-line string and the hard 3 speach mark type of string\.
+.
+.IP "\(bu" 4
+\-\-seperator \- this is the separator between arguments\. On all current operating systems this is some form of white space, so the default for this is the space character\.
+.
+.IP "" 0
+.
+.SS "Returns"
+The id for this application\. This is the same as the output and because of the methodology used is may therefore be updated or created, hence this being both an input and an output parameter\. This is generally a single instance of a string\.
+.
+.SH "SSREPI_argument"
+A command\-line argument accepted by an application \fISSREPI_application\fR\. Commands vary hugely in how they parse arguments on the command line, and this table needs to make clear how to build a command line that the Application can use\. To be clear, a command line is a string of text that is given to a shell (DOS, bash, etc\.) to initiate a batch job\.
+.
+.P
+An argument is populated by and argument value\. This is done at invocation and automatic\. Hence this argument describes the argument\. This means that an application invoked knows its arguments and what is allowable\. This allows for the automatic testing and population of the argument\. This also means it is better to specify the arguments comprehensively when using this primitive, even if the argument is not currently used in the experiment actually being documented\.
+.
+.SS "Mandatory parameters"
+These parameters are positional\.
+.
+.P
+A reference to the application for which this is is an argument\.
+.
+.P
+The id for this argument, and used to reference this particular argument from the first use of htis primitive\. This is the same as the output and because of the methodology used is may therefore be updated or created, hence this being both an input and an output parameter\. This is generally a single instance of a string\.
+.
+.SS "Optional parameters"
+.
+.IP "\(bu" 4
+\-\-description \- documentary description of what the argument does\.
+.
+.IP "\(bu" 4
+\-\-type \- this is whether it is required, optional or flag\. The default is optional
+.
+.IP "\(bu" 4
+\-\-name \- if this is not a positional name then this is conjunction with the separator and the assignment_operator will form the argument\.
+.
+.IP
+For example if the argument is of the type optional, the name is "path" the separator is "\-\-" and the assignment operator is "=" then the argument might eventually look like
+.
+.IP "" 0
+.
+.IP "" 4
+.
+.nf
+
+  \-\-path=some_example_file_name\.csv
+.
+.fi
+.
+.IP "" 0
+.
+.P
+If this is a non positional argument then this argument is mandatory\.
+.
+.IP "\(bu" 4
+\-\-seperator \- if this is not a positional name then this is conjunction with the argument name and the assignment_operator will form the argument\.
+.
+.IP
+For example if the argument is of the type optional, the name is "path" the separator is "\-\-" and the assignment operator is "=" then the argument might eventually look like
+.
+.IP "" 0
+.
+.IP "" 4
+.
+.nf
+
+  \-\-path=some_example_file_name\.csv
+.
+.fi
+.
+.IP "" 0
+.
+.P
+The default for this is "\-\-"\. Note there are some unix command variants that use a single dash in this postion and some Windows arguments which use the forward slash\.
+.
+.IP "\(bu" 4
+\-\-order_value \- if the argument is positional, then this is the position in which the argument appears
+.
+.IP "\(bu" 4
+\-\-arity \- the number of parts of the argument\. This defaults to a single part\.
+.
+.IP "\(bu" 4
+\-\-range \- a string to validate the range of the argument\. This is generally a regex but might be a file type\.
+.
+.IP "\(bu" 4
+\-\-argsep \- if the arity is greater than one, then this argument is useful\. The default is \',\'\. This is the seperator between different elements of the argument\.
+.
+.IP "\(bu" 4
+\-\-short_name \- Part of the Unix convention on arguments (unfortunately not always followed) is that there are short names for some arguments\. These short names are generally on one character long, and preceded by a single dash rather than two dash as is the default folr
+.
+.IP "" 0
+.
+.SS "Returns"
+The id for this argument\. This is a reference to the application\. This is the same as the output and because of the methodology used is may therefore be updated or created, hence this being both an input and an output parameter\.
+.
+.SH "SSREPI_batch"
+This is the non\-blocking launcher of an application\.
+.
+.P
+Remember to put wait at the end of the script that uses this approach, as the script in the foreground will just finish and leave the background processes to run\. This can have weird results\.
+.
+.P
+The only difference between this an \fISSREPI_run\fR is this is non\-blocking\. So the use of this invocation will launch the application and not wait for the response\.
+.
+.SS "Mandatory parameters"
+These parameters are positional\.
+.
+.P
+This the variable containing the reference to the application for which this is is an argument\. Or alternatively it might contain
+.
+.SS "Optional parameters"
+.
+.IP "\(bu" 4
+\-\-SSREPI\-argument \- there may be multiple instances of this\. This references the application \fISSREPI_application\fR argument entry in the database and encodes an actual argument to the program being run\. The definition of the argument defines its position or how the argument is entered, so the order in which this parameter is used is unimportant; the only necessary prerequisite is that the previous definitions of arguments must be comprehensive\. Therefore it is better to define all arguments even if those arguments are never actually used in a run\. This also makes the code re\-usable\.
+.
+.IP "\(bu" 4
+\-\-cwd \- the directory in which the application should run\. This argument can be used only once\. If there are multiple instances then the last will be used\.
+.
+.IP "\(bu" 4
+\-\-SSREPI\-input \- this is an input file to the application \fISSREPI_application\fR\. The existence of this file will be determined\. This argument can appear as an input and an argument, although often input files may be unstated in the arguments\.
+.
+.IP "\(bu" 4
+\-\-SSREPI\-output \- this is an output file to the application \fISSREPI_application\fR\. The existence of this file will be determined\. This argument can appear as an output and an argument, although often output files may be unstated in the arguments\.
+.
+.IP "" 0
+.
+.P
+This also takes all the optional arguments from an application definition as well \fISSREPI_application\fR\.
+.
+.SS "Returns"
+Nothing\. This is a setter and not a function\.
+.
+.SH "SSREPI_content"
+Updates the content table\. Content acts as a bridge from container type, which in this case is one of the input, output or argument types (\fISSREPI_input\fR, \fISSREPI_output\fR or \fISSREPI_argument\fR) to a named variable of interest (\fISSREPI_variable\fR), specifying that such a variable appears in some or all instances of these input/output/argument types\. It is associated with fine\-grained provenance metadata\.
+.
+.SS "Mandatory parameters"
+These parameters are positional\.
+.
+.P
+The type of container type the variable, statistical_variable\. At present this is restricted to the output from a (\fISSREPI_input\fR, a \fISSREPI_output\fR or a \fISSREPI_argument\fR\.k
+.
+.SS "Optional parameters"
+.
+.IP "\(bu" 4
+\-\-optionality \- can be "always" or "depends"
+.
+.IP "\(bu" 4
+\-\-locator \- where in a csv, using row:x, column:y, or field:z in a database\. This has yet to be implemented\.
+.
+.IP "\(bu" 4
+\-\-space\-locator \- if \-\-is\-space is set to true in the variable entry, then where in a csv, using row:x, column:y, or field:z in a database\.
+.
+.IP "\(bu" 4
+\-\-time\-locator \- if \-\-time is set to true in the variable entry, where in a csv, using row:x, column:y, or field:z in a database\.
+.
+.IP "\(bu" 4
+\-\-link\-locator \- if \-\-is\-link is set to true in the variable entry, where in a csv, using row:x, column:y, or field:z in a database\.
+.
+.IP "\(bu" 4
+\-\-agent\-locator \- if \-\-is\-agent is set to true in the variable entry, where in a csv, using row:x, column:y, or field:z in a database\.
+.
+.IP "\(bu" 4
+\-\-variable \- the variable that is being linked to a container type
+.
+.IP "\(bu" 4
+\-\-visualisation_method \- the visualisation method, if this involes a visualisation method
+.
+.IP "\(bu" 4
+\-\-statistical_variable \- the statistical_method involved, if this is for a set of statistics or a visualisation\.
+.
+.IP "" 0
+.
+.SS "Returns"
+A reference to that content bridge
+.
+.SH "SSREPI_contributor"
+Associates a contributor with a particular script or executable\. A contributor is necessarily a person\.
+.
+.SS "Mandatory parameters"
+These parameters are positional\.
+.
+.P
+A reference to the executable or script with with which the person is going to be associated with as a contributor\.
+.
+.P
+The person who has made a contribution to the executable or script referenced above\. Note this is not necessarily as author, but might be a maintainer, an enhancer or a curator\.
+.
+.P
+Author, designer, programmer, i\.e\. any string with relevant semantic loading\.
+.
+.SS "Returns"
+A contributor ID\.
+.
+.SH "SSREPI_hutton_person"
+Inserts new Hutton person into the database, or updates and existing one\. This is based on there being a user present in something corrresponding to the /etc/passwd file\.
+.
+.SS "Mandatory parameters"
+These parameters are positional\.
+.
+.P
+Actual operating system user\. The assumption is that this will allow access to personal information of the user in question\.
+.
+.SS "Returns"
+Person ID
+.
+.SH "SSREPI_implements"
+Reified relationship between StatisticalMethods or VisualisationMethods and Applications that implement them\.
+.
+.SS "Mandatory parameters"
+These parameters are positional\.
+.
+.SS "Optional parameters"
+Only single one of the following may be used\.
+.
+.IP "\(bu" 4
+\-\-statistical_method \-
+.
+.IP "\(bu" 4
+\-\-visualisation_method \-
+.
+.IP "\(bu" 4
+\-\-library \- Library containing the function if appropriate
+.
+.IP "\(bu" 4
+\-\-function \- Function in the language of the Application or provided by the application that implements the method
+.
+.IP "" 0
+.
+.SS "Returns"
+This is a setting routine and not a function and has no return\.
+.
+.SH "SSREPI_input"
+.
+.SS "Mandatory parameters"
+These parameters are positional\.
+.
+.P
+This is an input type for an executable or script\. This has to define an input for to allow the value to be set as an input\. If this is so defined, then the presence of the input file is checked for before the script or executable is run\.
+.
+.P
+The defines the container type\. A container type may be thought as a type of input or output\. Container types are less specific than this, but the code as it stands just deals with very generalised container types, such as code and more specific container types such as input and outputs to executables and other scripts\.
+.
+.P
+A command that verify the container type\. This might be a file inspection or a regular expression on the file name\. File inspection is preferred as this actually verifies the content of a container type, rather than just its existence\.
+.
+.SS "Returns"
+Input type ID
+.
+.SH "SSREPI_involvement"
+Links personnel to a particular study\.
+.
+.SS "Mandatory parameters"
+These parameters are positional\.
+.
+.P
+The reference to the study that is being linked to\.
+.
+.P
+A reference to the person involved in the study\. The reference is generated b y creating a person using \fISSREPI_person\fR and \fISSREPI_hutton_person\fR\.
+.
+.P
+This is a string and is unvalidated so might be anything\. For example "planner", "developer", "project leader" or some such\.
+.
+.SS "Returns"
+This is a setter, and there has no return as it is not a function\.
+.
+.SH "SSREPI_make_tag"
+.
+.SS "Mandatory parameters"
+These parameters are positional\.
+.
+.P
+How the tag will be referred to, it is also a reference to the tag so must be unique\.
+.
+.P
+A piece of text giving a human\-readable explanation of the tag\.
+.
+.SS "Returns"
+Tag ID
+.
+.P
+This is identical to the tag ID in the parameters\. This is due to the overall design which stresses idempotenency\.
+.
+.SH "SSREPI_me"
+If no parameters are provided will provide the Application ID of the script (and hopefully executable or script that is currently being run)\.
+.
+.SS "Optional parameters"
+This can be the path name of the application being run, or an application ID\.
+.
+.SS "Returns"
+This returns the application ID
+.
+.SH "SSREPI_output"
+.
+.SS "Mandatory parameters"
+These parameters are positional\.
+.
+.SS "Returns"
+The output type ID\.
+.
+.SH "SSREPI_paper"
+.
+.SS "Mandatory parameters"
+These parameters are positional\.
+.
+.P
+YYYY\-MM\-DD
+.
+.SS "Returns"
+Paper ID
+.
+.SH "SSREPI_parameter"
+A Parameter is the name of a parameter taken by a statistical or visualisation method, used to configure the way it behaves\. For example, in the case of R’s rpart() function, parameters are the data stored in the rpart\.control() list\.
+.
+.SS "Mandatory parameters"
+These parameters are positional\.
+.
+.SS "Optional parameters"
+.
+.IP "\(bu" 4
+\-\-statistical_method \-
+.
+.IP "\(bu" 4
+\-\-visualisation_method \-
+.
+.IP "" 0
+.
+.SS "Returns"
+Parameter ID
+.
+.SH "SSREPI_person"
+.
+.SS "Mandatory parameters"
+These parameters are positional\.
+.
+.SS "Optional parameters"
+.
+.SS "Returns"
+Person ID
+.
+.SH "SSREPI_person_makes_assumption"
+.
+.SS "Mandatory parameters"
+These parameters are positional\.
+.
+.P
+This create the assumption as well and attaches to the person in person ID\.
+.
+.SS "Optional parameters"
+.
+.SS "Returns"
+ID Assumption
+.
+.SH "SSREPI_project"
+.
+.SS "Mandatory parameters"
+These parameters are positional\.
+.
+.SS "Optional parameters"
+.
+.IP "\(bu" 4
+\-\-title
+.
+.IP "\(bu" 4
+\-\-funder
+.
+.IP "\(bu" 4
+\-\-grant_id
+.
+.IP "" 0
+.
+.SS "Returns"
+Project ID
+.
+.SH "SSREPI_require_exact"
+.
+.SS "Mandatory parameters"
+These parameters are positional\.
+.
+.SS "Returns"
+Returns 1 for meets the specification, 0 otherwise\.
+.
+.SH "SSREPI_require_minimum"
+.
+.SS "Mandatory parameters"
+These parameters are positional\.
+.
+.SS "Returns"
+Returns 1 for meets the specification, 0 otherwise\.
+.
+.SH "SSREPI_run"
+This will interactively run an application\. That is it will block
+.
+.P
+The only difference between this an \fISSREPI_batch\fR is this is blocking\. So the use of this invocation will launch the application and will wait for the response\.
+.
+.SS "Mandatory parameters"
+These parameters are positional\.
+.
+.P
+This the variable containing the reference to the application for which this is is an argument\. Or alternatively it might contain
+.
+.SS "Optional parameters"
+.
+.IP "\(bu" 4
+\-\-SSREPI\-argument \- there may be multiple instances of this\. This references the application \fISSREPI_application\fR argument entry in the database and encodes an actual argument to the program being run\. The definition of the argument defines its position or how the argument is entered, so the order in which this parameter is used is unimportant; the only necessary prerequisite is that the previous definitions of arguments must be comprehensive\. Therefore it is better to define all arguments even if those arguments are never actually used in a run\. This also makes the code re\-usable\.
+.
+.IP "\(bu" 4
+\-\-cwd \- the directory in which the application should run\. This argument can be used only once\. If there are multiple instances then the last will be used\.
+.
+.IP "\(bu" 4
+\-\-SSREPI\-input \- this is an input file to the application \fISSREPI_application\fR\. The existence of this file will be determined\. This argument can appear as an input and an argument, although often input files may be unstated in the arguments\.
+.
+.IP "\(bu" 4
+\-\-SSREPI\-output \- this is an output file to the application \fISSREPI_application\fR\. The existence of this file will be determined\. This argument can appear as an output and an argument, although often output files may be unstated in the arguments\.
+.
+.IP "" 0
+.
+.P
+This also takes all the optional arguments from an application definition as well \fISSREPI_application\fR\.
+.
+.SS "Returns"
+Nothing\. This is not a function\.
+.
+.SH "SSREPI_statistical_method"
+This declares a statistical method\. A statistical method is an approach to computing some statistics\. It may be implemented in or as part of an application\. A statistical method generates one or more statistical variables \fISSREPI_statitical_variable\fR as its results, and may use the results of another statistical method in its computation\. For example, computing the standard deviation of some data uses the mean of those data\.
+.
+.SS "Mandatory parameters"
+These parameters are positional\.
+.
+.P
+A mandatory set of text describing the statistical method\.
+.
+.SS "Returns"
+Statistical method ID\. This is identical to the statistical method ID in the parameters\. This is due to the overall design which stresses idempotenency\. This allows the instantiation or update of a particular statistical method\.
+.
+.SH "SSREPI_statistical_variable"
+A name for (one of) the result(s) of a statistical method \fISSREPI_statistical_method\fR\.
+.
+.P
+Each time a statistical method is applied, a Statistics entry should be created\. For each StatisticalVariable the StatisticalMethod Employs, there should be a StatisticalInput entry, and for each StatisticalVariable that is generated\-by the StatisticalMethod, there should be a Value entry with the result\-of field containing the ID of the Statistics activity\.
+.
+.SS "Mandatory parameters"
+These parameters are positional\.
+.
+.SS "Optional parameters"
+.
+.SS "Returns"
+Statistical variable ID
+.
+.SH "SSREPI_statistical_variable_value x"
+Reifies the relationship between a set of statistics and a value, recording when the result\-of some statistical methood is used on a set of statistics\. If a statistical method used by the set of statistics employs a statistical variable produced by a statistical method, then there should be an entry in this table recording the actual result used\.
+.
+.SS "Mandatory parameters"
+These parameters are positional\.
+.
+.P
+Can be any kind of single value\.
+.
+.P
+The variable referring to the statistical variable in question\.
+.
+.P
+A container entry specifying the file/image/db in which the statistics reside\.
+.
+.P
+The set of a statistics this refers to\.
+.
+.SS "Optional parameters"
+TODO None of these following three make any sense at the moment\. The last two might, but the first certainly doesn\'t\. I need to read this quite closely again\.
+.
+.IP "\(bu" 4
+\-\-parameter \- I have no idea what this is and I need to look at it properly\. This may even removed\.
+.
+.IP "\(bu" 4
+\-\-visualisation\-parameter \- this is should be created when a visualisation is being created, but does not happen as yet\. This should point to a visualisation
+.
+.IP "\(bu" 4
+\-\-statistics\-parameter \- this is should be created when a set of statistics are being created, but does not happen as yet\. This should point to a set of statistics\.
+.
+.IP "" 0
+.
+.SS "Returns"
+Nothing as this is a setting operation
+.
+.SH "SSREPI_statistics x"
+Statistics are activities that compute and populate the values of statistical rvariables\. They operate on raw data that are retrieved from the values using a query\. To replicate a set of statistics, the query can be rerun, selecting values that are pointed to by containers entries\.
+.
+.SS "Mandatory parameters"
+These parameters are positional\.
+.
+.P
+The id for this statistic\. This is the same as the output and because of the methodology used is may therefore be updated or created, hence this being both an input and an output parameter\. This is generally a single instance of a string\.
+.
+.P
+This could be in the form of how to run a command, a SQL query, or anything relevant\.
+.
+.SS "Optional parameters"
+.
+.SS "Returns"
+The id for this statistic\. This is the same as the input and because of the methodology used is may therefore be updated or created, hence this being both an input and an output parameter\.
+.
+.SH "SSREPI_study"
+A Study is a piece of work at some level of aggregation, which allows simulation outputs to be grouped together\. Studies can be parts of other Studies\. For example, a Study might be a simulation experiment, that is part of another Study to prepare a publication\. Multiple studies make up a project\.
+.
+.SS "Mandatory parameters"
+These parameters are positional\.
+.
+.SS "Optional parameters"
+.
+.IP "\(bu" 4
+\-\-description
+.
+.IP "\(bu" 4
+\-\-start_time YYYY\-MM\-DD
+.
+.IP "\(bu" 4
+\-\-end_time YYYY\-MM\-DD
+.
+.IP "" 0
+.
+.SS "Returns"
+Study ID
+.
+.SH "SSREPI_set"
+Set the default parameters for calls to functions\.
+.
+.SS "Optional parameters"
+.
+.IP "\(bu" 4
+\-\-study
+.
+.IP "\(bu" 4
+\-\-model
+.
+.IP "\(bu" 4
+\-\-version
+.
+.IP "\(bu" 4
+\-\-licence
+.
+.IP "" 0
+.
+.SS "Returns"
+Nothing\. This is a setter and not a function\.
+.
+.SH "SSREPI_make_tag"
+.
+.SS "Mandatory parameters"
+These parameters are positional\.
+.
+.SS "Returns"
+Tag ID
+.
+.SH "SSREPI_tag"
+.
+.SS "Mandatory parameters"
+These parameters are positional\.
+.
+.SS "Optional parameters"
+Although these parameters are optional \- there should at least be one of them\.
+.
+.IP "\(bu" 4
+\-\-documentation
+.
+.IP "\(bu" 4
+\-\-person
+.
+.IP "\(bu" 4
+\-\-study
+.
+.IP "\(bu" 4
+\-\-application
+.
+.IP "\(bu" 4
+\-\-container
+.
+.IP "\(bu" 4
+\-\-container_type
+.
+.IP "\(bu" 4
+\-\-other_tag
+.
+.IP "\(bu" 4
+\-\-study
+.
+.IP "\(bu" 4
+\-\-statistical_method
+.
+.IP "\(bu" 4
+\-\-visualisation_method
+.
+.IP "" 0
+.
+.SS "Returns"
+Does not return anyting as this is a setter and not a function\.
+.
+.SH "SSREPI_value x"
+Value of a Variable, recorded in some Container\. As currently, planned, it is not proposed to store these values in a table; rather, to use the original output data\. Hence this table has a ‘virtual’ presence and will need to be generated as required given a query using it\. The format and units attributes are stored as information in the Content of the ContainerType for the Variable the Value is for\.
+.
+.SS "Mandatory parameters"
+These parameters are positional\.
+.
+.SS "Optional parameters"
+.
+.IP "\(bu" 4
+\-\-statistical_variable
+.
+.IP "\(bu" 4
+\-\-parameter
+.
+.IP "\(bu" 4
+\-\-statistical_parameter
+.
+.IP "\(bu" 4
+\-\-visual_parameter
+.
+.IP "\(bu" 4
+\-\-result_of
+.
+.IP "\(bu" 4
+\-\-time
+.
+.IP "\(bu" 4
+\-\-agent
+.
+.IP "\(bu" 4
+\-\-link
+.
+.IP "" 0
+.
+.SS "Returns"
+Nothing\. This is a setter and not a function\.
+.
+.SH "SSREPI_variable"
+A Variable of interest (or potential interest), Values of which are stored in Containers of certain ContainerTypes\.
+.
+.SS "Mandatory parameters"
+These parameters are positional\.
+.
+.SS "Returns"
+Variable ID
+.
+.SH "SSREPI_visualisation"
+A visualisation is the process of creating an image to depict one or more (typically more than one) visualisation_values\.
+.
+.P
+This records an actual visualisation, the method, the way, or query to produce this particular visulisation and the location of the resulting visualisation\.
+.
+.SS "Mandatory parameters"
+These parameters are positional\.
+.
+.P
+This is not automatically generated (although it could be) and is used to reference this particular instance of visualisation\.
+.
+.SS "Visualisation method"
+Points to the visualisation methode\. This visualisation method is a description of the visualisation method, what it does, how it done and what it produces\.
+.
+.SS "Visualisation query"
+The query sent to the implementation referenced in the visualisation method in order to produce the instance of the visualisation\.
+.
+.SS "Location of this instance of visualisation"
+Self explanatory\. This points to a container showing where the visulisation is held\.
+.
+.SS "Returns"
+A reference to the visualisation object\.
+.
+.SH "SSREPI_visualisation_method"
+This table describes methods for generating Visualisations, which then may appear in the Content of a Container produced by a Process running an Application that Implements it\.
+.
+.SS "Mandatory parameters"
+These parameters are positional\.
+.
+.SS "Returns"
+Visualisation method ID
+.
+.SH "SSREPI_visualisation_variable"
+This creates a statistical variable that is used for a visulisation method and creates a link from this variable to the visualisation method that uses it\.
+.
+.P
+A statistical method is an approach to computing some statistics\. It may be implemented in or as part of an application\. A statistical method generates one or more statistical variables as its results, and may use the results of another statistical method in its computation\. For example, computing the standard deviation of some data uses the mean of those data\.
+.
+.P
+Each time a visualisation method is applied, a visualisation (\fISSREPI_visualisation\fR) entry should be created\. For each visulisation variable the visualisation method (\fISSREPI_visualisation_method\fR employs, there should be a StatisticalInput entry, and for each visualisation variable that is generated\-by the visualisation method, there should be a Value entry with the result\-of field containing the ID of the Statistics activity\.
+.
+.P
+In essence this is a link from the visualisation variable to a particular value and a link to the actual instance of visualisation\.
+.
+.P
+So I need to build a new primitive which takes a visualisation variable, or statistical_variable and links it to a particular value using StatisticalInput
+.
+.SS "Mandatory parameters"
+These parameters are positional\.
+.
+.P
+This is not automatically generated (although it could be) and is used to reference this particular visualisation variable\. This is normally a single woord and used to reference this particular visualisation variable\.
+.
+.SS "Description"
+Briefly in free form text what this
+.
+.SS "Data type"
+Point to the visualisation methode\. This visualisation method is a description of the visualisation method, what it does, how it done and what it produces\.
+.
+.SS "Visualisation method"
+The visualisation method \fISSREPI_visualisation_method\fR
+.
+.SS "Location of this instance of visualisation"
+.
+.SS "Optional parameters"
+.
+.SS "Returns"
+.
+.SH "SSREPI_visualisation_variable_value"
+Reifies the relationship between visualisation and value, recording when the result\-of a visualisation methood is used by a visualisation\. If a visualisation method used by the visualisation employs a statistical variable generated\-by a visualisation method, then there should be an entry in this table recording the actual result used\.
+.
+.SS "Mandatory parameters"
+These parameters are positional\.
+.
+.P
+Can be any kind of single value\.
+.
+.P
+The variable referring to the visualisation variable in question\.
+.
+.P
+A container entry specifying the file/image/visualisation/db in which the visualisation resides\.
+.
+.P
+$4 \- instance of a visualisation this refers to\.
+.
+.SS "Optional parameters"
+TODO None of these three make any sense at the moment\. The last two might, but the irst certainly doesn\'t\. I need to read this quite closely again\.
+.
+.IP "\(bu" 4
+\-\-parameter \- I have no idea what this is and I need to look at it properly
+.
+.IP "\(bu" 4
+\-\-visualisation\-parameter \- this is should be created when a visulisation is being created, but does not happen as yet\. This should point to a visualisation
+.
+.IP "\(bu" 4
+\-\-statistics\-parameter \- this is should be created when a set of statistics are being created, but does not happen as yet\. This should point to a set of statistics\.
+.
+.IP "" 0
+.
+.SS "Returns"
+Nothing as this is a setting operation
+.
+.SH "ENVRIONMENT VARIABLES"
+This enviroment inherits all the enviornment variables from ssrepi\.py \fI\./ssrepi\.1\fR
+.
+.P
+These are sourced from the first calling script\. Obviously only processes downstream can be affected by modified values to these\.
+.
+.SS "SSREPI_MAX_PROCESSES"
+.
+.SS "SSREPI_SLURM"
+.
+.SS "SSREPI_SLURM_PREFIX"
+.
+.SS "SSREPI_SLURM_PENDING_BLOCKS"
+.
+.SS "SSREPI_STUDY"
+.
+.SS "SSREPI_DBFILE"
+.
+.SS "SSREPI_DBUSER"
+.
+.SS "SSREPI_DBTYPE"
+.
+.SH "AUTHORS"
+Doug Salt, Lorenzo Milazzo, Gary Polhill
+.
+.SH "REPORTING BUGS"
+.
+.SH "COPYRIGHT"
+Copyright © 2022 The James Hutton Institute\. License GPLv3+: GNU GPL version 3 or later \fIhttps://gnu\.org/licenses/gpl\.html\fR\.
+.
+.P
+This is free software: you are free to change and redistribute it\. There is NO WARRANTY, to the extent permitted by law\.
+.
+.SH "SEE ALSO"
+ssrepi\.py \fI\./ssrepi\.1\fR
+.
+.SH "STANDARDS"
+.
+.SH "HISTORY"
+

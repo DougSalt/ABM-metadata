@@ -47,3 +47,23 @@ Also working on the documentation for the plugin.
 Last week I tided up the documentation.
 
 Specificially, today I have added a new routine to count rows in the database
+
+Okay thinking about SQL queries and in particular how to make these recursive (and if this is even possible, which I am not sure it is)
+
+Okay you create a file called `trace.sql` and this will contain something like 
+
+```
+SELECT * from Containers where id_container = 'Containers.container_505627104';
+```
+
+You then run it using 
+
+```
+psql ssrepi -f trace.sql
+```
+
+The problem with this is that you need to know your foreign keys, so what you would need is a SQL statement generator, which you could do.
+
+Ah ha. So you use the diagram generators to generate your SQL statements.
+
+Brilliant. The work is mostly done.
