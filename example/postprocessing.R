@@ -26,8 +26,13 @@ args <- commandArgs(TRUE)
 results <- read.csv(args[1])
 results[,"TSNE.1.X"] <- rep.int(0, nrow(results))
 results[,"TSNE.1.Y"] <- rep.int(0, nrow(results))
+
+#which(is.na(as.numeric(as.character(results$Reward))))
+#cat(results$Ratio, "\n")
+#stop()
 results$Incentive <- ifelse(substr(results$Government, 1, 7) == "Cluster",
                            results$Reward / results$Ratio, results$Reward)
+
 
 scenarios <- read.csv(args[2])
 merged <- merge(results,scenarios)

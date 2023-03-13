@@ -851,7 +851,7 @@ _run() {
                     then
                         stdout=' >>'$value
                     else
-                        stdout=" --output=$value"
+                        stdout=" --output=$value --open-mode=append"
                     fi
                 elif [[ "$arg" == *--SSREPI-stdout-* ]]
                 then
@@ -1468,7 +1468,6 @@ SSREPI_statistics() {
 
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	id_statistics=$(update.py \
-
 		--table="Statistics" \
 		--id_statistics=$1 \
 		--date=$(date "+%Y%m%dT%H%M%S") \

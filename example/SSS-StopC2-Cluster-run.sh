@@ -600,7 +600,7 @@ SSS_spomresult_area_id=$(SSREPI_output $PROG \
 	SSS_spomresult_area \
 	"SSS_spomresult_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]+_[^_]-area.csv")
 [ -n "$SSS_spomresult_area_id" ] || exit -1 
-
+wait
 	
 for govt in ClusterActivity RewardActivity RewardSpecies ClusterSpecies 
 do

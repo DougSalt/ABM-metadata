@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+export SSREPI_SLURM=1
 
 # This is the workflow script used tie all the results together in the post
 # processing for this experiment.
@@ -334,7 +335,7 @@ then
                                         ARGS="""$ARGS
                                         --SSREPI-extend-stdout-${o_result_id}=batch1.csv
                                         """
-                                        SSREPI_run $A_ANALYSEGE_GPLU2 $ARGS
+                                        SSREPI_batch $A_ANALYSEGE_GPLU2 $ARGS
 
                                 done
                             done
@@ -380,7 +381,7 @@ then
                                     ARGS="""$ARGS
                                     --SSREPI-extend-stdout-${o_result_id}=batch2.csv
                                     """
-                                    SSREPI_run $A_ANALYSEGE_GPLU2 $ARGS
+                                    SSREPI_batch $A_ANALYSEGE_GPLU2 $ARGS
                                 done
                             done
                         done
@@ -415,10 +416,12 @@ sm_analysege_gpLU2_id=$(SSREPI_statistical_method \
  Level of occupancy at each time step
  Shannon index and evenness measure.")
 
+(>&2 echo pickle)
 sos_statistics_set_1=$(SSREPI_statistics statistics.$(uniq)\
     $sm_analysege_gpLU2_id \
     "analysege_gpLU2.pl 8") 
 
+(>&2 echo pockle)
 sos_statistics_set_2=$(SSREPI_statistics statistics.$(uniq)\
     $sm_analysege_gpLU2_id \
     "analysege_gpLU2.pl 9") 
@@ -643,8 +646,15 @@ sv_richness_id=$(SSREPI_statistical_variable \
 # Merge
 # =====
 
-tail -n +2 batch1.csv > all_results.csv
-tail -n +3 batch2.csv >> all_results.csv
+if [ -n "$SSREPI_SLURM" ]
+then
+    echo "Government,Sink,StopC2,Market,BET,ASP,Reward,Ratio,Run,Expenditure,Income,Subsidy,Subsidy.Proportion,Bankruptcies,Land.Use.Change,Occupancy.LU.1,Occupancy.LU.2,Occupancy.LU.3,Occupancy.LU.4,Occupancy.LU.5,Occupancy.LU.6,Extinction.SPP.1,Extinction.SPP.2,Extinction.SPP.3,Extinction.SPP.4,Extinction.SPP.5,Extinction.SPP.6,Extinction.SPP.7,Extinction.SPP.8,Extinction.SPP.9,Extinction.SPP.10,Occupancy.SPP.1,Occupancy.SPP.2,Occupancy.SPP.3,Occupancy.SPP.4,Occupancy.SPP.5,Occupancy.SPP.6,Occupancy.SPP.7,Occupancy.SPP.8,Occupancy.SPP.9,Occupancy.SPP.10,Shannon,Equitability,Richness" > all_results.without_headings.csv
+    egrep -v "(^Government|^Report start|slurmstepd|var2RewardActivity|NARewardActivity)" all_results.csv >> all_results.without_headings.csv
+    mv all_results.without_headings.csv all_results.csv
+else
+    tail -n +2 batch1.csv > all_results.csv
+    tail -n +3 batch2.csv >> all_results.csv
+fi
 
 # postprocessing.R
 # ================
