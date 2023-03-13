@@ -3,6 +3,8 @@
 This directory provides a reference implementation for the Social Simulation
 REPository Interface (SSREPI).
 
+This is based on the SSS-complex runs, where, I believe SSS stands for Swarm Social Simulation. The original repository for this is [here](https://https://github.com/garypolhill/FEARLUS-SPOMM).
+
 An import file is
 
 + path.sh - this should be sourced to set up all the correct environment

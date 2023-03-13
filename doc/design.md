@@ -43,6 +43,8 @@ readable, but I am weird and think colour should be spelled that way.
 Each relation or row of a table is represented by an object, which each of the
 columns or rows represented as an attribute of that object.
 
+## The table superclass
+
 Each relation is therefore a child object of the super class Table. Table
 defines some default behaviours using class methods and default instance
 methods.
@@ -53,5 +55,116 @@ All these methods can, obviously be overwritten by any sub-class
 
 This are:
 
-+ schema
++ def add(self, cur):
++ def query(self,cur):
++ def search(self,cur, equals):
++ def update(self,cur):
++ def getPrimaryKeys(self):
++ def count(cls, conn):
++ def foreignKeys(cls):
++ def is\_relation(cls):
++ def setValues(self, values = None):
++ def validate(self):
++ def myPrimaryKeys(self):
++ def myTableName(self):
++ def commonFields():
++ def createTable(cls, conn):
+
+Generally the following methods are always overwritten by the subclass.
+
++ __init__(self, values = None):
++ primaryKeys(cls):
++ schema(class):
++ tableName(cls):
++ validate(self):
+
+Optionally the following relation is sometimes overwritten by the subclass.
+
 + is\_relation
+
+These are all subclasses of table:
+
++ Applications():
++ Arguments():
++ ArgumentValues():
++ Assumes():
++ Assumptions():
++ Computers():
++ Containers():
++ ContainerTypes():
++ Contents():
++ Contexts():
++ Contributors():
++ Dependencies():
++ Documentation():
++ Employs():
++ Entailments():
++ Implements():
++ Inputs():
++ Involvements():
++ Meets():
++ Models():
++ Parameters():
++ Persons():
++ PersonalData():
++ Pipelines():
++ Processes():
++ Products():
++ Projects():
++ Requirements():
++ Specifications():
++ StatisticalInputs():
++ StatisticalMethods():
++ StatisticalVariables():
++ Statistics():
++ Studies():
++ Tags():
++ TagMaps():
++ Users():
++ Uses():
++ Value():
++ Variables():
++ Visualisations():
++ VisualisationMethods():
++ VisualisationValues():
+
+## Helper routines
+
++ initially\_populate\_db\_templ():
++ connect\_db():
++ disconnect\_db(conn):
++ create\_tables(conn):
++ set\_debug(value):
++ write\_all\_to\_db(ss\_rep, conn, order = None):
++ initially\_populate\_db(ssrep\_array):
++ studies\_table\_exists(conn):
++ print\_values(ssr\_dict):
++ is\_positive\_int(s):
++ iso8601(str):
++ ip(str):
++ mimetype(allowableMimeTypes):
+
+## Graphing routines
+
++ graph():
++ derive\_edges():
++ derive\_edge(schema):
++ labels():
++ get\_label(schema):
++ get\_nodes(conn, nodes, labels):
++ draw\_nodes(conn, graph, nodes, labels):
++ format\_text(text, length=30):
++ get\_edges(conn, edges, activeNodes):
++ remove\_orphans(nodes, edges):
++ remove\_edges(nodes,edges):
++ save\_dot(nodes, edges, output=None):
++ draw\_graph (conn, nodes, output):
+
+## Exceptions
+
+class InvalidDBSpec(Exception):
+class InvalidNode(Exception):
+class InvalidEdge(Exception):
+
+Each of the table methods are now described in detail.
+

@@ -1,0 +1,57 @@
+.\" generated with Ronn/v0.7.3
+.\" http://github.com/rtomayko/ronn/tree/0.7.3
+.
+.TH "ANALYSIS\.PY" "" "January 2023" "" ""
+.
+.SH "NAME"
+\fBanalysis\.py\fR \- produces a dot file which contains the SSRepI analysis subgraph\.
+.
+.SH "SYNOPSIS"
+analysis\.py
+.
+.SH "DESCRIPTION"
+Produces a dot file, which then must be processed
+.
+.P
+```
+.
+.SH "OPTIONS"
+This takes no options
+.
+.SH "ENVRIONMENT"
+.
+.SS "SSREPI_DBTYPE"
+This may take the value "sqlite3" or "postgres"\. Any other values will result in malfunction\.
+.
+.SS "SSREPI_DBNAME"
+For sqlite3 this is the file location of the sqlite3 database\. It is not used if SSREPI_DBTYPE is set to "postgres"\.
+.
+.SS "SSREPI_DEBUG"
+This may take any value as long as it is defined\. If it is defined then debug is assumed to be on\.
+.
+.SH "EXIT STATUS"
+.
+.SH "RETURN VALUE"
+.
+.SH "EXAMPLES"
+.
+.SH "FILES"
+Expects there to be eiether a sqllite3 database or a postgres database present\. The sqlite3 database is specified in the enviroment variable,
+.
+.SH "AUTHORS"
+Doug Salt, Lorenzo Milazzo, Gary Polhill
+.
+.SH "REPORTING BUGS"
+.
+.SH "BUGS"
+.
+.SH "COPYRIGHT"
+Copyright © 2022 The James Hutton Institute\. License GPLv3+: GNU GPL version 3 or later \fIhttps://gnu\.org/licenses/gpl\.html\fR\.
+.
+.P
+This is free software: you are free to change and redistribute it\. There is NO WARRANTY, to the extent permitted by law\.
+.
+.SH "SEE ALSO"
+.
+.SH "HISTORY"
+

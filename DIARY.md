@@ -47,3 +47,38 @@ Also working on the documentation for the plugin.
 Last week I tided up the documentation.
 
 Specificially, today I have added a new routine to count rows in the database
+
+Okay thinking about SQL queries and in particular how to make these recursive (and if this is even possible, which I am not sure it is)
+
+Okay you create a file called `trace.sql` and this will contain something like 
+
+```
+SELECT * from Containers where id_container = 'Containers.container_505627104';
+```
+
+You then run it using 
+
+```
+psql ssrepi -f trace.sql
+```
+
+The problem with this is that you need to know your foreign keys, so what you would need is a SQL statement generator, which you could do.
+
+Ah ha. So you use the diagram generators to generate your SQL statements.
+
+Brilliant. The work is mostly done.
+
+# 2023-02-02
+
+Tidied up the man page area today, so Marie could look at the repository, she has come back with really good suggestions,so I have included them here, so I don't lose them and can make them general targets. 
+
+If you want me (or anyone else who is clueless) to use the code in it, I think that a “very Dummy starter guide” would be most helpful. Like if I wanted to start using it in one of my model, what I need to do in my model itself and for setting up the metadata database? (are all the installation listed compulsory (any version requirement)? Do I need to create the database using a specific code? Your “running the example” seems to imply using linux (may I request some explanation with the code lines examples?) ? Are all the installation underneath required for it? How do I need to amend my code?...).
+Maybe all those info are already mostly there and just need a few extra sentence in plain English to help a novice find its way around it (?)
+ 
+Anyway, see what fits with your workplan & which project example(s) you will be focusing on first. Maybe you don’t want to let us (novices) fully free yet with your code, and “dummy” guide would be for later on in your project. 😉
+ 
+# 2023-02-13
+
+I have been pondering graph databases, mainly because Gary asked me to, but I habecome fascinated by them. However, what I am going to do is convert the relational database I have produced from the provenance primitives I have created and convert it to a graph database, for easier querying. This is easy to do because you just take you diagramming tools and do one for the entire database.
+
+It appears obvious that a relational database is largely useless for path based queriesi (which initially I confused with recursive queries).
