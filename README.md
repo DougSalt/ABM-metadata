@@ -6,23 +6,24 @@ This repository is for the Miracle simulation metadata outputs specification.
 
 + README.md - this file
 + analysis.dot - a graphviz rendering of the analysis sub-graph.
-+ bin - the directory containing all executables. These are all written in Python.
++ bin - the directory containing all executables. These are all written in
+  Python.
 + cfg - a directory used by the example code containing 
 + doc - documentation directory
 + DIARY.md - notes on what I have done (very out of date)
 + example - the example code or the reference example
-+ finegrain.dot - a graphviz rendering of the finegrain sub-graph
-+ folksonomy.dot - a graphviz rendering of the folksonomy sub-graph
++ finegrain.dot - a graphviz rendering of the example finegrain sub-graph
++ folksonomy.dot - a graphviz rendering of the example folksonomy sub-graph
 + lib - bash and python libraries used by code in `bin`, and also the bash library is used by the code in `example`.
 + LICENCSE - GPLv3 license
 + man - a directory with a bunch of Unix man pages.
-+ project.dot - a graphviz rendering of the project sub-graph
-+ provenance.dot - a graphviz rendering of the provenance sub-graph
++ project.dot - a graphviz rendering of the example project sub-graph
++ provenance.dot - a graphviz rendering of the example provenance sub-graph
 + save - the results of a previous run. This allows the re-running of
   example/postprocessing without having to do the all the model runs again in
   `example`.
-+ services.dot - a graphviz rendering of the services sub-graph
-+ workflow.dot - a graphviz rendering of the workflow sub-graph
++ services.dot - a graphviz rendering of the example services sub-graph
++ workflow.dot - a graphviz rendering of the example workflow sub-graph
 
 # RUNNING THE EXAMPLE
 
