@@ -1,0 +1,20 @@
+digraph Hierarchical_database {
+	graph [
+		label="Hierarchical database"
+		labelloc="t"
+		fontname="Helvetica,Arial,sans-serif"
+	]
+	node [
+		fontname="Helvetica,Arial,sans-serif"
+		shape=record
+		style=filled
+		fillcolor=gray95
+	]
+    O1[label = <{<b>«Order 1»</b> | Cheese<br align="left"/>£2.50<br align="left"/>20/2/2000}>]
+    O2[label = <{<b>«Order 2»</b> | Broccoli<br align="left"/>£0.50<br align="left"/>25/2/2000}>]
+    O3[label = <{<b>«Order 3»</b> | Beans<br align="left"/>£0.99<br align="left"/>3/1/2000}>]
+    O4[label = <{<b>«Order 4»</b> | Bread<br align="left"/>£1.50<br align="left"/>3/1/2000}>]
+    O5[label = <{<b>«Order 5»</b> | Margarine<br align="left"/>£3.50<br align="left"/>3/1/2000}>]
+
+}
+

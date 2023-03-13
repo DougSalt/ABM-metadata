@@ -1,0 +1,125 @@
+\documentclass[usenames,dvipsnames,10pt]{beamer}
+%\documentclass[usenames,dvipsnames,10pt,handout]{beamer}
+
+\usepackage{pgfpages}
+\usepackage{tabularx}
+\mode<handout>{%
+    \pgfpagesuselayout{4 on 1}[a4paper]
+    \setbeameroption{show notes}
+}
+
+\usepackage{xcolor}
+\usepackage{hutton/hutton}
+
+\title{Databases}
+\author{Doug Salt}
+\institute{The James Hutton Institute}
+
+\begin{document}
+
+\begin{frame}[plain]
+    \maketitle
+\end{frame}
+
+\begin{frame}{Structure of the talk}
+
+    \begin{itemize}
+        \item History
+        \item Hierarchical model
+        \item Network model
+        \item Relational model
+        \item Deductive model
+        \item Semi-structured model
+        \item Semantic model
+        \item Graph model
+        \item Multi-dimensional model
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}[A brief history of database]
+
+    \vspace
+    Historically data was presented in a form of a file, which consisted of records of \textbf{fixed length}. I am old enough to remember this. Files were not necessarily accessed sequentially, but they were of fixed length. These records were further subdivided into fields. Each field was fixed in length. Variable length fields were a major advance (done with a length field at the start or end of a fixed length variable). 
+
+    \vspace
+    'C' introduced streams which were revolutionary in terms of data.
+    \vspace
+    The other innovations were databases. A database was essentially a file with properly variable length records. The structure of the database allowed the exploitation of the variable length nature of these files.
+    \vspace
+
+
+
+\end{frame}
+\begin{frame}{Hierarchical}
+
+    \vfill
+
+    The granddaddy of all databases.
+
+    \vfill
+
+    \includegraphics[width=0.5\textwidth]{img/hierarchical.png}
+
+    \vfill
+
+    Examples of this are:
+
+    \vfill
+
+
+    IBM IMS
+\end{frame}
+
+\begin{frame}{Network}
+
+\end{frame}
+
+\begin{frame}{Relational}
+
+    SQLite, Postgres, 
+\end{frame}
+
+\begin{frame}{Semi-structured}
+
+    XML, Excel (Unfortunately). Yes, arguably Excel is a database.
+\end{frame}
+
+\begin{frame}{Semantic}
+
+    OWL,RDF, XML
+\end{frame}
+
+\begin{frame}{Graph}
+
+    Graphviz, Gephi and Gremlin.
+\end{frame}
+
+\begin{frame}{Multidimensional}
+
+    OLAP
+
+\end{frame}
+
+\begin{frame}{Graph vs Relational}
+
+    \begin{flushleft}
+    \begin{tabular}{p{.275\textwidth} | p{0.33\textwidth} p{0.33\textwidth} }
+        & \textbf{Graph Database} & \textbf{Relational Database} \\
+        \hline
+        FORMAT  & Nodes and edges & Tables with rows and columns \\
+        RELATIONSHIPS & Considered data, represented by edges between nodes & Related across tables, established using foreign keys between tables \\
+        COMPLEX QUERIES & Run quickly and do not require joins & Require complex joins between tables \\
+        TOP USE CASES & Relationship heavy use cases, including fraud detectioin and recommendation engines & Transaction-focused use cases, including online transactions and accounting. \\
+    \end{tabular}
+    \end{flushleft}
+
+\end{frame}
+
+\begin{frame}
+    Thank you very much
+    \finalpage
+\end{frame}
+
+\end{document}
+
