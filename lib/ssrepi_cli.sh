@@ -469,8 +469,9 @@ SSREPI_batch() {
 	then
 		if [ -z "$SSREPI_SLURM_PREFIX" ]
 		then
-            export SSREPI_SLURM_PREFIX=SSREPI_$(uniq)
+            export SSREPI_SLURM_PREFIX=SSREPI
         fi
+        export job_name=${SSREPI_SLURM_PREFIX}_$(uniq)
     fi
     _run $@ $STANDARD_ARGS
     [ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
@@ -479,16 +480,32 @@ SSREPI_batch() {
 _run() {
     [ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 
+    PARAMS=$@
     if [ -z "$SSREPI_MAX_PROCESSES" ]
     then
         SSREPI_MAX_PROCESSES=4
     fi
 
+    WAIT=
+    if [[ "$@" == *--wait=* ]]
+    then
+        # So if a wait job is specified, then this will collect dependencies in
+        # a file called /tmp/$WAIT.dependencies. The problem is how do
+        # trigger the job that does the dependencies. Oh this is easy; you
+        # have a new primitive SSREPI_wait will do this, which take the
+        # wait_job as an argument. Perfect.
+
+        WAIT=$(echo "$@" | egrep -s "wait=" | \
+            sed "s/^.*--wait=\([^ ][^ ]*\).*$/\1/")
+        PARAMS=$(echo "$PARAMS" | egrep -s "wait=" | \
+            sed "s/--wait=[^ ][^ ]* *//")
+    fi	
+
     # The reasoning behind the next two lines is that the argument may be
     # an id_application or a path may be passed as the first argument
 
-    APP=$(_get_executable $@)
-    id_application=$(SSREPI_me $@)
+    APP=$(_get_executable $PARAMS)
+    id_application=$(SSREPI_me $PARAMS)
 # HERE
     invoking_application=application_$(cksum $(_parent_script) | \
         awk '{print $1}')
@@ -566,9 +583,9 @@ _run() {
 
     # Remove cwd
     CWD=
-    if [[ "$@" == *--cwd* ]]
+    if [[ "$PARAMS" == *--cwd* ]]
     then	
-        CWD=$(echo "$@" | egrep -s "cwd=" | \
+        CWD=$(echo "$PARAMS" | egrep -s "cwd=" | \
             sed "s/^.*--cwd=\([^ ][^ ]*\).*$/\1/")
         if [ ! -d "$CWD" ]
         then
@@ -580,14 +597,14 @@ _run() {
 
     blocking=
     # Remove --blocking
-    if [[ "$@" == *--blocking* ]]
+    if [[ "$PARAMS" == *--blocking* ]]
     then	
         blocking=1
         PARAMS=$(echo "$PARAMS" | egrep -s "\-\-blocking" | \
             sed "s/--blocking\s*//")
     fi
 
-    if [[ "$@" == *--dependency=* ]]
+    if [[ "$PARAMS" == *--dependency=* ]]
     then
         # This is for something that must be run before this part can
         # be run. For instance we may have some post processing to be
@@ -596,8 +613,8 @@ _run() {
         # through the database looking to see if there is a record of
         # the dependency have been executed successfully this time.
 
-        DEPENDENCY=$(echo "$@" | egrep -s "dependency=" | \
-            sed "s/^.*\(--dependency=[^ ][^ ]*\).*$/\1/")
+        DEPENDENCY=$(echo "$PARAMS" | egrep -s "dependency=" | \
+            sed "s/^.*--dependency=\([^ ][^ ]*\).*$/\1/")
         id_call_application=$(SSREPI_application $DEPENDENCY \
             --instance=$(which $DEPENDENCY) \
         )
@@ -626,7 +643,7 @@ _run() {
     proper_args=
     declare -A argument_value
     position_arg=()
-    for arg in $@
+    for arg in $PARAMS
     do
         if [[ "$arg" == *--SSREPI-argument-* ]]
         then
@@ -691,7 +708,7 @@ _run() {
                     [ -n "$argsep" ] || exit -1
                     if ( [[ $arity == "+" ]] || (( $arity > 1 )) ) && [[ "$argsep" == "space" ]] 
                     then
-                        value=$(echo $@ | sed 's/.*\-\-SSREPI\-argument\-'$id_arg'=//' | sed 's/\-\-.*//')
+                        value=$(echo $PARAMS | sed 's/.*\-\-SSREPI\-argument\-'$id_arg'=//' | sed 's/\-\-.*//')
                     fi
                     if [[ $arity != "+" ]] && (( $arity > 1 )) 
                     then
@@ -763,7 +780,7 @@ _run() {
             done
             stdout=
             stderr=
-            for arg in $@
+            for arg in $PARAMS
             do
                 if [[ "$arg" == *--SSREPI-input-* ]]
                 then
@@ -794,7 +811,7 @@ _run() {
                 exit -1
             fi
 
-            for arg in $@
+            for arg in $PARAMS
             do
                 if 	[[ "$arg" == *--SSREPI-output-* ]] || \
                     [[ "$arg" == *--SSREPI-extend-stdout-* ]] || \
@@ -837,7 +854,7 @@ _run() {
             done
             stdout=
             stderr=
-            for arg in $@
+            for arg in $PARAMS
             do
                 if [[ "$arg" == *--SSREPI-input-* ]]
                 then
@@ -892,12 +909,12 @@ _run() {
             else
 
                 [ -n $DEBUG ] && (>&2 echo "SLURMING...")
-                [ -n $DEBUG ] && (>&2 echo RUNNING: srun --job-name=$SSREPI_SLURM_PREFIX $stdout $stderr  $APP $proper_args ${position_arg[*]})
+                [ -n $DEBUG ] && (>&2 echo RUNNING: srun --job-name=$job_name $stdout $stderr  $APP $proper_args ${position_arg[*]})
 
-                srun --job-name=$SSREPI_SLURM_PREFIX $stdout $stderr $APP $proper_args ${position_arg[*]}
+                srun --job-name=${job_name} $stdout $stderr $APP $proper_args ${position_arg[*]}
             fi
 
-            for arg in $@
+            for arg in $PARAMS
             do
                 if 	[[ "$arg" == *--SSREPI-output-* ]] || \
                     [[ "$arg" == *--SSREPI-extend-stdout-* ]] || \
@@ -920,6 +937,15 @@ _run() {
                 --end_time=$(date "+%Y%m%dT%H%M%S"))
         ) &
 
+        if [ -n "$WAIT" ]
+        then
+            # I really do not like the next line. This is about the time it
+            # takes Slurm to instantiate the job and return a job id. Arbitrary
+            # timings bug me.
+
+            sleep 10
+            echo -n ":"$(squeue --format "%j %A" | grep ${job_name} | cut -f 2 -d ' ') >> /tmp/$USER.${WAIT}.dependencies
+        fi
 		# Check the number of processes running. And if it exceeded then sit here and wait.
 
 		# Dammit these could be initialising but not yet running, so I might get overflow.
@@ -1808,6 +1834,13 @@ SSREPI_person_makes_assumption() {
 	echo "$id_assumption"
 }
 
+SSREPI_wait() {
+    set -xv
+    WAIT="$1"
+    srun --job-name=$USER.$WAIT --dependency=afterany$(cat /tmp/$USER.$WAIT.dependencies) bash -c "echo $WAIT;sleep 60"
+    rm /tmp/$USER.$WAIT.dependencies
+    set +xv
+}
 _ip_address() {
 	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
 	IP=$(/sbin/ifconfig | sed -n "2p" | awk '{print $2}' |cut -f2 -d:)
@@ -1960,10 +1993,10 @@ _get_instances() {
     then
         instances=$(ps -A -o command | grep $1 | grep -v grep | wc -l)
     else
-        instances=$(( $(squeue -t RUNNING --name=$SSREPI_SLURM_PREFIX | wc -l) - 1 ))
+        instances=$(( $(squeue -t RUNNING | grep $SSREPI_SLURM_PREFIX | wc -l) - 1 ))
         if [ -n "$SSREPI_SLURM_PENDING_BLOCKS" ]
         then
-            instances=$(($instances + $(( $(squeue -t PENDING --name=$SSREPI_SLURM_PREFIX | wc -l) -1 )) ))
+            instances=$(($instances + $(( $(squeue -t PENDING | grep $SSREPI_SLURM_PREFIX | wc -l) -1 )) ))
         fi
     fi
     echo $instances

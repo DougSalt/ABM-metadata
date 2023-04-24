@@ -82,3 +82,7 @@ Anyway, see what fits with your workplan & which project example(s) you will be 
 I have been pondering graph databases, mainly because Gary asked me to, but I habecome fascinated by them. However, what I am going to do is convert the relational database I have produced from the provenance primitives I have created and convert it to a graph database, for easier querying. This is easy to do because you just take you diagramming tools and do one for the entire database.
 
 It appears obvious that a relational database is largely useless for path based queriesi (which initially I confused with recursive queries).
+
+# 2023-03-13
+
+I am not updating this a much as I should. I finally have clear water when running the processing on this. The script doing the merging of the data was single threaded and taking way to long, so I parallised it. This is "working" inasmuch as it doesn't block properly at the moment. It will block until it has less than or equal to `SSREPI_MAX_PROCESSES` processes left and then continue. This is something I badly overlooked. So what I need to do is set a blank job with a dependency on all the jobs that go before it. 

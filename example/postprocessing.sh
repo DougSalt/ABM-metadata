@@ -333,7 +333,7 @@ then
                                         """
 
                                         ARGS="""$ARGS
-                                        --SSREPI-extend-stdout-${o_result_id}=batch1.csv
+                                        --SSREPI-stdout-${o_result_id}=batch_${govt}_${run}_${market}_${sink}_${rwd}_${asp}_${bet}_${rat}.csv
                                         """
                                         SSREPI_batch $A_ANALYSEGE_GPLU2 $ARGS
 
@@ -361,7 +361,7 @@ then
                             do
                                 for rat in 1.0
                                 do
-                                    DIR="Cluster2-2/SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_"
+                                    DIR="Cluster2-2/#/SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_"
                                     IN_1="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.txt"
                                     IN_2="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.grd"
                                     IN_3="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-extinct.csv"
@@ -372,14 +372,14 @@ then
                                     """
 
                                     ARGS="""$ARGS
-                                    --SSREPI-input-${i_SSS_report_id}=$DIR/$IN_1
-                                    --SSREPI-input-${i_SSS_report_grd_id}=$DIR/$IN_2
-                                    --SSREPI-input-${i_SSS_spomresult_extinct_id}=$DIR/$IN_3
-                                    --SSREPI-input-${i_SSS_spomresult_lspp_id}=$DIR/$IN_4
+                                    --SSREPI-input-${i_SSS_report_id}=$DIR/#/$IN_1
+                                    --SSREPI-input-${i_SSS_report_grd_id}=$DIR/#/$IN_2
+                                    --SSREPI-input-${i_SSS_spomresult_extinct_id}=$DIR/#/$IN_3
+                                    --SSREPI-input-${i_SSS_spomresult_lspp_id}=$DIR/#/$IN_4
                                     """
 
                                     ARGS="""$ARGS
-                                    --SSREPI-extend-stdout-${o_result_id}=batch2.csv
+                                    --SSREPI-stdout-${o_result_id}=batch_${govt}_${run}_${market}_${sink}_${rwd}_${asp}_${bet}_${rat}.csv
                                     """
                                     SSREPI_batch $A_ANALYSEGE_GPLU2 $ARGS
                                 done
@@ -391,6 +391,9 @@ then
         done
     done
 fi
+
+#SSREPI_wait postprocessing
+wait
 
 # Metadata
 # --------
@@ -646,15 +649,13 @@ sv_richness_id=$(SSREPI_statistical_variable \
 # Merge
 # =====
 
-if [ -n "$SSREPI_SLURM" ]
-then
-    echo "Government,Sink,StopC2,Market,BET,ASP,Reward,Ratio,Run,Expenditure,Income,Subsidy,Subsidy.Proportion,Bankruptcies,Land.Use.Change,Occupancy.LU.1,Occupancy.LU.2,Occupancy.LU.3,Occupancy.LU.4,Occupancy.LU.5,Occupancy.LU.6,Extinction.SPP.1,Extinction.SPP.2,Extinction.SPP.3,Extinction.SPP.4,Extinction.SPP.5,Extinction.SPP.6,Extinction.SPP.7,Extinction.SPP.8,Extinction.SPP.9,Extinction.SPP.10,Occupancy.SPP.1,Occupancy.SPP.2,Occupancy.SPP.3,Occupancy.SPP.4,Occupancy.SPP.5,Occupancy.SPP.6,Occupancy.SPP.7,Occupancy.SPP.8,Occupancy.SPP.9,Occupancy.SPP.10,Shannon,Equitability,Richness" > all_results.without_headings.csv
-    egrep -v "(^Government|^Report start|slurmstepd|var2RewardActivity|NARewardActivity)" all_results.csv >> all_results.without_headings.csv
-    mv all_results.without_headings.csv all_results.csv
-else
-    tail -n +2 batch1.csv > all_results.csv
-    tail -n +3 batch2.csv >> all_results.csv
-fi
+echo "Government,Sink,StopC2,Market,BET,ASP,Reward,Ratio,Run,Expenditure,Income,Subsidy,Subsidy.Proportion,Bankruptcies,Land.Use.Change,Occupancy.LU.1,Occupancy.LU.2,Occupancy.LU.3,Occupancy.LU.4,Occupancy.LU.5,Occupancy.LU.6,Extinction.SPP.1,Extinction.SPP.2,Extinction.SPP.3,Extinction.SPP.4,Extinction.SPP.5,Extinction.SPP.6,Extinction.SPP.7,Extinction.SPP.8,Extinction.SPP.9,Extinction.SPP.10,Occupancy.SPP.1,Occupancy.SPP.2,Occupancy.SPP.3,Occupancy.SPP.4,Occupancy.SPP.5,Occupancy.SPP.6,Occupancy.SPP.7,Occupancy.SPP.8,Occupancy.SPP.9,Occupancy.SPP.10,Shannon,Equitability,Richness" > all_results.csv
+egrep -v "(^Government|^Report start|slurmstepd|var2RewardActivity|NARewardActivity)" batch_*.csv >> all_results.csv
+#rm batch*csv
+
+# This is how it used to be done
+#    tail -n +2 batch1.csv > all_results.csv
+#    tail -n +3 batch2.csv >> all_results.csv
 
 # postprocessing.R
 # ================
