@@ -37,7 +37,7 @@ else
 	exit -1
 fi
 
-if ! which squeue && [ -n "$SSREPI_SLURM" ]
+if ! which squeue > /dev/null && [ -n "$SSREPI_SLURM" ]
 then
 	(>&2 echo "No squeue and SSREPI_SLURM is set
 		Is Slurm installed?")

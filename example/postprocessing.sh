@@ -295,94 +295,55 @@ i_SSS_spomresult_lspp_id=$(SSREPI_input $A_ANALYSEGE_GPLU2 \
 o_result_id=$(SSREPI_output $A_ANALYSEGE_GPLU2 result "^(batch1|batch2).csv$")
 [ -n "$o_result_id" ] || exit -1
 
+# You are a complete and total idiot. My stupidity tends to infinity as I
+# approach one. Unbelievabe. I am not going to reveal what I did here before
+# but you can probably guess. Let's just say my output file was _considerably_
+# larger than it should have been.
 
-if [ -z "$test" ]
-then
-    for govt in ClusterActivity RewardActivity RewardSpecies ClusterSpecies 
+# There is the usual lesson here - which is do not make assumptions (problem
+# being is that you didn't of course know you were making those assumptions
+# until you are slapped in the face by a wet haddock because of those
+# assumptions, and even then being slapped in the face by a wet haddock seems
+# like the behaviour you are expecting until something alerts you to the fact
+# that being slapped in the face by a wet haddock is probably not something you
+# should be expecting. So the endeavour becomes: the recognition of piscean
+# countenance concussion (the clue should have been the length of time).
+
+ARGS=
+count=0
+total=$((4 * 20 * 2 * 1 * 10 * 2 * 2 * 3))
+for govt in ClusterActivity RewardActivity RewardSpecies ClusterSpecies 
+do
+    for run in 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020
     do
-        for run in 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020
+        for market in flat var2
         do
-            for market in flat var2
+            for sink in nosink
             do
-                for sink in nosink
+                for rwd in 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0
                 do
-                    for rwd in 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0
-                    do
-                         for asp in 1.0 5.0
-                         do
-                              for bet in 25.0 30.0
-                              do
-                                   for rat in 1.0 2.0 10.0
-                                   do
+                     for asp in 1.0 5.0
+                     do
+                          for bet in 25.0 30.0
+                          do
+                               for rat in 1.0 2.0 10.0
+                               do
 
-                                        DIR="Cluster2/SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_"
-                                        IN_1="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.txt"
-                                        IN_2="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.grd"
-                                        IN_3="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-extinct.csv"
-                                        IN_4="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-lspp.csv"
-
-                                        ARGS="""
-                                        --SSREPI-argument-$a_experiment=8
-                                        """
-
-                                        ARGS="""$ARGS
-                                        --SSREPI-input-${i_SSS_report_id}=$DIR/$IN_1
-                                        --SSREPI-input-${i_SSS_report_grd_id}=$DIR/$IN_2
-                                        --SSREPI-input-${i_SSS_spomresult_extinct_id}=$DIR/$IN_3
-                                        --SSREPI-input-${i_SSS_spomresult_lspp_id}=$DIR/$IN_4
-                                        """
-
-                                        ARGS="""$ARGS
-                                        --SSREPI-stdout-${o_result_id}=batch_${govt}_${run}_${market}_${sink}_${rwd}_${asp}_${bet}_${rat}.csv
-                                        """
-                                        SSREPI_batch $A_ANALYSEGE_GPLU2 $ARGS
-
-                                done
-                            done
-                        done
-                    done
-                done
-            done
-        done
-    done
-    for govt in RewardActivity RewardSpecies 
-    do
-        for run in 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020
-        do
-            for market in flat var2
-            do
-                for sink in nosink
-                do
-                    for rwd in 15.0 20.0 25.0 30.0 40.0 50.0 100.0
-                    do
-                        for asp in 1.0 5.0
-                        do
-                           for bet in 25.0 30.0
-                            do
-                                for rat in 1.0
-                                do
-                                    DIR="Cluster2-2/#/SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_"
+                                    DIR="Cluster2/SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_"
                                     IN_1="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.txt"
                                     IN_2="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.grd"
                                     IN_3="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-extinct.csv"
                                     IN_4="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-lspp.csv"
 
-                                    ARGS="""
-                                    --SSREPI-argument-$a_experiment=9
+                                    ARGS="""$ARGS
+                                    --SSREPI-input-${i_SSS_report_id}=$DIR/$IN_1
+                                    --SSREPI-input-${i_SSS_report_grd_id}=$DIR/$IN_2
+                                    --SSREPI-input-${i_SSS_spomresult_extinct_id}=$DIR/$IN_3
+                                    --SSREPI-input-${i_SSS_spomresult_lspp_id}=$DIR/$IN_4
                                     """
 
-                                    ARGS="""$ARGS
-                                    --SSREPI-input-${i_SSS_report_id}=$DIR/#/$IN_1
-                                    --SSREPI-input-${i_SSS_report_grd_id}=$DIR/#/$IN_2
-                                    --SSREPI-input-${i_SSS_spomresult_extinct_id}=$DIR/#/$IN_3
-                                    --SSREPI-input-${i_SSS_spomresult_lspp_id}=$DIR/#/$IN_4
-                                    """
-
-                                    ARGS="""$ARGS
-                                    --SSREPI-stdout-${o_result_id}=batch_${govt}_${run}_${market}_${sink}_${rwd}_${asp}_${bet}_${rat}.csv
-                                    """
-                                    SSREPI_batch $A_ANALYSEGE_GPLU2 $ARGS
-                                done
+                                    count=$(($count + 1))
+                                    (>&2 echo 1st loop COUNT: $count / $total)
                             done
                         done
                     done
@@ -390,8 +351,69 @@ then
             done
         done
     done
-fi
+done
 
+ARGS="""$ARGS
+--SSREPI-argument-$a_experiment=8
+"""
+ARGS="""$ARGS
+--SSREPI-stdout-${o_result_id}=batch1.csv
+"""
+
+SSREPI_batch $A_ANALYSEGE_GPLU2 $ARGS
+
+ARGS=
+count=0
+total=$((2 * 20 * 2 * 1 * 7 * 2 * 2 * 1))
+for govt in RewardActivity RewardSpecies 
+do
+    for run in 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020
+    do
+        for market in flat var2
+        do
+            for sink in nosink
+            do
+                for rwd in 15.0 20.0 25.0 30.0 40.0 50.0 100.0
+                do
+                    for asp in 1.0 5.0
+                    do
+                       for bet in 25.0 30.0
+                        do
+                            for rat in 1.0
+                            do
+                                DIR="Cluster2-2/#/SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_"
+                                IN_1="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.txt"
+                                IN_2="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.grd"
+                                IN_3="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-extinct.csv"
+                                IN_4="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-lspp.csv"
+
+                               ARGS="""$ARGS
+                                --SSREPI-input-${i_SSS_report_id}=$DIR/#/$IN_1
+                                --SSREPI-input-${i_SSS_report_grd_id}=$DIR/#/$IN_2
+                                --SSREPI-input-${i_SSS_spomresult_extinct_id}=$DIR/#/$IN_3
+                                --SSREPI-input-${i_SSS_spomresult_lspp_id}=$DIR/#/$IN_4
+                                """
+
+                                count=$(($count + 1))
+                                (>&2 echo 2nd loop COUNT: $count / $total)
+                           done
+                        done
+                    done
+                done
+            done
+        done
+    done
+done
+
+ARGS="""$ARGS
+--SSREPI-argument-$a_experiment=9
+"""
+ARGS="""$ARGS
+--SSREPI-stdout-${o_result_id}=batch2.csv
+"""
+
+SSREPI_batch $A_ANALYSEGE_GPLU2 $ARGS
+ 
 #SSREPI_wait postprocessing
 wait
 
@@ -419,12 +441,10 @@ sm_analysege_gpLU2_id=$(SSREPI_statistical_method \
  Level of occupancy at each time step
  Shannon index and evenness measure.")
 
-(>&2 echo pickle)
 sos_statistics_set_1=$(SSREPI_statistics statistics.$(uniq)\
     $sm_analysege_gpLU2_id \
     "analysege_gpLU2.pl 8") 
 
-(>&2 echo pockle)
 sos_statistics_set_2=$(SSREPI_statistics statistics.$(uniq)\
     $sm_analysege_gpLU2_id \
     "analysege_gpLU2.pl 9") 
@@ -649,13 +669,12 @@ sv_richness_id=$(SSREPI_statistical_variable \
 # Merge
 # =====
 
-echo "Government,Sink,StopC2,Market,BET,ASP,Reward,Ratio,Run,Expenditure,Income,Subsidy,Subsidy.Proportion,Bankruptcies,Land.Use.Change,Occupancy.LU.1,Occupancy.LU.2,Occupancy.LU.3,Occupancy.LU.4,Occupancy.LU.5,Occupancy.LU.6,Extinction.SPP.1,Extinction.SPP.2,Extinction.SPP.3,Extinction.SPP.4,Extinction.SPP.5,Extinction.SPP.6,Extinction.SPP.7,Extinction.SPP.8,Extinction.SPP.9,Extinction.SPP.10,Occupancy.SPP.1,Occupancy.SPP.2,Occupancy.SPP.3,Occupancy.SPP.4,Occupancy.SPP.5,Occupancy.SPP.6,Occupancy.SPP.7,Occupancy.SPP.8,Occupancy.SPP.9,Occupancy.SPP.10,Shannon,Equitability,Richness" > all_results.csv
-egrep -v "(^Government|^Report start|slurmstepd|var2RewardActivity|NARewardActivity)" batch_*.csv >> all_results.csv
-#rm batch*csv
+#echo "Government,Sink,StopC2,Market,BET,ASP,Reward,Ratio,Run,Expenditure,Income,Subsidy,Subsidy.Proportion,Bankruptcies,Land.Use.Change,Occupancy.LU.1,Occupancy.LU.2,Occupancy.LU.3,Occupancy.LU.4,Occupancy.LU.5,Occupancy.LU.6,Extinction.SPP.1,Extinction.SPP.2,Extinction.SPP.3,Extinction.SPP.4,Extinction.SPP.5,Extinction.SPP.6,Extinction.SPP.7,Extinction.SPP.8,Extinction.SPP.9,Extinction.SPP.10,Occupancy.SPP.1,Occupancy.SPP.2,Occupancy.SPP.3,Occupancy.SPP.4,Occupancy.SPP.5,Occupancy.SPP.6,Occupancy.SPP.7,Occupancy.SPP.8,Occupancy.SPP.9,Occupancy.SPP.10,Shannon,Equitability,Richness" > all_results.csv
+#egrep -v "(^Government|^Report start|slurmstepd|var2RewardActivity|NARewardActivity)" batch_*.csv >> all_results.csv
+##rm batch*csv
 
-# This is how it used to be done
-#    tail -n +2 batch1.csv > all_results.csv
-#    tail -n +3 batch2.csv >> all_results.csv
+tail -n +2 batch1.csv > all_results.csv
+tail -n +3 batch2.csv >> all_results.csv
 
 # postprocessing.R
 # ================
