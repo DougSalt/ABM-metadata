@@ -309,7 +309,12 @@ o_result_id=$(SSREPI_output $A_ANALYSEGE_GPLU2 result "^(batch1|batch2).csv$")
 # should be expecting. So the endeavour becomes: the recognition of piscean
 # countenance concussion (the clue should have been the length of time).
 
-ARGS=
+ARGS="""
+--SSREPI-argument-$a_experiment=8
+"""
+ARGS="""$ARGS
+--SSREPI-stdout-${o_result_id}=batch1.csv
+"""
 count=0
 total=$((4 * 20 * 2 * 1 * 10 * 2 * 2 * 3))
 for govt in ClusterActivity RewardActivity RewardSpecies ClusterSpecies 
@@ -322,28 +327,28 @@ do
             do
                 for rwd in 1.0 2.0 3.0 4.0 5.0 6.0 7.0 8.0 9.0 10.0
                 do
-                     for asp in 1.0 5.0
-                     do
-                          for bet in 25.0 30.0
-                          do
-                               for rat in 1.0 2.0 10.0
-                               do
+                    for asp in 1.0 5.0
+                    do
+                        for bet in 25.0 30.0
+                        do
+                            for rat in 1.0 2.0 10.0
+                            do
+                                
+                                DIR="Cluster2/SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_"
+                                IN_1="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.txt"
+                                IN_2="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.grd"
+                                IN_3="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-extinct.csv"
+                                IN_4="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-lspp.csv"
 
-                                    DIR="Cluster2/SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_"
-                                    IN_1="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.txt"
-                                    IN_2="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.grd"
-                                    IN_3="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-extinct.csv"
-                                    IN_4="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-lspp.csv"
+                                ARGS="""$ARGS
+                                --SSREPI-input-${i_SSS_report_id}=$DIR/$IN_1
+                                --SSREPI-input-${i_SSS_report_grd_id}=$DIR/$IN_2
+                                --SSREPI-input-${i_SSS_spomresult_extinct_id}=$DIR/$IN_3
+                                --SSREPI-input-${i_SSS_spomresult_lspp_id}=$DIR/$IN_4
+                                """
 
-                                    ARGS="""$ARGS
-                                    --SSREPI-input-${i_SSS_report_id}=$DIR/$IN_1
-                                    --SSREPI-input-${i_SSS_report_grd_id}=$DIR/$IN_2
-                                    --SSREPI-input-${i_SSS_spomresult_extinct_id}=$DIR/$IN_3
-                                    --SSREPI-input-${i_SSS_spomresult_lspp_id}=$DIR/$IN_4
-                                    """
-
-                                    count=$(($count + 1))
-                                    (>&2 echo 1st loop COUNT: $count / $total)
+                                count=$(($count + 1))
+                                (>&2 echo 1st loop COUNT: $count / $total)
                             done
                         done
                     done
@@ -353,16 +358,15 @@ do
     done
 done
 
-ARGS="""$ARGS
---SSREPI-argument-$a_experiment=8
+SSREPI_run $A_ANALYSEGE_GPLU2 $ARGS
+
+ARGS="""
+--SSREPI-argument-$a_experiment=9
 """
 ARGS="""$ARGS
---SSREPI-stdout-${o_result_id}=batch1.csv
+--SSREPI-stdout-${o_result_id}=batch2.csv
 """
 
-SSREPI_batch $A_ANALYSEGE_GPLU2 $ARGS
-
-ARGS=
 count=0
 total=$((2 * 20 * 2 * 1 * 7 * 2 * 2 * 1))
 for govt in RewardActivity RewardSpecies 
@@ -381,17 +385,17 @@ do
                         do
                             for rat in 1.0
                             do
-                                DIR="Cluster2-2/#/SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_"
+                                DIR="Cluster2-2/SSS_dir_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_"
                                 IN_1="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.txt"
                                 IN_2="SSS_report_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}.grd"
                                 IN_3="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-extinct.csv"
                                 IN_4="SSS_spomresult_${sink}_${govt}_all_${rwd}_${rat}_${market}_${bet}_noapproval_0_${asp}_${run}-lspp.csv"
 
                                ARGS="""$ARGS
-                                --SSREPI-input-${i_SSS_report_id}=$DIR/#/$IN_1
-                                --SSREPI-input-${i_SSS_report_grd_id}=$DIR/#/$IN_2
-                                --SSREPI-input-${i_SSS_spomresult_extinct_id}=$DIR/#/$IN_3
-                                --SSREPI-input-${i_SSS_spomresult_lspp_id}=$DIR/#/$IN_4
+                                --SSREPI-input-${i_SSS_report_id}=$DIR/$IN_1
+                                --SSREPI-input-${i_SSS_report_grd_id}=$DIR/$IN_2
+                                --SSREPI-input-${i_SSS_spomresult_extinct_id}=$DIR/$IN_3
+                                --SSREPI-input-${i_SSS_spomresult_lspp_id}=$DIR/$IN_4
                                 """
 
                                 count=$(($count + 1))
@@ -405,18 +409,8 @@ do
     done
 done
 
-ARGS="""$ARGS
---SSREPI-argument-$a_experiment=9
-"""
-ARGS="""$ARGS
---SSREPI-stdout-${o_result_id}=batch2.csv
-"""
-
-SSREPI_batch $A_ANALYSEGE_GPLU2 $ARGS
+SSREPI_run $A_ANALYSEGE_GPLU2 $ARGS
  
-#SSREPI_wait postprocessing
-wait
-
 # Metadata
 # --------
 

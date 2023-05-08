@@ -1127,7 +1127,7 @@ _input_value() {
 	# $3 - id_container_type
 	# $4 - path to object
 
-	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: entering...")
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: $@ entering...")
 	if [ ! -e $4 ]
 	then
 		(>&2 echo "$FUNCNAME: Something seriously wrong in the call \"--SSREPI-input-$id_container_type=$4\": $4 does not exist")
@@ -1192,6 +1192,7 @@ _input_value() {
 		--process=$2 \
 		--container=$id_container \
 	)
+	[ -n "$DEBUG" ] && (>&2 echo "$FUNCNAME: ...exit.")
 	[ -n "$id_input" ] || exit -1
 }
 SSREPI_hutton_person() {
