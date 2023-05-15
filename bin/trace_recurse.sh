@@ -24,7 +24,11 @@ do
         type_source=$(echo $source | cut -f1 -d.)
         target=$(echo $line | sed 's/^.*".*".*\-\>.*"\(.*\)".*\[.*$/\1/')
         type_target=$(echo $target | cut -f1 -d.)
-        if [[ "$source" = "$token" ]]
+        if egrep -q "$source.*\-\>.*$target" "$output"
+        then
+            # Already present
+            continue
+        elif [[ "$source" = "$token" ]]
         then 
             #echo TARGET $target
             if [[ "$hist" != *$target* ]]
@@ -33,11 +37,15 @@ do
                 then
                     echo "$line" >> "$output"
                 fi
-#                echo trace_recurse "$input" "$target" "$output" "$filter" "$hist$target"
+                echo trace_recurse "$input" "$target" "$output" "$filter" "$hist$target"
                 trace_recurse.sh "$input" "$target" "$output" "$filter" "$hist$target"
              fi
         fi
-    elif echo "$line" | egrep -q '^"'"$token"
+    elif egrep -q '^"'"$token" "$output"
+    then
+        # Stop duplicates
+        continue
+    elif echo "$line" | egrep -q '^"'"$token" 
     then
         type=$(echo $token | cut -f1 -d.)
         if [[ "$filter" = *$type* ]]
