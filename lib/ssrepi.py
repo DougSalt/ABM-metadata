@@ -3777,13 +3777,4 @@ def draw_graph (conn, nodes, output):
     active_edges = remove_edges(active_nodes, possible_edges)
     save_dot(active_nodes,active_edges,output=output)
 
-def convert_to_graph (conn, nodes, output):
-    original_nodes = get_nodes(conn, nodes, labels())
-    possible_edges = get_edges(conn, derive_edges(), original_nodes)
-#    gremlin(original_nodes,possible_edges,output=output)
-    active_nodes = remove_orphans(original_nodes, possible_edges)
-    active_edges = remove_edges(active_nodes, possible_edges)
-    gremlin(active_nodes,active_edges,output=output)
-
-def gremlin(conn, nodes, output):
 
