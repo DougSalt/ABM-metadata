@@ -1,3 +1,6 @@
+
+THIS REPOSITORY IS NOW CLOSED AND HAS BEEN MOVED HERE (https://github.com/large-scale-modelling/miracle)
+
 # PURPOSE
 
 This repository is for the Miracle simulation metadata outputs specification.
